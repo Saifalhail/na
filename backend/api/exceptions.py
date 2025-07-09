@@ -1,11 +1,17 @@
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import Http404
+from django.db import DatabaseError
 import logging
 import uuid
 from datetime import datetime
+import traceback
+import sys
+
+# Import custom exceptions
+from api.exceptions.custom_exceptions import *
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +24,84 @@ def custom_exception_handler(exc, context):
     # Call REST framework's default exception handler first
     response = exception_handler(exc, context)
     
-    # Generate unique request ID for tracking
-    request_id = f"req_{uuid.uuid4().hex[:12]}"
+    # Get request object
+    request = context.get('request')
     
-    if response is not None:
+    # Generate unique request ID for tracking
+    request_id = getattr(request, 'correlation_id', f"req_{uuid.uuid4().hex[:12]}")
+    
+    # Handle database errors
+    if isinstance(exc, DatabaseError):
+        logger.error(
+            f"Database error occurred: {str(exc)}",
+            exc_info=True,
+            extra={'request_id': request_id}
+        )
+        response = Response(
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+        response.data = {
+            'error': 'A database error occurred',
+            'error_code': 'DATABASE_ERROR',
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'request_id': request_id
+        }
+    
+    # Handle Django validation errors
+    elif isinstance(exc, DjangoValidationError):
+        response = Response(
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        response.data = {
+            'error': 'Validation error',
+            'error_code': 'VALIDATION_ERROR',
+            'details': {'errors': exc.messages},
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'request_id': request_id
+        }
+    
+    # Handle our custom exceptions
+    elif isinstance(exc, NutritionAIException):
+        response = Response(
+            status=exc.status_code
+        )
+        response.data = {
+            'error': str(exc.detail),
+            'error_code': exc.default_code.upper(),
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'request_id': request_id
+        }
+        
+        # Add extra details if available
+        if hasattr(exc, 'extra_detail'):
+            response.data['details'] = exc.extra_detail
+    
+    # Handle unexpected exceptions
+    elif response is None:
+        # Log unexpected error with full traceback
+        logger.error(
+            f"Unexpected error: {str(exc)}",
+            exc_info=True,
+            extra={
+                'request_id': request_id,
+                'exception_type': type(exc).__name__,
+                'traceback': traceback.format_exc()
+            }
+        )
+        
+        # Don't expose internal errors in production
+        response = Response(
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+        response.data = {
+            'error': 'An unexpected error occurred',
+            'error_code': 'INTERNAL_SERVER_ERROR',
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'request_id': request_id
+        }
+    
+    # Process standard DRF exceptions
+    if response is not None and not hasattr(response, '_processed'):
         # Get error details from the original response
         error_details = response.data
         
@@ -46,16 +126,20 @@ def custom_exception_handler(exc, context):
                 custom_response_data['details'] = {'errors': error_details}
         
         response.data = custom_response_data
+        response._processed = True
         
         # Log the error for debugging
-        logger.error(
+        log_level = logging.WARNING if response.status_code < 500 else logging.ERROR
+        logger.log(
+            log_level,
             f"API Error [{request_id}]: {error_code} - {error_message}",
             extra={
                 'request_id': request_id,
                 'error_code': error_code,
                 'status_code': response.status_code,
                 'exception_type': type(exc).__name__,
-                'path': context.get('request').path if context.get('request') else None
+                'path': request.path if request else None,
+                'user': request.user.email if request and request.user.is_authenticated else 'anonymous'
             }
         )
     
