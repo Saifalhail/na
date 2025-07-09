@@ -1,0 +1,30 @@
+# Security-related packages for Nutrition AI backend
+
+# JWT Authentication
+djangorestframework-simplejwt==5.3.1
+
+# Rate Limiting
+django-ratelimit==4.1.0
+
+# Security Headers
+django-security==0.19.0
+
+# Additional security packages
+django-csp==3.8  # Content Security Policy
+django-sslredirect==2.1.1  # HTTPS enforcement
+django-environ==0.11.2  # Environment variables (if not already installed)
+
+# Password validation
+django-password-validators==1.7.3
+
+# File upload security
+python-magic==0.4.27  # File type detection
+pillow==10.4.0  # Image processing (update if needed)
+
+# Monitoring and logging
+sentry-sdk==2.18.0  # Error tracking
+python-json-logger==2.0.7  # JSON logging
+
+# Testing security
+bandit==1.8.0  # Security linter
+safety==3.2.8  # Check for known security vulnerabilities
