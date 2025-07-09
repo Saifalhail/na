@@ -37,7 +37,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True, max_length=150)
     last_name = serializers.CharField(required=True, max_length=150)
     account_type = serializers.ChoiceField(
-        choices=User.ACCOUNT_TYPES,
+        choices=User.ACCOUNT_TYPE_CHOICES,
         default='free',
         help_text="Account type: free or premium"
     )

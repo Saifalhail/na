@@ -68,3 +68,4 @@ sentry-sdk==2.20.0
 celery==5.4.0
 redis==5.2.2
 gunicorn==23.1.0
+psutil==7.0.0
