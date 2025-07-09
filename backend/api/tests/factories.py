@@ -5,7 +5,7 @@ import factory
 from factory.django import DjangoModelFactory
 from factory import fuzzy
 from django.contrib.auth import get_user_model
-from django.utils import timezone
+from django.utils import timezone as django_timezone
 from datetime import datetime, timedelta
 import random
 from decimal import Decimal
@@ -32,7 +32,7 @@ class UserFactory(DjangoModelFactory):
     is_active = True
     is_verified = True
     account_type = fuzzy.FuzzyChoice(['free', 'premium'])
-    date_joined = factory.LazyFunction(timezone.now)
+    date_joined = factory.LazyFunction(django_timezone.now)
     
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):
@@ -75,8 +75,8 @@ class UserProfileFactory(DjangoModelFactory):
     timezone = 'UTC'
     preferred_units = 'metric'
     marketing_consent = factory.Faker('boolean')
-    created_at = factory.LazyFunction(timezone.now)
-    updated_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
+    updated_at = factory.LazyFunction(django_timezone.now)
 
 
 class DietaryRestrictionFactory(DjangoModelFactory):
@@ -88,8 +88,8 @@ class DietaryRestrictionFactory(DjangoModelFactory):
     name = factory.Faker('word')
     restriction_type = fuzzy.FuzzyChoice(['allergy', 'intolerance', 'preference', 'religious', 'medical'])
     description = factory.Faker('sentence')
-    created_at = factory.LazyFunction(timezone.now)
-    updated_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
+    updated_at = factory.LazyFunction(django_timezone.now)
     
     @factory.post_generation
     def users(obj, create, extracted, **kwargs):
@@ -125,8 +125,8 @@ class FoodItemFactory(DjangoModelFactory):
     serving_unit = fuzzy.FuzzyChoice(['g', 'ml', 'cup', 'piece', 'slice'])
     
     is_verified = factory.Faker('boolean')
-    created_at = factory.LazyFunction(timezone.now)
-    updated_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
+    updated_at = factory.LazyFunction(django_timezone.now)
 
 
 class MealFactory(DjangoModelFactory):
@@ -138,7 +138,7 @@ class MealFactory(DjangoModelFactory):
     user = factory.SubFactory(UserFactory)
     name = factory.LazyAttribute(lambda obj: f"{obj.meal_type.title()} on {obj.consumed_at.strftime('%Y-%m-%d')}")
     meal_type = fuzzy.FuzzyChoice(['breakfast', 'lunch', 'dinner', 'snack'])
-    consumed_at = factory.LazyFunction(lambda: timezone.now() - timedelta(hours=random.randint(0, 72)))
+    consumed_at = factory.LazyFunction(lambda: django_timezone.now() - timedelta(hours=random.randint(0, 72)))
     notes = factory.Faker('paragraph', nb_sentences=2)
     
     # Calculated totals (will be updated when items are added)
@@ -147,8 +147,8 @@ class MealFactory(DjangoModelFactory):
     total_carbs = Decimal('0')
     total_fat = Decimal('0')
     
-    created_at = factory.LazyFunction(timezone.now)
-    updated_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
+    updated_at = factory.LazyFunction(django_timezone.now)
 
 
 class MealItemFactory(DjangoModelFactory):
@@ -168,8 +168,8 @@ class MealItemFactory(DjangoModelFactory):
     carbohydrates = factory.LazyAttribute(lambda obj: obj.food_item.carbohydrates * obj.quantity)
     fat = factory.LazyAttribute(lambda obj: obj.food_item.fat * obj.quantity)
     
-    created_at = factory.LazyFunction(timezone.now)
-    updated_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
+    updated_at = factory.LazyFunction(django_timezone.now)
 
 
 class MealAnalysisFactory(DjangoModelFactory):
@@ -206,7 +206,7 @@ class MealAnalysisFactory(DjangoModelFactory):
     processing_time_ms = fuzzy.FuzzyInteger(500, 3000)
     confidence_score = fuzzy.FuzzyDecimal(0.7, 1.0, precision=2)
     
-    created_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
 
 
 class NutritionalInfoFactory(DjangoModelFactory):
@@ -240,8 +240,8 @@ class NutritionalInfoFactory(DjangoModelFactory):
     potassium = fuzzy.FuzzyDecimal(0, 100, precision=1)
     zinc = fuzzy.FuzzyDecimal(0, 100, precision=1)
     
-    created_at = factory.LazyFunction(timezone.now)
-    updated_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
+    updated_at = factory.LazyFunction(django_timezone.now)
 
 
 class FavoriteMealFactory(DjangoModelFactory):
@@ -255,7 +255,7 @@ class FavoriteMealFactory(DjangoModelFactory):
     custom_name = factory.Faker('sentence', nb_words=3)
     notes = factory.Faker('paragraph', nb_sentences=1)
     quick_add_enabled = factory.Faker('boolean')
-    created_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
 
 
 class APIUsageLogFactory(DjangoModelFactory):
@@ -273,14 +273,11 @@ class APIUsageLogFactory(DjangoModelFactory):
     response_status_code = fuzzy.FuzzyChoice([200, 201, 204, 400, 401, 403, 404, 500])
     response_time_ms = fuzzy.FuzzyInteger(10, 1000)
     ai_tokens_used = fuzzy.FuzzyInteger(0, 1000)
-    error_message = factory.Maybe(
-        'response_status_code',
-        None,
-        factory.Faker('sentence'),
-        lambda obj: obj.response_status_code >= 400
+    error_message = factory.LazyAttribute(
+        lambda obj: factory.Faker('sentence').generate() if obj.response_status_code >= 400 else None
     )
     correlation_id = factory.Faker('uuid4')
-    created_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
 
 
 # Legacy model factories (for backwards compatibility)
@@ -302,8 +299,8 @@ class NutritionDataFactory(DjangoModelFactory):
     fiber = fuzzy.FuzzyDecimal(0, 20, precision=2)
     sugar = fuzzy.FuzzyDecimal(0, 50, precision=2)
     sodium = fuzzy.FuzzyDecimal(0, 2000, precision=2)
-    created_at = factory.LazyFunction(timezone.now)
-    updated_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
+    updated_at = factory.LazyFunction(django_timezone.now)
 
 
 class RecipeIngredientFactory(DjangoModelFactory):
@@ -320,5 +317,5 @@ class RecipeIngredientFactory(DjangoModelFactory):
     protein = fuzzy.FuzzyDecimal(0, 20, precision=2)
     fat = fuzzy.FuzzyDecimal(0, 15, precision=2)
     carbs = fuzzy.FuzzyDecimal(0, 40, precision=2)
-    created_at = factory.LazyFunction(timezone.now)
-    updated_at = factory.LazyFunction(timezone.now)
+    created_at = factory.LazyFunction(django_timezone.now)
+    updated_at = factory.LazyFunction(django_timezone.now)

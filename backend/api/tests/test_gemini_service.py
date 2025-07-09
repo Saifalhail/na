@@ -6,8 +6,8 @@ from PIL import Image
 import io
 import time
 
-from ..services.gemini_service import GeminiService, retry_on_failure
-from ..exceptions import AIServiceError, RateLimitError
+from api.services.gemini_service import GeminiService, retry_on_failure
+from api.exceptions import AIServiceError, RateLimitError
 
 
 @pytest.mark.django_db

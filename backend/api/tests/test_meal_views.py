@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import json
 
-from ..models import Meal, MealItem, FoodItem, FavoriteMeal
-from ..tests.factories import UserFactory, MealFactory, FoodItemFactory, MealItemFactory
+from api.models import Meal, MealItem, FoodItem, FavoriteMeal
+from api.tests.factories import UserFactory, MealFactory, FoodItemFactory, MealItemFactory
 
 
 @pytest.mark.django_db

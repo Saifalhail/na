@@ -1,5 +1,4 @@
 # Make tests directory a Python package
-
-from .test_user_models import *
-from .test_food_models import *
-from .test_other_models import *
+# 
+# This file intentionally left empty to allow pytest to discover tests.
+# Importing test modules here is not necessary and can cause issues.

@@ -9,8 +9,8 @@ import json
 import io
 from PIL import Image
 
-from ..models import Meal, MealItem, FoodItem, MealAnalysis
-from ..tests.factories import UserFactory, MealFactory, FoodItemFactory
+from api.models import Meal, MealItem, FoodItem, MealAnalysis
+from api.tests.factories import UserFactory, MealFactory, FoodItemFactory
 
 
 @pytest.mark.django_db

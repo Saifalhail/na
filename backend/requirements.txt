@@ -52,6 +52,7 @@ urllib3==2.5.0
 pytest==8.3.4
 pytest-django==4.10.0
 pytest-cov==6.0.0
+pytest-xdist==3.6.1
 factory-boy==3.3.1
 faker==33.7.0
 
