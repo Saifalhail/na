@@ -79,12 +79,36 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Email backend for development (console)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Cache settings for development (dummy cache)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+# Cache settings for development
+# Use Redis if available, fallback to dummy cache
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', '6379')
+REDIS_DB = os.getenv('REDIS_DB', '0')
+
+try:
+    import redis
+    # Test Redis connection
+    r = redis.Redis(host=REDIS_HOST, port=int(REDIS_PORT), db=int(REDIS_DB))
+    r.ping()
+    # Redis is available, use it
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}',
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': 'nutritionai_dev',
+            'TIMEOUT': 300,  # 5 minutes default timeout
+        }
     }
-}
+except:
+    # Redis not available, use dummy cache
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
 
 # Development-specific DRF settings
 REST_FRAMEWORK.update({

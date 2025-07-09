@@ -71,7 +71,10 @@ class MealSerializer(serializers.ModelSerializer):
 
 class ImageAnalysisSerializer(serializers.Serializer):
     """Validates image upload for AI analysis."""
-    image = serializers.ImageField(required=True)
+    image = serializers.ImageField(
+        required=True,
+        help_text=_('Food image to analyze (max 10MB, JPEG/PNG/WebP/HEIC)')
+    )
     meal_type = serializers.ChoiceField(
         choices=Meal.MEAL_TYPE_CHOICES,
         required=False,
@@ -96,6 +99,71 @@ class ImageAnalysisSerializer(serializers.Serializer):
         allow_blank=True,
         help_text=_('Additional context about the meal')
     )
+    
+    # Allowed image formats
+    ALLOWED_FORMATS = ['JPEG', 'JPG', 'PNG', 'WEBP', 'HEIC', 'HEIF']
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+    MIN_DIMENSION = 100  # Minimum width/height
+    MAX_DIMENSION = 4096  # Maximum width/height
+    
+    def validate_image(self, value):
+        """
+        Validate image file:
+        - Check file size
+        - Verify format
+        - Check dimensions
+        """
+        # Check file size
+        if value.size > self.MAX_FILE_SIZE:
+            raise serializers.ValidationError(
+                _('Image file too large. Maximum size is 10MB.')
+            )
+        
+        # Check file extension
+        file_extension = value.name.split('.')[-1].upper()
+        if file_extension not in self.ALLOWED_FORMATS:
+            raise serializers.ValidationError(
+                _('Invalid image format. Supported formats: JPEG, PNG, WebP, HEIC')
+            )
+        
+        # Verify it's a valid image and check dimensions
+        try:
+            from PIL import Image
+            import io
+            
+            # Read image
+            image_data = value.read()
+            image = Image.open(io.BytesIO(image_data))
+            
+            # Reset file pointer for later use
+            value.seek(0)
+            
+            # Verify format matches content
+            if image.format and image.format.upper() not in self.ALLOWED_FORMATS:
+                raise serializers.ValidationError(
+                    _('Image content does not match file extension.')
+                )
+            
+            # Check dimensions
+            width, height = image.size
+            if width < self.MIN_DIMENSION or height < self.MIN_DIMENSION:
+                raise serializers.ValidationError(
+                    _(f'Image too small. Minimum dimension is {self.MIN_DIMENSION}px.')
+                )
+            
+            if width > self.MAX_DIMENSION or height > self.MAX_DIMENSION:
+                raise serializers.ValidationError(
+                    _(f'Image too large. Maximum dimension is {self.MAX_DIMENSION}px.')
+                )
+            
+        except serializers.ValidationError:
+            raise
+        except Exception as e:
+            raise serializers.ValidationError(
+                _('Invalid image file. Please upload a valid image.')
+            )
+        
+        return value
 
 
 class AnalysisResultSerializer(serializers.Serializer):

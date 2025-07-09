@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Sum, Count, Avg, F
+from django.db.models import Q, Sum, Count, Avg, F, OuterRef, Subquery
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from datetime import datetime, timedelta
@@ -105,11 +105,30 @@ class MealViewSet(viewsets.ModelViewSet):
     filterset_fields = ['meal_type']
     
     def get_queryset(self):
-        """Get meals for the current user."""
-        return Meal.objects.filter(user=self.request.user).prefetch_related(
-            'meal_items__food_item',
-            'favorited_by'
-        ).select_related('analysis')
+        """Get meals for the current user with optimized queries."""
+        queryset = Meal.objects.filter(user=self.request.user)
+        
+        # Optimize queries based on action
+        if self.action == 'list':
+            # For list view, we need basic meal info and counts
+            queryset = queryset.prefetch_related(
+                'meal_items',
+                'favorited_by'
+            ).annotate(
+                items_count=Count('meal_items', distinct=True),
+                is_favorited=Count('favorited_by', filter=Q(favorited_by__user=self.request.user))
+            )
+        elif self.action in ['retrieve', 'update', 'partial_update']:
+            # For detail views, we need full meal items and food items
+            queryset = queryset.prefetch_related(
+                'meal_items__food_item',
+                'favorited_by'
+            ).select_related('analysis')
+        elif self.action == 'statistics':
+            # For statistics, optimize aggregation queries
+            queryset = queryset.prefetch_related('meal_items')
+        
+        return queryset
     
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
@@ -206,8 +225,13 @@ class MealViewSet(viewsets.ModelViewSet):
         """Get user's favorite meals."""
         favorites = FavoriteMeal.objects.filter(
             user=request.user
-        ).select_related('meal').prefetch_related(
+        ).select_related(
+            'meal',
+            'meal__user'
+        ).prefetch_related(
             'meal__meal_items__food_item'
+        ).annotate(
+            meal_items_count=Count('meal__meal_items', distinct=True)
         ).order_by('quick_add_order', '-created_at')
         
         serializer = FavoriteMealSerializer(
@@ -238,16 +262,27 @@ class MealViewSet(viewsets.ModelViewSet):
         else:  # all
             start_date = None
         
-        # Base queryset
-        meals = self.get_queryset()
+        # Base queryset - use a fresh queryset for statistics
+        meals = Meal.objects.filter(user=self.request.user)
         if start_date:
             meals = meals.filter(consumed_at__gte=start_date)
         
-        # Calculate statistics
-        stats = meals.aggregate(
+        # Calculate statistics with optimized queries
+        # Use subqueries to avoid N+1 issues
+        meal_calories = MealItem.objects.filter(
+            meal=OuterRef('pk')
+        ).values('meal').annotate(
+            total=Sum('calories')
+        ).values('total')
+        
+        meals_with_calories = meals.annotate(
+            meal_calories=Subquery(meal_calories)
+        )
+        
+        stats = meals_with_calories.aggregate(
             total_meals=Count('id'),
-            total_calories=Sum('meal_items__calories'),
-            avg_calories=Avg('meal_items__calories')
+            total_calories=Sum('meal_calories'),
+            avg_calories=Avg('meal_calories')
         )
         
         # Meals by type
@@ -395,7 +430,7 @@ class MealViewSet(viewsets.ModelViewSet):
         if not food_item_ids:
             return Response([])
         
-        # Find meals with similar ingredients
+        # Find meals with similar ingredients with optimized query
         similar_meals = Meal.objects.filter(
             user=request.user,
             meal_type=meal.meal_type
@@ -406,7 +441,9 @@ class MealViewSet(viewsets.ModelViewSet):
         ).annotate(
             match_count=Count('meal_items__food_item_id', filter=Q(
                 meal_items__food_item_id__in=food_item_ids
-            ))
+            ), distinct=True)
+        ).prefetch_related(
+            'meal_items__food_item'
         ).order_by('-match_count', '-consumed_at')[:5]
         
         serializer = MealListSerializer(

@@ -14,6 +14,12 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# AI Service Configuration
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'your-gemini-api-key')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-pro')
+AI_USE_CACHE = os.getenv('AI_USE_CACHE', 'True') == 'True'
+AI_CACHE_TIMEOUT = int(os.getenv('AI_CACHE_TIMEOUT', '3600'))  # 1 hour default
+
 
 # Application definition
 

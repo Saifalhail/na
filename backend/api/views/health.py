@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from django.db import connection
+from django.db import connection, models
 from django.core.cache import cache
 from django.conf import settings
 import time
@@ -139,18 +139,61 @@ class ReadinessCheckView(APIView):
     def _check_gemini_api(self):
         """Check Gemini API availability."""
         try:
-            # Just check if API key is configured
-            # Don't make actual API call to avoid costs
+            # First check if API key is configured
             api_key_configured = bool(settings.GEMINI_API_KEY)
+            if not api_key_configured:
+                return {
+                    'healthy': False,
+                    'api_key_configured': False,
+                    'message': 'API key not configured'
+                }
             
-            return {
-                'healthy': api_key_configured,
-                'api_key_configured': api_key_configured,
-            }
+            # Check cached health status (valid for 5 minutes)
+            cache_key = 'gemini_api_health_check'
+            cached_result = cache.get(cache_key)
+            if cached_result is not None:
+                return cached_result
+            
+            # Perform actual health check (minimal API call)
+            try:
+                start_time = time.time()
+                service = GeminiService()
+                
+                # Make a minimal test request
+                import google.generativeai as genai
+                model = genai.GenerativeModel(settings.GEMINI_MODEL)
+                response = model.generate_content("Return 'OK' if you receive this.")
+                
+                response_time = int((time.time() - start_time) * 1000)
+                
+                result = {
+                    'healthy': bool(response.text),
+                    'api_key_configured': True,
+                    'response_time_ms': response_time,
+                    'model': settings.GEMINI_MODEL
+                }
+                
+                # Cache successful result for 5 minutes
+                cache.set(cache_key, result, 300)
+                return result
+                
+            except Exception as api_error:
+                # API call failed but key is configured
+                result = {
+                    'healthy': False,
+                    'api_key_configured': True,
+                    'error': str(api_error),
+                    'message': 'API reachable but request failed'
+                }
+                # Cache failure for 1 minute
+                cache.set(cache_key, result, 60)
+                return result
+                
         except Exception as e:
             return {
                 'healthy': False,
                 'error': str(e),
+                'message': 'Health check failed'
             }
 
 

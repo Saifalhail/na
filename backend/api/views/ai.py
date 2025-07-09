@@ -5,12 +5,15 @@ from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 from django.utils import timezone
 from django.db import transaction
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from decimal import Decimal
 import logging
 import time
 from typing import Dict, List, Any, Optional
 
-from ..models import Meal, MealItem, FoodItem, MealAnalysis
+from ..models import Meal, MealItem, FoodItem, MealAnalysis, APIUsageLog
 from ..serializers.ai_serializers import (
     ImageAnalysisSerializer,
     AnalysisResultSerializer,
@@ -28,6 +31,33 @@ from ..exceptions import (
 logger = logging.getLogger(__name__)
 
 
+def log_api_usage(request, endpoint_name, status_code, response_time_ms, 
+                  ai_tokens_used=0, error_message=''):
+    """Helper function to log API usage."""
+    try:
+        # Get client IP
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(',')[0]
+        else:
+            ip_address = request.META.get('REMOTE_ADDR')
+        
+        APIUsageLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            endpoint=endpoint_name,
+            method=request.method,
+            ip_address=ip_address,
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            request_body_size=len(request.body) if request.body else 0,
+            response_status_code=status_code,
+            response_time_ms=response_time_ms,
+            ai_tokens_used=ai_tokens_used,
+            error_message=error_message
+        )
+    except Exception as e:
+        logger.error(f"Failed to log API usage: {str(e)}")
+
+
 class AnalyzeImageView(APIView):
     """
     Analyze food image using AI to extract nutritional information.
@@ -37,11 +67,25 @@ class AnalyzeImageView(APIView):
     2. Uses AI (Google Gemini) to identify food items
     3. Creates a Meal with detected food items
     4. Returns detailed nutritional analysis
+    
+    Rate limit: 10 requests per minute per user
     """
     permission_classes = [IsAuthenticated]
     
+    @method_decorator(ratelimit(key='user', rate='10/m', method='POST'))
     def post(self, request, *args, **kwargs):
         """Process food image and return nutritional analysis."""
+        # Check if rate limited
+        if getattr(request, 'limited', False):
+            return Response(
+                {
+                    'error': 'Rate limit exceeded',
+                    'message': 'Maximum 10 image analyses per minute allowed',
+                    'code': 'rate_limit_exceeded'
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        
         serializer = ImageAnalysisSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -109,16 +153,43 @@ class AnalyzeImageView(APIView):
             serializer = AnalysisResultSerializer(data=response_data)
             serializer.is_valid(raise_exception=True)
             
+            # Log successful API usage
+            log_api_usage(
+                request=request,
+                endpoint_name='/api/v1/ai/analyze/',
+                status_code=status.HTTP_201_CREATED,
+                response_time_ms=processing_time_ms,
+                ai_tokens_used=len(analysis_result['data'].get('ingredients', [])) * 100  # Rough estimate
+            )
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except AIServiceError as e:
             logger.error(f"AI service error: {str(e)}", exc_info=True)
+            # Log failed API usage
+            processing_time = int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0
+            log_api_usage(
+                request=request,
+                endpoint_name='/api/v1/ai/analyze/',
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                response_time_ms=processing_time,
+                error_message=str(e)
+            )
             return Response(
                 {'error': str(e), 'code': 'AI_SERVICE_ERROR'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         except Exception as e:
             logger.error(f"Unexpected error in image analysis: {str(e)}", exc_info=True)
+            # Log failed API usage
+            processing_time = int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0
+            log_api_usage(
+                request=request,
+                endpoint_name='/api/v1/ai/analyze/',
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                response_time_ms=processing_time,
+                error_message=str(e)
+            )
             return Response(
                 {'error': 'An unexpected error occurred', 'details': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -273,11 +344,25 @@ class RecalculateNutritionView(APIView):
     2. Uses AI to calculate accurate nutritional information
     3. Optionally updates an existing meal
     4. Returns detailed nutritional breakdown
+    
+    Rate limit: 20 requests per minute per user
     """
     permission_classes = [IsAuthenticated]
     
+    @method_decorator(ratelimit(key='user', rate='20/m', method='POST'))
     def post(self, request, *args, **kwargs):
         """Recalculate nutrition for given ingredients."""
+        # Check if rate limited
+        if getattr(request, 'limited', False):
+            return Response(
+                {
+                    'error': 'Rate limit exceeded',
+                    'message': 'Maximum 20 recalculations per minute allowed',
+                    'code': 'rate_limit_exceeded'
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        
         serializer = RecalculationRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
@@ -291,6 +376,9 @@ class RecalculateNutritionView(APIView):
             return self._mock_recalculation(ingredients, serving_size)
         
         try:
+            # Start timing
+            start_time = time.time()
+            
             # Initialize AI service
             gemini_service = GeminiService()
             
@@ -342,16 +430,46 @@ class RecalculateNutritionView(APIView):
             serializer = NutritionalBreakdownSerializer(data=response_data)
             serializer.is_valid(raise_exception=True)
             
+            # Calculate processing time
+            processing_time_ms = int((time.time() - start_time) * 1000)
+            
+            # Log successful API usage
+            log_api_usage(
+                request=request,
+                endpoint_name='/api/v1/ai/recalculate/',
+                status_code=status.HTTP_200_OK,
+                response_time_ms=processing_time_ms,
+                ai_tokens_used=len(ingredients) * 50  # Rough estimate
+            )
+            
             return Response(serializer.data, status=status.HTTP_200_OK)
             
         except AIServiceError as e:
             logger.error(f"AI service error in recalculation: {str(e)}")
+            # Log failed API usage
+            processing_time = int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0
+            log_api_usage(
+                request=request,
+                endpoint_name='/api/v1/ai/recalculate/',
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                response_time_ms=processing_time,
+                error_message=str(e)
+            )
             return Response(
                 {'error': str(e), 'code': 'AI_SERVICE_ERROR'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
         except Exception as e:
             logger.error(f"Unexpected error in recalculation: {str(e)}", exc_info=True)
+            # Log failed API usage
+            processing_time = int((time.time() - start_time) * 1000) if 'start_time' in locals() else 0
+            log_api_usage(
+                request=request,
+                endpoint_name='/api/v1/ai/recalculate/',
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                response_time_ms=processing_time,
+                error_message=str(e)
+            )
             return Response(
                 {'error': 'An unexpected error occurred', 'details': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
