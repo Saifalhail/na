@@ -1,11 +1,11 @@
 from django.urls import path, include
 from .views import (
-    # Legacy views (to be updated)
-    AnalyzeImageView, 
+    # Legacy views (kept for backward compatibility)
+    AnalyzeImageView as LegacyAnalyzeImageView, 
     NutritionDataDetailView,
-    RecalculateNutritionView,
+    RecalculateNutritionView as LegacyRecalculateNutritionView,
     IngredientsListView,
-    RecalculateView,
+    RecalculateView as LegacyRecalculateView,
     
     # Health check views
     HealthCheckView,
@@ -26,14 +26,11 @@ health_patterns = [
 
 # API v1 patterns
 v1_patterns = [
-    # Authentication endpoints (to be implemented)
-    # path('auth/', include('api.auth.urls')),
+    # Authentication endpoints
+    path('auth/', include('api.auth.urls')),
     
-    # Analysis endpoints
-    path('analysis/', include([
-        path('image/', AnalyzeImageView.as_view(), name='analyze-image'),
-        path('recalculate/', RecalculateView.as_view(), name='recalculate'),
-    ])),
+    # AI Analysis endpoints (new)
+    path('ai/', include('api.ai.urls')),
     
     # Meal endpoints (to be implemented)
     # path('meals/', include('api.meals.urls')),
@@ -42,10 +39,10 @@ v1_patterns = [
     # path('users/', include('api.users.urls')),
     
     # Legacy endpoints (deprecated, will be removed in v2)
-    path('analyze-image/', AnalyzeImageView.as_view(), name='analyze-image-legacy'),
-    path('recalculate/', RecalculateView.as_view(), name='recalculate-legacy'),
+    path('analyze-image/', LegacyAnalyzeImageView.as_view(), name='analyze-image-legacy'),
+    path('recalculate/', LegacyRecalculateView.as_view(), name='recalculate-legacy'),
     path('nutrition/<int:pk>/', NutritionDataDetailView.as_view(), name='nutrition-detail'),
-    path('nutrition/<int:pk>/recalculate/', RecalculateNutritionView.as_view(), name='nutrition-recalculate'),
+    path('nutrition/<int:pk>/recalculate/', LegacyRecalculateNutritionView.as_view(), name='nutrition-recalculate'),
     path('nutrition/<int:nutrition_data_id>/ingredients/', IngredientsListView.as_view(), name='ingredients-list'),
 ]
 

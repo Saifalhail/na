@@ -2,12 +2,16 @@ import google.generativeai as genai
 from django.conf import settings
 import json
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 import base64
 from PIL import Image
 import io
 import time
 from functools import wraps
+from datetime import datetime
+import hashlib
+from django.core.cache import cache
+from ..exceptions import AIServiceError, RateLimitError
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +36,15 @@ def retry_on_failure(max_retries=3, delay=1.0, backoff=2.0):
                     return func(self, *args, **kwargs)
                 except Exception as e:
                     last_exception = e
+                    
+                    # Check if it's a rate limit error
+                    if 'quota' in str(e).lower() or 'rate limit' in str(e).lower():
+                        raise RateLimitError(f"API rate limit exceeded: {str(e)}")
+                    
+                    # Check if it's a permanent error that shouldn't be retried
+                    if 'invalid' in str(e).lower() or 'authentication' in str(e).lower():
+                        raise AIServiceError(f"API authentication error: {str(e)}")
+                    
                     if attempt < max_retries:
                         logger.warning(
                             f"Attempt {attempt + 1} failed for {func.__name__}: {str(e)}. "
@@ -43,7 +56,7 @@ def retry_on_failure(max_retries=3, delay=1.0, backoff=2.0):
                         logger.error(f"All {max_retries + 1} attempts failed for {func.__name__}")
             
             # If all retries failed, raise the last exception
-            raise last_exception
+            raise AIServiceError(f"Failed after {max_retries + 1} attempts: {str(last_exception)}")
         
         return wrapper
     return decorator
@@ -58,7 +71,14 @@ class GeminiService:
             raise ValueError("GEMINI_API_KEY not found in settings")
         
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.5-pro')
+        
+        # Use the best available model
+        model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-1.5-pro')
+        self.model = genai.GenerativeModel(model_name)
+        
+        # Cache configuration
+        self.cache_timeout = getattr(settings, 'AI_CACHE_TIMEOUT', 3600)  # 1 hour default
+        self.use_cache = getattr(settings, 'AI_USE_CACHE', True)
     
     def _validate_nutrition_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -160,6 +180,30 @@ class GeminiService:
         except (TypeError, ValueError):
             return None
     
+    def _build_context_prompt(self, context: Dict[str, Any]) -> str:
+        """Build context information for the prompt."""
+        context_parts = []
+        
+        if context.get('meal_type'):
+            context_parts.append(f"This is a {context['meal_type']} meal.")
+        
+        if context.get('cuisine_type'):
+            context_parts.append(f"The cuisine type is {context['cuisine_type']}.")
+        
+        if context.get('time_of_day'):
+            context_parts.append(f"The meal is being consumed at {context['time_of_day']}.")
+        
+        if context.get('location'):
+            context_parts.append(f"The meal is from {context['location']}.")
+        
+        if context.get('user_notes'):
+            context_parts.append(f"Additional context: {context['user_notes']}")
+        
+        if context_parts:
+            return "Context:\n" + "\n".join(f"- {part}" for part in context_parts) + "\n"
+        
+        return ""
+    
     @retry_on_failure(max_retries=3, delay=2.0)
     def _call_gemini_api(self, prompt: str, image_data: bytes) -> str:
         """
@@ -208,7 +252,7 @@ class GeminiService:
             
         return response.text
     
-    def analyze_food_image(self, image_data: bytes) -> Dict[str, Any]:
+    def analyze_food_image(self, image_data: bytes, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Analyze a food image and extract nutrition information.
         
@@ -233,9 +277,27 @@ class GeminiService:
                     'success': False,
                     'error': 'Invalid image format'
                 }
+            # Generate cache key if caching is enabled
+            cache_key = None
+            if self.use_cache:
+                image_hash = hashlib.sha256(image_data).hexdigest()[:16]
+                context_hash = hashlib.sha256(json.dumps(context or {}, sort_keys=True).encode()).hexdigest()[:8]
+                cache_key = f"gemini_analysis_{image_hash}_{context_hash}"
+                
+                # Check cache first
+                cached_result = cache.get(cache_key)
+                if cached_result:
+                    logger.info(f"Returning cached analysis for key: {cache_key}")
+                    return cached_result
+            
+            # Build enhanced prompt with context
+            context_info = self._build_context_prompt(context) if context else ""
+            
             # Create the prompt for nutrition analysis
-            prompt = """
+            prompt = f"""
             Analyze this food image and provide detailed nutritional information.
+            
+            {context_info}
             
             Instructions:
             1. Identify all visible ingredients and their estimated quantities
@@ -319,11 +381,18 @@ class GeminiService:
                     'raw_response': response_text
                 }
             
-            return {
+            result = {
                 'success': True,
                 'data': validated_data,
                 'raw_response': response_text
             }
+            
+            # Cache successful result
+            if self.use_cache and cache_key:
+                cache.set(cache_key, result, self.cache_timeout)
+                logger.info(f"Cached analysis result for key: {cache_key}")
+            
+            return result
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse Gemini response as JSON: {e}")
@@ -388,7 +457,7 @@ class GeminiService:
             logger.error(f"Error extracting nutrition from text: {e}")
             return None
     
-    def calculate_nutrition_from_ingredients(self, ingredients: list) -> Dict[str, Any]:
+    def calculate_nutrition_from_ingredients(self, ingredients: list, serving_size: int = 1) -> Dict[str, Any]:
         """
         Calculate nutrition information from a list of ingredients.
         
@@ -406,11 +475,13 @@ class GeminiService:
             
             {ingredients_text}
             
+            This recipe makes {serving_size} serving(s).
+            
             Return the data in the following JSON format:
             {{
                 "description": "Brief description of the combined ingredients",
                 "nutrition": {{
-                    "calories": number,
+                    "calories": number (total for all ingredients),
                     "protein": number (in grams),
                     "carbohydrates": number (in grams),
                     "fat": number (in grams),
@@ -418,14 +489,33 @@ class GeminiService:
                     "sugar": number (in grams),
                     "sodium": number (in milligrams)
                 }},
+                "per_serving": {{
+                    "calories": number (per serving),
+                    "protein": number (in grams),
+                    "carbohydrates": number (in grams),
+                    "fat": number (in grams),
+                    "fiber": number (in grams),
+                    "sugar": number (in grams),
+                    "sodium": number (in milligrams)
+                }},
+                "ingredients_breakdown": [
+                    {{
+                        "name": "ingredient name",
+                        "calories": number,
+                        "protein": number,
+                        "carbohydrates": number,
+                        "fat": number
+                    }}
+                ],
                 "serving_info": {{
                     "total_weight": number (in grams),
-                    "suggested_servings": number,
+                    "servings": {serving_size},
                     "serving_size": "description"
                 }}
             }}
             
             Provide accurate nutritional calculations based on standard nutritional databases.
+            Be precise with the nutritional values for each ingredient.
             """
             
             # Call Gemini API with retry logic

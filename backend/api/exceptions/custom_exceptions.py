@@ -154,6 +154,12 @@ class ExternalServiceException(NutritionAIException):
     default_code = 'external_service_error'
 
 
+class AIServiceError(ExternalServiceException):
+    """General AI service error."""
+    default_detail = 'AI service encountered an error.'
+    default_code = 'ai_service_error'
+
+
 class GeminiAPIException(ExternalServiceException):
     """Raised when Gemini API call fails."""
     default_detail = 'AI service is temporarily unavailable.'
@@ -178,6 +184,12 @@ class RateLimitException(NutritionAIException):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     default_detail = 'Rate limit exceeded.'
     default_code = 'rate_limit_exceeded'
+
+
+class RateLimitError(RateLimitException):
+    """General rate limit error."""
+    default_detail = 'Rate limit exceeded. Please try again later.'
+    default_code = 'rate_limit_error'
 
 
 class LoginRateLimitException(RateLimitException):

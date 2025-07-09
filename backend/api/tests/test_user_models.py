@@ -6,6 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from api.models import UserProfile, DietaryRestriction
+from api.tests.factories import UserFactory, UserProfileFactory, DietaryRestrictionFactory
 
 User = get_user_model()
 
@@ -47,6 +48,27 @@ class UserModelTest(TestCase):
         
         self.assertTrue(admin.is_staff)
         self.assertTrue(admin.is_superuser)
+    
+    def test_user_factory(self):
+        """Test creating user with factory."""
+        user = UserFactory()
+        
+        self.assertTrue(user.email)
+        self.assertTrue(user.first_name)
+        self.assertTrue(user.last_name)
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.is_verified)
+        self.assertIn(user.account_type, ['free', 'premium'])
+        
+    def test_user_factory_with_profile(self):
+        """Test creating user with profile using factory."""
+        profile = UserProfileFactory()
+        
+        self.assertIsNotNone(profile.user)
+        self.assertIsNotNone(profile.date_of_birth)
+        self.assertIn(profile.gender, ['M', 'F', 'O'])
+        self.assertGreaterEqual(profile.height, 150)
+        self.assertLessEqual(profile.height, 210)
     
     def test_unique_email_constraint(self):
         """Test that email must be unique."""

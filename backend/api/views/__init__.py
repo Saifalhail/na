@@ -5,3 +5,21 @@ from .health import (
     LivenessCheckView,
     MetricsView
 )
+
+from .auth import (
+    RegisterView,
+    EmailVerifyView,
+    LoginView,
+    RefreshTokenView,
+    LogoutView,
+    PasswordResetRequestView,
+    PasswordResetConfirmView,
+    PasswordChangeView,
+    ProfileView,
+    TokenVerifyView
+)
+
+from .ai import (
+    AnalyzeImageView,
+    RecalculateNutritionView
+)
