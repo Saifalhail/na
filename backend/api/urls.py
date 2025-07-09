@@ -32,8 +32,8 @@ v1_patterns = [
     # AI Analysis endpoints (new)
     path('ai/', include('api.ai.urls')),
     
-    # Meal endpoints (to be implemented)
-    # path('meals/', include('api.meals.urls')),
+    # Meal endpoints
+    path('meals/', include('api.meals.urls')),
     
     # User endpoints (to be implemented)
     # path('users/', include('api.users.urls')),

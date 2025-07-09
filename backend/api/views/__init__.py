@@ -23,3 +23,7 @@ from .ai import (
     AnalyzeImageView,
     RecalculateNutritionView
 )
+
+from .meals import (
+    MealViewSet
+)

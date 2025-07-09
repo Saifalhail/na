@@ -437,6 +437,286 @@ Recalculates nutritional information based on ingredient modifications.
 }
 ```
 
+### Meal Management Endpoints
+
+#### 1. List Meals
+**GET** `/api/v1/meals/` 🔒
+
+Lists all meals for the authenticated user with filtering and search options.
+
+**Query Parameters:**
+- `search`: Search in meal name, notes, or food items
+- `meal_type`: Filter by meal type (breakfast, lunch, dinner, snack, other)
+- `start_date`: Filter meals after this date (ISO format)
+- `end_date`: Filter meals before this date (ISO format)
+- `min_calories`: Filter meals with at least this many calories
+- `max_calories`: Filter meals with at most this many calories
+- `favorites_only`: Set to "true" to show only favorited meals
+- `ordering`: Sort by field (e.g., -consumed_at, name, created_at)
+- `page`: Page number for pagination
+- `page_size`: Number of results per page (default: 20)
+
+**Success Response (200):**
+```json
+{
+    "count": 50,
+    "next": "http://localhost:8000/api/v1/meals/?page=2",
+    "previous": null,
+    "results": [
+        {
+            "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "name": "Healthy Breakfast",
+            "meal_type": "breakfast",
+            "consumed_at": "2025-01-09T08:30:00Z",
+            "total_calories": 450,
+            "items_count": 3,
+            "is_favorite": true,
+            "image": null,
+            "created_at": "2025-01-09T08:35:00Z"
+        }
+    ]
+}
+```
+
+#### 2. Create Meal
+**POST** `/api/v1/meals/` 🔒
+
+Creates a new meal with optional meal items.
+
+**Request Body:**
+```json
+{
+    "name": "Healthy Lunch",
+    "meal_type": "lunch",
+    "consumed_at": "2025-01-09T12:30:00Z",
+    "notes": "Post-workout meal",
+    "location_name": "Home",
+    "meal_items": [
+        {
+            "food_item_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "quantity": 150,
+            "unit": "g",
+            "custom_name": "Grilled Chicken"
+        },
+        {
+            "food_item_name": "Brown Rice",
+            "quantity": 100,
+            "unit": "g"
+        }
+    ]
+}
+```
+
+**Success Response (201):**
+```json
+{
+    "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+    "user": "user123",
+    "name": "Healthy Lunch",
+    "meal_type": "lunch",
+    "consumed_at": "2025-01-09T12:30:00Z",
+    "image": null,
+    "notes": "Post-workout meal",
+    "location_name": "Home",
+    "latitude": null,
+    "longitude": null,
+    "meal_items": [
+        {
+            "id": 1,
+            "food_item": {
+                "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                "name": "Chicken Breast",
+                "calories": 165.0,
+                "protein": 31.0,
+                "carbohydrates": 0.0,
+                "fat": 3.6
+            },
+            "quantity": 150.0,
+            "unit": "g",
+            "calories": 247.5,
+            "protein": 46.5,
+            "custom_name": "Grilled Chicken"
+        }
+    ],
+    "total_calories": 415.5,
+    "total_macros": {
+        "protein": 51.4,
+        "carbohydrates": 23.5,
+        "fat": 4.5
+    },
+    "is_favorite": false,
+    "favorite_id": null,
+    "created_at": "2025-01-09T12:35:00Z",
+    "updated_at": "2025-01-09T12:35:00Z"
+}
+```
+
+#### 3. Get Meal Details
+**GET** `/api/v1/meals/{meal_id}/` 🔒
+
+Retrieves detailed information about a specific meal.
+
+**Success Response (200):**
+Returns same format as Create Meal response.
+
+#### 4. Update Meal
+**PATCH** `/api/v1/meals/{meal_id}/` 🔒
+
+Updates meal information. Can update meal fields and replace all meal items.
+
+**Request Body:**
+```json
+{
+    "name": "Updated Lunch",
+    "notes": "Added extra vegetables"
+}
+```
+
+#### 5. Delete Meal
+**DELETE** `/api/v1/meals/{meal_id}/` 🔒
+
+Deletes a meal and all its associated meal items.
+
+**Success Response (204):** No content
+
+#### 6. Add to Favorites
+**POST** `/api/v1/meals/{meal_id}/favorite/` 🔒
+
+Adds a meal to user's favorites for quick access.
+
+**Request Body:**
+```json
+{
+    "name": "My Go-To Breakfast",
+    "is_template": true,
+    "quick_add_order": 1
+}
+```
+
+**Success Response (201):**
+```json
+{
+    "id": 123,
+    "meal": {
+        "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+        "name": "Healthy Breakfast",
+        "meal_type": "breakfast",
+        "total_calories": 450
+    },
+    "name": "My Go-To Breakfast",
+    "is_template": true,
+    "quick_add_order": 1,
+    "times_used": 0,
+    "last_used": null,
+    "created_at": "2025-01-09T12:40:00Z"
+}
+```
+
+#### 7. Remove from Favorites
+**DELETE** `/api/v1/meals/{meal_id}/unfavorite/` 🔒
+
+Removes a meal from favorites.
+
+**Success Response (204):** No content
+
+#### 8. Duplicate Meal
+**POST** `/api/v1/meals/{meal_id}/duplicate/` 🔒
+
+Creates a copy of an existing meal with all its items.
+
+**Request Body:**
+```json
+{
+    "name": "Today's Lunch",
+    "consumed_at": "2025-01-09T12:00:00Z"
+}
+```
+
+**Success Response (201):** Returns full meal object like Create Meal
+
+#### 9. Quick Log from Favorite
+**POST** `/api/v1/meals/quick_log/` 🔒
+
+Quickly creates a new meal entry from a favorite meal template.
+
+**Request Body:**
+```json
+{
+    "favorite_meal_id": 123,
+    "consumed_at": "2025-01-09T08:00:00Z"
+}
+```
+
+**Success Response (201):** Returns full meal object
+
+#### 10. Get Favorite Meals
+**GET** `/api/v1/meals/favorites/` 🔒
+
+Lists all user's favorite meals ordered by quick add order.
+
+**Success Response (200):**
+```json
+[
+    {
+        "id": 123,
+        "meal": {
+            "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+            "name": "Healthy Breakfast",
+            "meal_type": "breakfast",
+            "total_calories": 450,
+            "items_count": 3
+        },
+        "name": "My Go-To Breakfast",
+        "is_template": true,
+        "quick_add_order": 1,
+        "times_used": 15,
+        "last_used": "2025-01-08T08:15:00Z"
+    }
+]
+```
+
+#### 11. Get Meal Statistics
+**GET** `/api/v1/meals/statistics/` 🔒
+
+Returns aggregated statistics about user's meals.
+
+**Query Parameters:**
+- `period`: Statistics period (week, month, year, all) - default: month
+
+**Success Response (200):**
+```json
+{
+    "total_meals": 150,
+    "total_calories": 67500.0,
+    "average_calories_per_meal": 450.0,
+    "favorite_meal_type": "lunch",
+    "meals_by_type": {
+        "breakfast": 45,
+        "lunch": 50,
+        "dinner": 40,
+        "snack": 15
+    },
+    "recent_favorites": [...],
+    "average_macros": {
+        "protein": 35.5,
+        "carbohydrates": 55.2,
+        "fat": 18.3,
+        "fiber": 8.5
+    },
+    "meals_this_week": 21,
+    "meals_this_month": 90,
+    "most_active_meal_time": "12:00 - 13:00"
+}
+```
+
+#### 12. Find Similar Meals
+**GET** `/api/v1/meals/{meal_id}/similar/` 🔒
+
+Finds meals with similar ingredients and meal type.
+
+**Success Response (200):**
+Returns array of meal objects (up to 5) similar to List Meals format.
+
 ## Error Responses
 
 All endpoints return consistent error responses:
