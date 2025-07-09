@@ -84,6 +84,10 @@ class InvalidInputException(ValidationException):
     default_code = 'invalid_input'
 
 
+# Alias for backward compatibility - many files expect ValidationError
+ValidationError = ValidationException
+
+
 class MissingRequiredFieldException(ValidationException):
     """Raised when required field is missing."""
     default_detail = 'Required field is missing.'
