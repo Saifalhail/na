@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Alert } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { Button } from '@/components/base/Button';
-import { useTheme } from '@/hooks/useTheme';
 import { useTwoFactorStore } from '@/store/twoFactorStore';
 import { useAuthStore } from '@/store/authStore';
 
@@ -34,13 +33,13 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
     try {
       // Check if device supports Google Play Services
       await GoogleSignin.hasPlayServices();
-      
+
       // Get the user's ID token
       const userInfo = await GoogleSignin.signIn();
-      
+
       // Get tokens
       const tokens = await GoogleSignin.getTokens();
-      
+
       if (!userInfo.data?.idToken || !tokens.accessToken) {
         throw new Error('Failed to get Google authentication tokens');
       }
@@ -59,7 +58,7 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
       onSuccess?.();
     } catch (error: any) {
       let errorMessage = 'Google login failed';
-      
+
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         errorMessage = 'Google sign-in was cancelled';
       } else if (error.code === statusCodes.IN_PROGRESS) {
@@ -69,9 +68,9 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       onError?.(errorMessage);
-      
+
       // Only show alert if not cancelled by user
       if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         Alert.alert('Login Failed', errorMessage);
@@ -83,7 +82,7 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
     if (isSocialLoading) {
       return 'Signing in...';
     }
-    
+
     switch (provider) {
       case 'google':
         return 'Continue with Google';

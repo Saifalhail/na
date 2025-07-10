@@ -38,7 +38,7 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   }[size];
 
   return (
-    <View 
+    <View
       style={[
         styles.badge,
         {
@@ -50,7 +50,7 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
         style,
       ]}
     >
-      <Text 
+      <Text
         style={[
           styles.text,
           {

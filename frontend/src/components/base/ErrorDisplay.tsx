@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { useTheme } from '@theme/ThemeContext';
 import { Theme } from '@theme/index';
 import Card from './Card';
@@ -89,92 +83,87 @@ interface FieldErrorProps {
   style?: ViewStyle;
 }
 
-export const FieldError: React.FC<FieldErrorProps> = ({
-  error,
-  touched = true,
-  style,
-}) => {
+export const FieldError: React.FC<FieldErrorProps> = ({ error, touched = true, style }) => {
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
   if (!error || !touched) return null;
 
-  return (
-    <Text style={[styles.fieldError, style]}>{error}</Text>
-  );
+  return <Text style={[styles.fieldError, style]}>{error}</Text>;
 };
 
-const createStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    padding: theme.spacing.l,
-    alignItems: 'center',
-    borderColor: theme.colors.error[500],
-  },
-  compactContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: theme.spacing.s,
-    backgroundColor: theme.colors.error[50],
-    borderRadius: theme.borderRadius.sm,
-  },
-  iconContainer: {
-    marginBottom: theme.spacing.s,
-  },
-  icon: {
-    fontSize: 32,
-  },
-  title: {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.xs,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.m,
-  },
-  retryButton: {
-    paddingHorizontal: theme.spacing.l,
-    paddingVertical: theme.spacing.s,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.error[500],
-  },
-  retryText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.error[500],
-    fontWeight: '600',
-  },
-  compactText: {
-    flex: 1,
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.error[500],
-  },
-  retryTextCompact: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.error[500],
-    fontWeight: '600',
-    marginLeft: theme.spacing.s,
-  },
-  errorMessageContainer: {
-    backgroundColor: theme.colors.error[50],
-    padding: theme.spacing.s,
-    borderRadius: theme.borderRadius.sm,
-    borderLeftWidth: 3,
-    borderLeftColor: theme.colors.error[500],
-  },
-  errorMessageText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.error[500],
-  },
-  fieldError: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.error[500],
-    marginTop: theme.spacing.xs,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      padding: theme.spacing.l,
+      alignItems: 'center',
+      borderColor: theme.colors.error[500],
+    },
+    compactContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: theme.spacing.s,
+      backgroundColor: theme.colors.error[50],
+      borderRadius: theme.borderRadius.sm,
+    },
+    iconContainer: {
+      marginBottom: theme.spacing.s,
+    },
+    icon: {
+      fontSize: 32,
+    },
+    title: {
+      fontSize: theme.typography.fontSize.lg,
+      fontWeight: theme.typography.fontWeight.semibold,
+      color: theme.colors.text.primary,
+      marginBottom: theme.spacing.xs,
+      textAlign: 'center',
+    },
+    message: {
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.text.secondary,
+      textAlign: 'center',
+      marginBottom: theme.spacing.m,
+    },
+    retryButton: {
+      paddingHorizontal: theme.spacing.l,
+      paddingVertical: theme.spacing.s,
+      borderRadius: theme.borderRadius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.error[500],
+    },
+    retryText: {
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.error[500],
+      fontWeight: '600',
+    },
+    compactText: {
+      flex: 1,
+      fontSize: theme.typography.fontSize.xs,
+      color: theme.colors.error[500],
+    },
+    retryTextCompact: {
+      fontSize: theme.typography.fontSize.xs,
+      color: theme.colors.error[500],
+      fontWeight: '600',
+      marginLeft: theme.spacing.s,
+    },
+    errorMessageContainer: {
+      backgroundColor: theme.colors.error[50],
+      padding: theme.spacing.s,
+      borderRadius: theme.borderRadius.sm,
+      borderLeftWidth: 3,
+      borderLeftColor: theme.colors.error[500],
+    },
+    errorMessageText: {
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.error[500],
+    },
+    fieldError: {
+      fontSize: theme.typography.fontSize.xs,
+      color: theme.colors.error[500],
+      marginTop: theme.spacing.xs,
+    },
+  });
 
 export default ErrorDisplay;

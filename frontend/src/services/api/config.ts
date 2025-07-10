@@ -20,13 +20,13 @@ export const API_ENDPOINTS = {
     passwordChange: '/auth/password/change/',
     profile: '/auth/profile/',
   },
-  
+
   // Social Authentication
   social: {
     google: '/auth/social/google/',
     apple: '/auth/social/apple/',
   },
-  
+
   // Two-Factor Authentication
   twoFactor: {
     setup: '/auth/2fa/enable/',
@@ -38,13 +38,13 @@ export const API_ENDPOINTS = {
     backupCodes: '/auth/2fa/backup-codes/',
     generateBackupCodes: '/auth/2fa/backup-codes/',
   },
-  
+
   // AI Analysis
   ai: {
     analyze: '/ai/analyze/',
     recalculate: '/ai/recalculate/',
   },
-  
+
   // Meals
   meals: {
     list: '/meals/',
@@ -57,14 +57,14 @@ export const API_ENDPOINTS = {
     statistics: '/meals/statistics/',
     quickLog: '/meals/quick_log/',
   },
-  
+
   // Food Items
   foodItems: {
     list: '/food-items/',
     detail: (id: string) => `/food-items/${id}/`,
     search: '/food-items/search/',
   },
-  
+
   // Notifications
   notifications: {
     list: '/notifications/',
@@ -74,7 +74,7 @@ export const API_ENDPOINTS = {
     preferences: '/notifications/preferences/',
     adminCreate: '/notifications/admin/create/',
   },
-  
+
   // Health Checks
   health: {
     check: '/health/',

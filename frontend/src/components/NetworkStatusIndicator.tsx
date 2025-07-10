@@ -8,7 +8,7 @@ export const NetworkStatusIndicator: React.FC = () => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { isOnline, queueSize, clearQueue } = useOffline();
-  
+
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const previousOnlineStatus = useRef(isOnline);
@@ -45,7 +45,7 @@ export const NetworkStatusIndicator: React.FC = () => {
         ]).start();
       }, 2000);
     }
-    
+
     previousOnlineStatus.current = isOnline;
   }, [isOnline]);
 
@@ -80,14 +80,10 @@ export const NetworkStatusIndicator: React.FC = () => {
     >
       <View style={styles.content}>
         <View style={styles.messageContainer}>
-          <Text style={styles.statusIcon}>
-            {isOnline ? '✓' : '⚠️'}
-          </Text>
-          <Text style={styles.statusText}>
-            {getStatusMessage()}
-          </Text>
+          <Text style={styles.statusIcon}>{isOnline ? '✓' : '⚠️'}</Text>
+          <Text style={styles.statusText}>{getStatusMessage()}</Text>
         </View>
-        
+
         {!isOnline && queueSize > 0 && (
           <View style={styles.queueInfo}>
             <Text style={styles.queueText}>
@@ -99,7 +95,7 @@ export const NetworkStatusIndicator: React.FC = () => {
           </View>
         )}
       </View>
-      
+
       {!isOnline && (
         <View style={styles.progressBar}>
           <Animated.View

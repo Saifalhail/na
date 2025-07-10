@@ -23,12 +23,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     const date = new Date(dateString);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) {
       return 'Just now';
     } else if (diffInMinutes < 60) {
       return `${diffInMinutes}m ago`;
-    } else if (diffInMinutes < 1440) { // 24 hours
+    } else if (diffInMinutes < 1440) {
+      // 24 hours
       const hours = Math.floor(diffInMinutes / 60);
       return `${hours}h ago`;
     } else {
@@ -64,7 +65,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     if (!notification.is_read && onMarkAsRead) {
       onMarkAsRead(notification);
     }
-    
+
     if (onPress) {
       onPress(notification);
     } else if (notification.action_url) {
@@ -75,14 +76,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
   const handleLongPress = () => {
     const options = [];
-    
+
     if (!notification.is_read && onMarkAsRead) {
       options.push({
         text: 'Mark as Read',
         onPress: () => onMarkAsRead(notification),
       });
     }
-    
+
     if (onDelete) {
       options.push({
         text: 'Delete',
@@ -90,17 +91,17 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         onPress: () => onDelete(notification),
       });
     }
-    
+
     options.push({ text: 'Cancel', style: 'cancel' as const });
-    
+
     Alert.alert('Notification Options', '', options);
   };
 
   return (
-    <Card 
+    <Card
       style={[
         styles.container,
-        !notification.is_read && { 
+        !notification.is_read && {
           backgroundColor: theme.colors.primary[50],
           borderLeftWidth: 4,
           borderLeftColor: theme.colors.primary[500],
@@ -114,11 +115,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         activeOpacity={0.7}
       >
         <View style={styles.header}>
-          <Text style={styles.icon}>
-            {getNotificationIcon(notification.notification_type)}
-          </Text>
+          <Text style={styles.icon}>{getNotificationIcon(notification.notification_type)}</Text>
           <View style={styles.headerText}>
-            <Text 
+            <Text
               style={[
                 styles.title,
                 { color: theme.colors.text },
@@ -133,22 +132,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             </Text>
           </View>
           {!notification.is_read && (
-            <View 
-              style={[
-                styles.unreadDot,
-                { backgroundColor: theme.colors.primary[500] },
-              ]}
-            />
+            <View style={[styles.unreadDot, { backgroundColor: theme.colors.primary[500] }]} />
           )}
         </View>
-        
-        <Text 
-          style={[
-            styles.message,
-            { color: theme.colors.textSecondary },
-          ]}
-          numberOfLines={2}
-        >
+
+        <Text style={[styles.message, { color: theme.colors.textSecondary }]} numberOfLines={2}>
           {notification.message}
         </Text>
       </TouchableOpacity>

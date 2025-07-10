@@ -2,13 +2,13 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { mmkvStorage } from './persist';
 import { notificationsApi } from '@services/api';
-import type { 
-  Notification, 
-  NotificationPreferences, 
+import type {
+  Notification,
+  NotificationPreferences,
   NotificationListResponse,
   PaginationParams,
-  UpdateNotificationPreferencesRequest 
-} from '@types/api';
+  UpdateNotificationPreferencesRequest,
+} from '@/types/api';
 
 interface NotificationState {
   // State
@@ -20,18 +20,18 @@ interface NotificationState {
   error: string | null;
   hasMore: boolean;
   nextPage: number;
-  
+
   // Actions
   fetchNotifications: (params?: PaginationParams & { refresh?: boolean }) => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
   getUnreadCount: () => Promise<void>;
-  
+
   // Preferences
   fetchPreferences: () => Promise<void>;
   updatePreferences: (data: UpdateNotificationPreferencesRequest) => Promise<void>;
-  
+
   // Utility
   clearError: () => void;
   reset: () => void;
@@ -57,26 +57,26 @@ export const useNotificationStore = create<NotificationState>()(
       fetchNotifications: async (params = {}) => {
         const { refresh = false } = params;
         const currentState = get();
-        
+
         // Don't fetch if already loading
         if (currentState.isLoading) return;
-        
+
         // Reset pagination if refreshing
         const page = refresh ? 1 : currentState.nextPage;
-        
+
         set({ isLoading: true, error: null });
-        
+
         try {
           const response = await notificationsApi.getNotifications({
             page,
             page_size: 20,
             ...params,
           });
-          
-          const newNotifications = refresh 
-            ? response.results 
+
+          const newNotifications = refresh
+            ? response.results
             : [...currentState.notifications, ...response.results];
-          
+
           set({
             notifications: newNotifications,
             unreadCount: response.unread_count || 0,
@@ -98,12 +98,10 @@ export const useNotificationStore = create<NotificationState>()(
       markAsRead: async (id: string) => {
         try {
           const updatedNotification = await notificationsApi.markAsRead(id);
-          
-          set(state => ({
-            notifications: state.notifications.map(notification =>
-              notification.id === id 
-                ? { ...notification, is_read: true }
-                : notification
+
+          set((state) => ({
+            notifications: state.notifications.map((notification) =>
+              notification.id === id ? { ...notification, is_read: true } : notification
             ),
             unreadCount: Math.max(0, state.unreadCount - (updatedNotification.is_read ? 0 : 1)),
           }));
@@ -117,9 +115,9 @@ export const useNotificationStore = create<NotificationState>()(
       markAllAsRead: async () => {
         try {
           await notificationsApi.markAllAsRead();
-          
-          set(state => ({
-            notifications: state.notifications.map(notification => ({
+
+          set((state) => ({
+            notifications: state.notifications.map((notification) => ({
               ...notification,
               is_read: true,
             })),
@@ -135,13 +133,13 @@ export const useNotificationStore = create<NotificationState>()(
       deleteNotification: async (id: string) => {
         try {
           await notificationsApi.deleteNotification(id);
-          
-          set(state => {
-            const notificationToDelete = state.notifications.find(n => n.id === id);
+
+          set((state) => {
+            const notificationToDelete = state.notifications.find((n) => n.id === id);
             const wasUnread = notificationToDelete && !notificationToDelete.is_read;
-            
+
             return {
-              notifications: state.notifications.filter(notification => notification.id !== id),
+              notifications: state.notifications.filter((notification) => notification.id !== id),
               unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
             };
           });
@@ -164,7 +162,7 @@ export const useNotificationStore = create<NotificationState>()(
       // Fetch notification preferences
       fetchPreferences: async () => {
         set({ isLoadingPreferences: true, error: null });
-        
+
         try {
           const preferences = await notificationsApi.getPreferences();
           set({
@@ -184,7 +182,7 @@ export const useNotificationStore = create<NotificationState>()(
       // Update notification preferences
       updatePreferences: async (data: UpdateNotificationPreferencesRequest) => {
         set({ isLoadingPreferences: true, error: null });
-        
+
         try {
           const updatedPreferences = await notificationsApi.updatePreferences(data);
           set({

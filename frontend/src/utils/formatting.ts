@@ -17,7 +17,10 @@ export const formatMacros = (grams: number): string => {
   return `${Math.round(grams)}g`;
 };
 
-export const formatWeight = (weight: number, system: string = MEASUREMENT_SYSTEMS.METRIC): string => {
+export const formatWeight = (
+  weight: number,
+  system: string = MEASUREMENT_SYSTEMS.METRIC
+): string => {
   if (system === MEASUREMENT_SYSTEMS.IMPERIAL) {
     const pounds = weight * 2.20462;
     return `${pounds.toFixed(1)} lbs`;
@@ -25,7 +28,10 @@ export const formatWeight = (weight: number, system: string = MEASUREMENT_SYSTEM
   return `${weight.toFixed(1)} kg`;
 };
 
-export const formatHeight = (height: number, system: string = MEASUREMENT_SYSTEMS.METRIC): string => {
+export const formatHeight = (
+  height: number,
+  system: string = MEASUREMENT_SYSTEMS.METRIC
+): string => {
   if (system === MEASUREMENT_SYSTEMS.IMPERIAL) {
     const inches = height * 0.393701;
     const feet = Math.floor(inches / 12);
@@ -99,11 +105,11 @@ export const formatNumber = (num: number): string => {
 
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 

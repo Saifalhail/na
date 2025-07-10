@@ -11,19 +11,19 @@ export const PlatformUtils = {
   isIOS: Platform.OS === 'ios',
   isAndroid: Platform.OS === 'android',
   isWeb: Platform.OS === 'web',
-  
+
   /**
    * Version checks
    */
   iosVersion: Platform.OS === 'ios' ? parseInt(Platform.Version as string, 10) : 0,
   androidVersion: Platform.OS === 'android' ? Platform.Version : 0,
-  
+
   /**
    * Device type checks
    */
   isTablet: Device.deviceType === Device.DeviceType.TABLET,
   isPhone: Device.deviceType === Device.DeviceType.PHONE,
-  
+
   /**
    * Screen dimensions
    */
@@ -31,31 +31,32 @@ export const PlatformUtils = {
   screenHeight,
   pixelRatio: PixelRatio.get(),
   fontScale: PixelRatio.getFontScale(),
-  
+
   /**
    * Safe area helpers
    */
   statusBarHeight: Constants.statusBarHeight,
-  
+
   /**
    * Platform-specific values
    */
   select: <T>(options: { ios?: T; android?: T; default?: T }): T | undefined => {
     return Platform.select(options);
   },
-  
+
   /**
    * Feature availability
    */
   features: {
     hasNotch: Platform.OS === 'ios' && Device.modelName?.includes('X'),
-    hasDynamicIsland: Platform.OS === 'ios' && 
+    hasDynamicIsland:
+      Platform.OS === 'ios' &&
       (Device.modelName?.includes('14 Pro') || Device.modelName?.includes('15 Pro')),
     hasHaptics: Platform.OS === 'ios' || (Platform.OS === 'android' && Platform.Version >= 26),
     hasWidgets: Platform.OS === 'android' && Platform.Version >= 26,
     hasLiveActivities: Platform.OS === 'ios' && parseInt(Platform.Version as string, 10) >= 16,
   },
-  
+
   /**
    * Performance helpers
    */
@@ -78,7 +79,7 @@ export const PlatformShadow = {
       elevation: 2,
     },
   }),
-  
+
   medium: Platform.select({
     ios: {
       shadowColor: '#000',
@@ -90,7 +91,7 @@ export const PlatformShadow = {
       elevation: 4,
     },
   }),
-  
+
   heavy: Platform.select({
     ios: {
       shadowColor: '#000',
@@ -123,7 +124,7 @@ export const PlatformAnimations = {
       useNativeDriver: true,
     },
   }),
-  
+
   /**
    * Timing animation config
    */
@@ -142,7 +143,7 @@ export const PlatformKeyboard = {
     ios: 0,
     android: -200,
   }),
-  
+
   keyboardAvoidingViewBehavior: Platform.select({
     ios: 'padding' as const,
     android: 'height' as const,
@@ -157,7 +158,7 @@ export const PlatformStorage = {
     ios: 10 * 1024 * 1024, // 10MB
     android: 5 * 1024 * 1024, // 5MB
   }),
-  
+
   maxCacheSize: Platform.select({
     ios: 100 * 1024 * 1024, // 100MB
     android: 50 * 1024 * 1024, // 50MB
@@ -175,7 +176,7 @@ export const PlatformPermissions = {
       android: 'Allow this app to take pictures?',
     }),
   },
-  
+
   gallery: {
     title: 'Photo Library Permission',
     message: Platform.select({
@@ -183,7 +184,7 @@ export const PlatformPermissions = {
       android: 'Allow this app to access your photos?',
     }),
   },
-  
+
   notifications: {
     title: 'Notification Permission',
     message: Platform.select({

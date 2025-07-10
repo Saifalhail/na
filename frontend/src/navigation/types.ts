@@ -43,17 +43,8 @@ export type HomeTabNavigationProp = CompositeNavigationProp<
 >;
 
 // Route props
-export type AuthRouteProp<T extends keyof AuthStackParamList> = RouteProp<
-  AuthStackParamList,
-  T
->;
+export type AuthRouteProp<T extends keyof AuthStackParamList> = RouteProp<AuthStackParamList, T>;
 
-export type MainRouteProp<T extends keyof MainStackParamList> = RouteProp<
-  MainStackParamList,
-  T
->;
+export type MainRouteProp<T extends keyof MainStackParamList> = RouteProp<MainStackParamList, T>;
 
-export type HomeTabRouteProp<T extends keyof HomeTabParamList> = RouteProp<
-  HomeTabParamList,
-  T
->;
+export type HomeTabRouteProp<T extends keyof HomeTabParamList> = RouteProp<HomeTabParamList, T>;

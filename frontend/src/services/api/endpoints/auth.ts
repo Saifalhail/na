@@ -11,8 +11,8 @@ import {
   PasswordChange,
   EmailVerification,
   UpdateProfileData,
-} from '@types/api';
-import { UserProfile } from '@types/models';
+} from '@/types/api';
+import { UserProfile } from '@/types/models';
 
 export const authApi = {
   /**
@@ -20,32 +20,32 @@ export const authApi = {
    */
   async register(data: RegisterData): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>(API_ENDPOINTS.auth.register, data);
-    
+
     // Save tokens
     await TokenStorage.saveTokens(response.tokens);
-    
+
     return response;
   },
-  
+
   /**
    * Login with email and password
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>(API_ENDPOINTS.auth.login, credentials);
-    
+
     // Save tokens
     await TokenStorage.saveTokens(response.tokens);
-    
+
     return response;
   },
-  
+
   /**
    * Logout and invalidate tokens
    */
   async logout(): Promise<void> {
     try {
       const refreshToken = await TokenStorage.getRefreshToken();
-      
+
       if (refreshToken) {
         await api.post(API_ENDPOINTS.auth.logout, { refresh: refreshToken });
       }
@@ -57,7 +57,7 @@ export const authApi = {
       await TokenStorage.clearTokens();
     }
   },
-  
+
   /**
    * Refresh access token
    */
@@ -65,13 +65,13 @@ export const authApi = {
     const response = await api.post<TokenPair>(API_ENDPOINTS.auth.refresh, {
       refresh: refreshToken,
     });
-    
+
     // Save new tokens
     await TokenStorage.saveTokens(response);
-    
+
     return response;
   },
-  
+
   /**
    * Verify if token is valid
    */
@@ -83,49 +83,49 @@ export const authApi = {
       return false;
     }
   },
-  
+
   /**
    * Verify email address
    */
   async verifyEmail(data: EmailVerification): Promise<void> {
     await api.post(API_ENDPOINTS.auth.verifyEmail, data);
   },
-  
+
   /**
    * Request password reset
    */
   async requestPasswordReset(data: PasswordResetRequest): Promise<void> {
     await api.post(API_ENDPOINTS.auth.passwordReset, data);
   },
-  
+
   /**
    * Confirm password reset with token
    */
   async confirmPasswordReset(data: PasswordResetConfirm): Promise<void> {
     await api.post(API_ENDPOINTS.auth.passwordResetConfirm, data);
   },
-  
+
   /**
    * Change password (authenticated)
    */
   async changePassword(data: PasswordChange): Promise<void> {
     await api.post(API_ENDPOINTS.auth.passwordChange, data);
   },
-  
+
   /**
    * Get user profile
    */
   async getProfile(): Promise<UserProfile> {
     return await api.get<UserProfile>(API_ENDPOINTS.auth.profile);
   },
-  
+
   /**
    * Update user profile
    */
   async updateProfile(data: UpdateProfileData): Promise<UserProfile> {
     return await api.put<UserProfile>(API_ENDPOINTS.auth.profile, data);
   },
-  
+
   /**
    * Upload profile avatar
    */
@@ -136,14 +136,14 @@ export const authApi = {
       type: 'image/jpeg',
       name: 'avatar.jpg',
     } as any);
-    
+
     return await api.patch<UserProfile>(API_ENDPOINTS.auth.profile, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
   },
-  
+
   /**
    * Delete user account
    */
@@ -151,7 +151,7 @@ export const authApi = {
     await api.delete(API_ENDPOINTS.auth.profile, {
       data: { password },
     });
-    
+
     // Clear tokens after account deletion
     await TokenStorage.clearTokens();
   },

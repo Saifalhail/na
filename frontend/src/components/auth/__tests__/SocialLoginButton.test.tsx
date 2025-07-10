@@ -20,11 +20,7 @@ describe('SocialLoginButton', () => {
   it('renders Google sign-in button correctly', () => {
     const { getByTestId } = render(
       <TestWrapper>
-        <SocialLoginButton
-          provider="google"
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
+        <SocialLoginButton provider="google" onSuccess={mockOnSuccess} onError={mockOnError} />
       </TestWrapper>
     );
 
@@ -48,11 +44,7 @@ describe('SocialLoginButton', () => {
 
     const { getByTestId } = render(
       <TestWrapper>
-        <SocialLoginButton
-          provider="google"
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
+        <SocialLoginButton provider="google" onSuccess={mockOnSuccess} onError={mockOnError} />
       </TestWrapper>
     );
 
@@ -68,17 +60,13 @@ describe('SocialLoginButton', () => {
 
   it('handles Google sign-in cancellation', async () => {
     const error = { code: statusCodes.SIGN_IN_CANCELLED };
-    
+
     (GoogleSignin.hasPlayServices as jest.Mock).mockResolvedValue(true);
     (GoogleSignin.signIn as jest.Mock).mockRejectedValue(error);
 
     const { getByTestId } = render(
       <TestWrapper>
-        <SocialLoginButton
-          provider="google"
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
+        <SocialLoginButton provider="google" onSuccess={mockOnSuccess} onError={mockOnError} />
       </TestWrapper>
     );
 
@@ -93,18 +81,14 @@ describe('SocialLoginButton', () => {
 
   it('handles Google sign-in errors', async () => {
     const error = { code: 'UNKNOWN_ERROR', message: 'Something went wrong' };
-    
+
     (GoogleSignin.hasPlayServices as jest.Mock).mockResolvedValue(true);
     (GoogleSignin.signIn as jest.Mock).mockRejectedValue(error);
     jest.spyOn(Alert, 'alert');
 
     const { getByTestId } = render(
       <TestWrapper>
-        <SocialLoginButton
-          provider="google"
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
+        <SocialLoginButton provider="google" onSuccess={mockOnSuccess} onError={mockOnError} />
       </TestWrapper>
     );
 
@@ -126,11 +110,7 @@ describe('SocialLoginButton', () => {
 
     const { getByTestId } = render(
       <TestWrapper>
-        <SocialLoginButton
-          provider="google"
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
+        <SocialLoginButton provider="google" onSuccess={mockOnSuccess} onError={mockOnError} />
       </TestWrapper>
     );
 
@@ -157,11 +137,7 @@ describe('SocialLoginButton', () => {
 
     const { getByTestId, queryByText } = render(
       <TestWrapper>
-        <SocialLoginButton
-          provider="google"
-          onSuccess={mockOnSuccess}
-          onError={mockOnError}
-        />
+        <SocialLoginButton provider="google" onSuccess={mockOnSuccess} onError={mockOnError} />
       </TestWrapper>
     );
 

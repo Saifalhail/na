@@ -150,6 +150,7 @@ export interface SocialLinkRequest {
 // AI Analysis Types
 export interface AnalysisRequest {
   imageUri: string;
+  image?: string; // Base64 encoded image data
   metadata?: {
     mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other';
     cuisine?: string;
@@ -165,6 +166,25 @@ export interface AnalysisResult {
   meal: import('./models').Meal;
   analysis: import('./models').MealAnalysis;
   suggestions?: string[];
+  // Legacy/alternative response format support
+  total_calories?: number;
+  macronutrients?: {
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber?: number;
+    sugar?: number;
+  };
+  micronutrients?: Record<string, number>;
+  items?: Array<{
+    name: string;
+    quantity: number;
+    unit: string;
+    calories?: number;
+    confidence?: number;
+  }>;
+  meal_type?: string;
+  cuisine_type?: string;
 }
 
 export interface RecalculateRequest {
@@ -186,6 +206,16 @@ export interface RecalculateResult {
     carbs: number;
     fat: number;
   };
+  // Legacy/alternative response format support
+  total_calories?: number;
+  macronutrients?: {
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber?: number;
+    sugar?: number;
+  };
+  micronutrients?: Record<string, number>;
 }
 
 // Meal Management Types
@@ -226,7 +256,13 @@ export interface MealFilters {
   minCalories?: number;
   maxCalories?: number;
   tags?: string[];
-  ordering?: 'consumed_at' | '-consumed_at' | 'calories' | '-calories' | 'created_at' | '-created_at';
+  ordering?:
+    | 'consumed_at'
+    | '-consumed_at'
+    | 'calories'
+    | '-calories'
+    | 'created_at'
+    | '-created_at';
   page?: number;
   pageSize?: number;
 }
@@ -243,7 +279,7 @@ export interface CreateFoodItemData {
   barcode?: string;
   category?: string;
   description?: string;
-  
+
   // Nutrition per 100g
   calories: number;
   protein: number;
@@ -252,11 +288,11 @@ export interface CreateFoodItemData {
   fiber?: number;
   sugar?: number;
   sodium?: number;
-  
+
   // Serving info
   servingSize: number;
   servingUnit: string;
-  
+
   isPublic?: boolean;
 }
 
@@ -283,20 +319,20 @@ export interface UpdateProfileData {
   height?: number;
   weight?: number;
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  
+
   // Goals
   dailyCalorieGoal?: number;
   dailyProteinGoal?: number;
   dailyCarbsGoal?: number;
   dailyFatGoal?: number;
-  
+
   // Preferences
   timezone?: string;
   language?: string;
   measurementSystem?: 'metric' | 'imperial';
   receiveEmailNotifications?: boolean;
   receivePushNotifications?: boolean;
-  
+
   // Privacy
   profileVisibility?: 'public' | 'private' | 'friends';
   dataSharing?: 'none' | 'anonymous' | 'full';
@@ -341,7 +377,15 @@ export interface Notification {
   user: string;
   title: string;
   message: string;
-  notification_type: 'meal_reminder' | 'daily_summary' | 'weekly_report' | 'achievement' | 'streak' | 'tip' | 'system' | 'promotional';
+  notification_type:
+    | 'meal_reminder'
+    | 'daily_summary'
+    | 'weekly_report'
+    | 'achievement'
+    | 'streak'
+    | 'tip'
+    | 'system'
+    | 'promotional';
   channel: 'in_app' | 'email' | 'push';
   is_read: boolean;
   action_url?: string;
@@ -359,34 +403,34 @@ export interface NotificationListResponse extends PaginatedResponse<Notification
 export interface NotificationPreferences {
   id: string;
   user: string;
-  
+
   // Email preferences
   email_daily_summary: boolean;
   email_weekly_report: boolean;
   email_tips: boolean;
   email_achievements: boolean;
   email_streak_milestones: boolean;
-  
+
   // Push notification preferences
   push_meal_reminders: boolean;
   push_daily_summary: boolean;
   push_achievements: boolean;
   push_streak_milestones: boolean;
   push_tips: boolean;
-  
+
   // In-app notification preferences
   in_app_meal_reminders: boolean;
   in_app_daily_summary: boolean;
   in_app_achievements: boolean;
   in_app_streak_milestones: boolean;
   in_app_tips: boolean;
-  
+
   // Meal reminder times
   meal_reminder_times: string[];
-  
+
   // Timezone for scheduling
   timezone: string;
-  
+
   created_at: string;
   updated_at: string;
 }

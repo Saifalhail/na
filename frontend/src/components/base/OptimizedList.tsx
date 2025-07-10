@@ -10,7 +10,8 @@ import {
 import { ListOptimization, useThrottle } from '@/utils/performance';
 import { useTheme } from '@/hooks/useTheme';
 
-interface OptimizedListProps<T> extends Omit<FlatListProps<T>, 'renderItem'> {
+interface OptimizedListProps<T>
+  extends Omit<FlatListProps<T>, 'renderItem' | 'maintainVisibleContentPosition'> {
   data: T[] | null | undefined;
   renderItem: ListRenderItem<T>;
   itemHeight?: number;
@@ -47,7 +48,7 @@ export function OptimizedList<T>({
   const { theme } = useTheme();
   const listRef = useRef<FlatList<T>>(null);
   const viewabilityConfigCallbackPairs = useRef<any[]>([]);
-  
+
   // Memoize getItemLayout if itemHeight is provided
   const getItemLayout = useMemo(() => {
     if (itemHeight) {
@@ -55,21 +56,21 @@ export function OptimizedList<T>({
     }
     return undefined;
   }, [itemHeight]);
-  
+
   // Memoize keyExtractor
-  const keyExtractor = useCallback((item: T, index: number) => {
-    if (props.keyExtractor) {
-      return props.keyExtractor(item, index);
-    }
-    return ListOptimization.keyExtractor(item);
-  }, [props.keyExtractor]);
-  
-  // Throttle onEndReached to prevent multiple calls
-  const throttledOnEndReached = useThrottle(
-    props.onEndReached || (() => {}),
-    1000
+  const keyExtractor = useCallback(
+    (item: T, index: number) => {
+      if (props.keyExtractor) {
+        return props.keyExtractor(item, index);
+      }
+      return ListOptimization.keyExtractor(item);
+    },
+    [props.keyExtractor]
   );
-  
+
+  // Throttle onEndReached to prevent multiple calls
+  const throttledOnEndReached = useThrottle(props.onEndReached || (() => {}), 1000);
+
   // Memoize renderItem to prevent unnecessary re-renders
   const memoizedRenderItem = useCallback<ListRenderItem<T>>(
     (info) => {
@@ -80,7 +81,7 @@ export function OptimizedList<T>({
     },
     [renderItem, debug]
   );
-  
+
   // Handle viewability changes
   const onViewableItemsChanged = useCallback(
     ({ viewableItems, changed }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
@@ -91,7 +92,7 @@ export function OptimizedList<T>({
     },
     [props.onViewableItemsChanged, debug]
   );
-  
+
   // Optimized refresh control
   const refreshControl = useMemo(() => {
     if (onRefresh) {
@@ -106,22 +107,25 @@ export function OptimizedList<T>({
     }
     return undefined;
   }, [onRefresh, refreshing, theme.colors.primary]);
-  
+
   // Performance optimizations for large lists
-  const listOptimizations = useMemo(() => ({
-    maxToRenderPerBatch,
-    updateCellsBatchingPeriod,
-    windowSize,
-    initialNumToRender,
-    removeClippedSubviews,
-  }), [
-    maxToRenderPerBatch,
-    updateCellsBatchingPeriod,
-    windowSize,
-    initialNumToRender,
-    removeClippedSubviews,
-  ]);
-  
+  const listOptimizations = useMemo(
+    () => ({
+      maxToRenderPerBatch,
+      updateCellsBatchingPeriod,
+      windowSize,
+      initialNumToRender,
+      removeClippedSubviews,
+    }),
+    [
+      maxToRenderPerBatch,
+      updateCellsBatchingPeriod,
+      windowSize,
+      initialNumToRender,
+      removeClippedSubviews,
+    ]
+  );
+
   // Maintain scroll position optimization
   const maintainVisibleContentPositionConfig = useMemo(() => {
     if (maintainVisibleContentPosition) {
@@ -132,7 +136,7 @@ export function OptimizedList<T>({
     }
     return undefined;
   }, [maintainVisibleContentPosition]);
-  
+
   return (
     <FlatList<T>
       ref={listRef}
@@ -173,7 +177,7 @@ export function VirtualizedOptimizedList<T>({
 }) {
   const memoizedGetItem = useCallback(getItem, []);
   const memoizedGetItemCount = useCallback(getItemCount, []);
-  
+
   return (
     <VirtualizedList
       {...props}

@@ -46,10 +46,13 @@ export const useErrorHandler = () => {
     }
   }, []);
 
-  const handleError = useCallback((error: unknown, context?: Record<string, any>) => {
-    const errorObj = error instanceof Error ? error : new Error(String(error));
-    reportError({ error: errorObj, context });
-  }, [reportError]);
+  const handleError = useCallback(
+    (error: unknown, context?: Record<string, any>) => {
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      reportError({ error: errorObj, context });
+    },
+    [reportError]
+  );
 
   return {
     reportError,

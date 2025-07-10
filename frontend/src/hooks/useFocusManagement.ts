@@ -17,15 +17,11 @@ export const useFocusManagement = (
   elements: FocusableElement[],
   options: UseFocusManagementOptions = {}
 ) => {
-  const {
-    autoFocusFirst = false,
-    trapFocus = false,
-    restoreFocus = true,
-  } = options;
-  
+  const { autoFocusFirst = false, trapFocus = false, restoreFocus = true } = options;
+
   const currentFocusIndex = useRef(0);
   const previousFocusRef = useRef<any>(null);
-  
+
   // Sort elements by order if specified
   const sortedElements = elements.sort((a, b) => {
     if (a.order === undefined && b.order === undefined) return 0;
@@ -33,7 +29,7 @@ export const useFocusManagement = (
     if (b.order === undefined) return -1;
     return a.order - b.order;
   });
-  
+
   // Store previous focus when component mounts
   useEffect(() => {
     if (restoreFocus && Platform.OS === 'ios') {
@@ -41,7 +37,7 @@ export const useFocusManagement = (
       // Note: This is a simplified version. In production, you'd want to
       // properly track the previously focused element
     }
-    
+
     return () => {
       if (restoreFocus && previousFocusRef.current) {
         // Restore focus to previous element
@@ -52,7 +48,7 @@ export const useFocusManagement = (
       }
     };
   }, [restoreFocus]);
-  
+
   // Auto-focus first element
   useEffect(() => {
     if (autoFocusFirst && sortedElements.length > 0) {
@@ -61,64 +57,70 @@ export const useFocusManagement = (
       }, 100);
     }
   }, [autoFocusFirst]);
-  
-  const focusElement = useCallback((index: number) => {
-    if (index < 0 || index >= sortedElements.length) return;
-    
-    const element = sortedElements[index];
-    if (element.ref.current) {
-      const handle = findNodeHandle(element.ref.current);
-      if (handle) {
-        AccessibilityInfo.setAccessibilityFocus(handle);
-        currentFocusIndex.current = index;
+
+  const focusElement = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= sortedElements.length) return;
+
+      const element = sortedElements[index];
+      if (element.ref.current) {
+        const handle = findNodeHandle(element.ref.current);
+        if (handle) {
+          AccessibilityInfo.setAccessibilityFocus(handle);
+          currentFocusIndex.current = index;
+        }
       }
-    }
-  }, [sortedElements]);
-  
+    },
+    [sortedElements]
+  );
+
   const focusNext = useCallback(() => {
     let nextIndex = currentFocusIndex.current + 1;
-    
+
     if (trapFocus && nextIndex >= sortedElements.length) {
       nextIndex = 0;
     }
-    
+
     if (nextIndex < sortedElements.length) {
       focusElement(nextIndex);
     }
   }, [sortedElements, trapFocus, focusElement]);
-  
+
   const focusPrevious = useCallback(() => {
     let prevIndex = currentFocusIndex.current - 1;
-    
+
     if (trapFocus && prevIndex < 0) {
       prevIndex = sortedElements.length - 1;
     }
-    
+
     if (prevIndex >= 0) {
       focusElement(prevIndex);
     }
   }, [sortedElements, trapFocus, focusElement]);
-  
+
   const focusFirst = useCallback(() => {
     focusElement(0);
   }, [focusElement]);
-  
+
   const focusLast = useCallback(() => {
     focusElement(sortedElements.length - 1);
   }, [sortedElements, focusElement]);
-  
-  const focusByLabel = useCallback((label: string) => {
-    const index = sortedElements.findIndex(el => el.label === label);
-    if (index !== -1) {
-      focusElement(index);
-    }
-  }, [sortedElements, focusElement]);
-  
+
+  const focusByLabel = useCallback(
+    (label: string) => {
+      const index = sortedElements.findIndex((el) => el.label === label);
+      if (index !== -1) {
+        focusElement(index);
+      }
+    },
+    [sortedElements, focusElement]
+  );
+
   // Announce focus changes
   const announceFocus = useCallback((message: string) => {
     AccessibilityInfo.announceForAccessibility(message);
   }, []);
-  
+
   return {
     focusNext,
     focusPrevious,
@@ -142,7 +144,7 @@ export const useKeyboardNavigation = (
     // Note: React Native doesn't have built-in keyboard event handling
     // like web. This would need to be implemented using a native module
     // or a library like react-native-keyevent
-    
+
     // Placeholder for keyboard event handling
     const handleKeyPress = (event: any) => {
       switch (event.key) {
@@ -163,9 +165,9 @@ export const useKeyboardNavigation = (
           break;
       }
     };
-    
+
     // In a real implementation, you'd add event listeners here
-    
+
     return () => {
       // Cleanup event listeners
     };
@@ -178,10 +180,10 @@ export const useKeyboardNavigation = (
 export const useFocusTrap = (isActive: boolean) => {
   const firstElementRef = useRef<any>(null);
   const lastElementRef = useRef<any>(null);
-  
+
   useEffect(() => {
     if (!isActive) return;
-    
+
     // Focus first element when trap becomes active
     if (firstElementRef.current) {
       const handle = findNodeHandle(firstElementRef.current);
@@ -189,11 +191,11 @@ export const useFocusTrap = (isActive: boolean) => {
         AccessibilityInfo.setAccessibilityFocus(handle);
       }
     }
-    
+
     // Note: Implementing actual focus trapping in React Native
     // requires native modules or specific libraries
   }, [isActive]);
-  
+
   return {
     firstElementRef,
     lastElementRef,

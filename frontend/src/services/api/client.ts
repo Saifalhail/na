@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 import { API_CONFIG, getApiUrl } from './config';
 import { TokenStorage } from '@services/storage/tokenStorage';
 import { handleApiError, AuthenticationError } from './errors';
-import { TokenPair } from '@types/api';
+import { TokenPair } from '@/types/api';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -10,7 +10,7 @@ const apiClient: AxiosInstance = axios.create({
   timeout: API_CONFIG.timeout,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
   },
 });
 
@@ -25,11 +25,11 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     // Add platform info
     config.headers['X-Platform'] = 'mobile';
     config.headers['X-App-Version'] = process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0';
-    
+
     return config;
   },
   (error) => {
@@ -46,30 +46,30 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
-    
+
     // Handle 401 errors (unauthorized)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       // Skip refresh for auth endpoints
       if (originalRequest.url?.includes('/auth/')) {
         await TokenStorage.clearTokens();
         throw new AuthenticationError('Session expired. Please login again.');
       }
-      
+
       try {
         // Use existing refresh promise or create new one
         if (!refreshTokenPromise) {
           refreshTokenPromise = refreshAccessToken();
         }
-        
+
         const tokens = await refreshTokenPromise;
-        
+
         // Retry original request with new token
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${tokens.access}`;
         }
-        
+
         return apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, clear tokens and throw error
@@ -77,7 +77,7 @@ apiClient.interceptors.response.use(
         throw new AuthenticationError('Session expired. Please login again.');
       }
     }
-    
+
     // Handle other errors
     return Promise.reject(error);
   }
@@ -87,11 +87,11 @@ apiClient.interceptors.response.use(
 async function refreshAccessToken(): Promise<TokenPair> {
   try {
     const refreshToken = await TokenStorage.getRefreshToken();
-    
+
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
-    
+
     const response = await axios.post(
       getApiUrl('/auth/refresh/'),
       { refresh: refreshToken },
@@ -102,10 +102,10 @@ async function refreshAccessToken(): Promise<TokenPair> {
         timeout: API_CONFIG.timeout,
       }
     );
-    
+
     const tokens: TokenPair = response.data;
     await TokenStorage.saveTokens(tokens);
-    
+
     return tokens;
   } catch (error) {
     refreshTokenPromise = null;
@@ -119,12 +119,12 @@ export default apiClient;
 // Helper function for file uploads
 export const createFormData = (data: Record<string, any>): FormData => {
   const formData = new FormData();
-  
+
   Object.entries(data).forEach(([key, value]) => {
     if (value === null || value === undefined) {
       return;
     }
-    
+
     if (value instanceof File || value instanceof Blob) {
       formData.append(key, value);
     } else if (typeof value === 'object' && value.uri) {
@@ -140,14 +140,12 @@ export const createFormData = (data: Record<string, any>): FormData => {
       formData.append(key, String(value));
     }
   });
-  
+
   return formData;
 };
 
 // Request wrapper with error handling
-export async function apiRequest<T>(
-  config: AxiosRequestConfig
-): Promise<T> {
+export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
   try {
     const response = await apiClient(config);
     return response.data;
@@ -156,20 +154,23 @@ export async function apiRequest<T>(
   }
 }
 
+// Export the axios instance directly
+export { apiClient };
+
 // Convenience methods
 export const api = {
-  get: <T>(url: string, config?: AxiosRequestConfig) => 
+  get: <T>(url: string, config?: AxiosRequestConfig) =>
     apiRequest<T>({ ...config, method: 'GET', url }),
-    
-  post: <T>(url: string, data?: any, config?: AxiosRequestConfig) => 
+
+  post: <T>(url: string, data?: any, config?: AxiosRequestConfig) =>
     apiRequest<T>({ ...config, method: 'POST', url, data }),
-    
-  put: <T>(url: string, data?: any, config?: AxiosRequestConfig) => 
+
+  put: <T>(url: string, data?: any, config?: AxiosRequestConfig) =>
     apiRequest<T>({ ...config, method: 'PUT', url, data }),
-    
-  patch: <T>(url: string, data?: any, config?: AxiosRequestConfig) => 
+
+  patch: <T>(url: string, data?: any, config?: AxiosRequestConfig) =>
     apiRequest<T>({ ...config, method: 'PATCH', url, data }),
-    
-  delete: <T>(url: string, config?: AxiosRequestConfig) => 
+
+  delete: <T>(url: string, config?: AxiosRequestConfig) =>
     apiRequest<T>({ ...config, method: 'DELETE', url }),
 };

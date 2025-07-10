@@ -48,7 +48,7 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const labelAnimation = useRef(new Animated.Value(value ? 1 : 0)).current;
-  
+
   const handleFocus = (e: any) => {
     setIsFocused(true);
     Animated.timing(labelAnimation, {
@@ -58,7 +58,7 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
     }).start();
     onFocus?.(e);
   };
-  
+
   const handleBlur = (e: any) => {
     setIsFocused(false);
     if (!value) {
@@ -70,13 +70,13 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
     }
     onBlur?.(e);
   };
-  
+
   const handleChangeText = (text: string) => {
     if (maxCharacters && text.length > maxCharacters) {
       return;
     }
     onChangeText?.(text);
-    
+
     // Announce character count for screen readers
     if (showCharacterCount && maxCharacters) {
       const remaining = maxCharacters - text.length;
@@ -85,13 +85,9 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
       }
     }
   };
-  
-  const accessibilityProps = getInputAccessibilityProps(
-    label,
-    error,
-    required
-  );
-  
+
+  const accessibilityProps = getInputAccessibilityProps(label, error, required);
+
   const labelStyle = {
     position: 'absolute' as const,
     left: icon ? 40 : 16,
@@ -106,16 +102,16 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
     color: error
       ? theme.colors.error[500]
       : isFocused
-      ? theme.colors.primary[500]
-      : theme.colors.textSecondary,
+        ? theme.colors.primary[500]
+        : theme.colors.textSecondary,
   };
-  
+
   const borderColor = error
     ? theme.colors.error[500]
     : isFocused
-    ? theme.colors.primary[500]
-    : theme.colors.borderLight;
-  
+      ? theme.colors.primary[500]
+      : theme.colors.borderLight;
+
   return (
     <View style={[styles.container, containerStyle]}>
       <TouchableOpacity
@@ -123,20 +119,14 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
         onPress={() => inputRef.current?.focus()}
         accessible={false}
       >
-        <View
-          style={[
-            styles.inputContainer,
-            { borderColor },
-            !editable && styles.disabled,
-          ]}
-        >
+        <View style={[styles.inputContainer, { borderColor }, !editable && styles.disabled]}>
           {icon && <View style={styles.icon}>{icon}</View>}
-          
+
           <Animated.Text style={labelStyle}>
             {label}
             {required && <Text style={{ color: theme.colors.error[500] }}> *</Text>}
           </Animated.Text>
-          
+
           <TextInput
             {...props}
             {...accessibilityProps}
@@ -155,7 +145,7 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
             placeholderTextColor={theme.colors.textSecondary}
             selectionColor={theme.colors.primary[500]}
           />
-          
+
           {rightIcon && (
             <TouchableOpacity
               onPress={onRightIconPress}
@@ -169,23 +159,21 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
           )}
         </View>
       </TouchableOpacity>
-      
+
       {(error || hint || showCharacterCount) && (
         <View style={styles.footer}>
           {(error || hint) && (
             <Text
               style={[
                 styles.helperText,
-                error
-                  ? { color: theme.colors.error[500] }
-                  : { color: theme.colors.textSecondary },
+                error ? { color: theme.colors.error[500] } : { color: theme.colors.textSecondary },
               ]}
               accessibilityLiveRegion={error ? 'assertive' : 'polite'}
             >
               {error || hint}
             </Text>
           )}
-          
+
           {showCharacterCount && maxCharacters && (
             <Text
               style={[styles.characterCount, { color: theme.colors.textSecondary }]}

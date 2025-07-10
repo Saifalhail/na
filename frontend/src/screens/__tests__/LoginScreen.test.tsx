@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { LoginScreen } from '../LoginScreen';
-import { ThemeProvider } from '@theme/ThemeContext';
-import { useAuthStore } from '@store/authStore';
+import { ThemeProvider } from '../../theme/ThemeContext';
+import { useAuthStore } from '../../store/authStore';
 
 // Mock the auth store
-jest.mock('@store/authStore', () => ({
+jest.mock('../../store/authStore', () => ({
   useAuthStore: jest.fn(),
 }));
 

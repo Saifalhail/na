@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Container, Spacer } from '@/components/layout';
 import { TextInput } from '@/components/base/TextInput';
 import { Button } from '@/components/base/Button';
 import { Card } from '@/components/base/Card';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { ErrorDisplay } from '@/components/base/ErrorDisplay';
 import { OptimizedList } from '@/components/base/OptimizedList';
 import { OptimizedImage } from '@/components/base/OptimizedImage';
@@ -28,92 +22,90 @@ interface MealCardProps {
   onDelete: (meal: Meal) => void;
 }
 
-const MealCard: React.FC<MealCardProps> = React.memo(({ 
-  meal, 
-  onPress, 
-  onToggleFavorite, 
-  onDuplicate, 
-  onDelete 
-}) => {
-  const { theme } = useTheme();
-  
-  const formatDate = useCallback((dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }, []);
+const MealCard: React.FC<MealCardProps> = React.memo(
+  ({ meal, onPress, onToggleFavorite, onDuplicate, onDelete }) => {
+    const { theme } = useTheme();
 
-  const formatCalories = useCallback((calories: number) => {
-    return `${Math.round(calories)} cal`;
-  }, []);
+    const formatDate = useCallback((dateString: string) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }, []);
 
-  return (
-    <Card style={styles.mealCard} onPress={() => onPress(meal)}>
-      <View style={styles.mealHeader}>
-        <Text style={[styles.mealName, { color: theme.colors.text }]} numberOfLines={1}>
-          {meal.name}
-        </Text>
-        <TouchableOpacity
-          onPress={() => onToggleFavorite(meal)}
-          style={styles.favoriteButton}
-        >
-          <Text style={[styles.favoriteIcon, { color: meal.isFavorite ? theme.colors.error[500] : theme.colors.textSecondary }]}>
-            {meal.isFavorite ? '♥' : '♡'}
+    const formatCalories = useCallback((calories: number) => {
+      return `${Math.round(calories)} cal`;
+    }, []);
+
+    return (
+      <Card style={styles.mealCard} onPress={() => onPress(meal)}>
+        <View style={styles.mealHeader}>
+          <Text style={[styles.mealName, { color: theme.colors.text }]} numberOfLines={1}>
+            {meal.name}
           </Text>
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.mealInfo}>
-        <Text style={[styles.mealType, { color: theme.colors.primary[500] }]}>
-          {meal.mealType?.charAt(0).toUpperCase() + meal.mealType?.slice(1)}
-        </Text>
-        <Text style={[styles.mealDate, { color: theme.colors.textSecondary }]}>
-          {formatDate(meal.consumedAt)}
-        </Text>
-      </View>
-      
-      <View style={styles.mealNutrition}>
-        <Text style={[styles.calories, { color: theme.colors.text }]}>
-          {formatCalories(meal.totalCalories)}
-        </Text>
-        <Text style={[styles.macros, { color: theme.colors.textSecondary }]}>
-          P: {Math.round(meal.totalProtein)}g • C: {Math.round(meal.totalCarbs)}g • F: {Math.round(meal.totalFat)}g
-        </Text>
-      </View>
-      
-      <View style={styles.mealActions}>
-        <TouchableOpacity
-          onPress={() => onDuplicate(meal)}
-          style={[styles.actionButton, { backgroundColor: theme.colors.primary[100] }]}
-        >
-          <Text style={[styles.actionText, { color: theme.colors.primary[500] }]}>
-            Duplicate
+          <TouchableOpacity onPress={() => onToggleFavorite(meal)} style={styles.favoriteButton}>
+            <Text
+              style={[
+                styles.favoriteIcon,
+                { color: meal.isFavorite ? theme.colors.error[500] : theme.colors.textSecondary },
+              ]}
+            >
+              {meal.isFavorite ? '♥' : '♡'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.mealInfo}>
+          <Text style={[styles.mealType, { color: theme.colors.primary[500] }]}>
+            {meal.mealType?.charAt(0).toUpperCase() + meal.mealType?.slice(1)}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => onDelete(meal)}
-          style={[styles.actionButton, { backgroundColor: theme.colors.error[100] }]}
-        >
-          <Text style={[styles.actionText, { color: theme.colors.error[500] }]}>
-            Delete
+          <Text style={[styles.mealDate, { color: theme.colors.textSecondary }]}>
+            {formatDate(meal.consumedAt)}
           </Text>
-        </TouchableOpacity>
-      </View>
-    </Card>
-  );
-}, (prevProps, nextProps) => {
-  return prevProps.meal.id === nextProps.meal.id &&
-         prevProps.meal.totalCalories === nextProps.meal.totalCalories &&
-         prevProps.meal.isFavorite === nextProps.meal.isFavorite;
-});
+        </View>
+
+        <View style={styles.mealNutrition}>
+          <Text style={[styles.calories, { color: theme.colors.text }]}>
+            {formatCalories(meal.totalCalories)}
+          </Text>
+          <Text style={[styles.macros, { color: theme.colors.textSecondary }]}>
+            P: {Math.round(meal.totalProtein)}g • C: {Math.round(meal.totalCarbs)}g • F:{' '}
+            {Math.round(meal.totalFat)}g
+          </Text>
+        </View>
+
+        <View style={styles.mealActions}>
+          <TouchableOpacity
+            onPress={() => onDuplicate(meal)}
+            style={[styles.actionButton, { backgroundColor: theme.colors.primary[100] }]}
+          >
+            <Text style={[styles.actionText, { color: theme.colors.primary[500] }]}>Duplicate</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => onDelete(meal)}
+            style={[styles.actionButton, { backgroundColor: theme.colors.error[100] }]}
+          >
+            <Text style={[styles.actionText, { color: theme.colors.error[500] }]}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      </Card>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.meal.id === nextProps.meal.id &&
+      prevProps.meal.totalCalories === nextProps.meal.totalCalories &&
+      prevProps.meal.isFavorite === nextProps.meal.isFavorite
+    );
+  }
+);
 
 export const MealHistoryScreen: React.FC = React.memo(() => {
   usePerformanceMonitor('MealHistoryScreen');
-  
+
   const { theme } = useTheme();
   const {
     meals,
@@ -131,7 +123,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
 
   const [searchQuery, setSearchQuery] = useState(filters.search || '');
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Debounce search query
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
@@ -203,24 +195,20 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
   };
 
   const handleDelete = (meal: Meal) => {
-    Alert.alert(
-      'Delete Meal',
-      `Are you sure you want to delete "${meal.name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteMeal(meal.id);
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete meal');
-            }
-          },
+    Alert.alert('Delete Meal', `Are you sure you want to delete "${meal.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteMeal(meal.id);
+          } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to delete meal');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const renderMealCard = ({ item }: { item: Meal }) => (
@@ -235,11 +223,11 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-        No meals found
-      </Text>
+      <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No meals found</Text>
       <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
-        {filters.search ? 'Try adjusting your search or filters' : 'Start logging your meals to see them here'}
+        {filters.search
+          ? 'Try adjusting your search or filters'
+          : 'Start logging your meals to see them here'}
       </Text>
       {filters.search && (
         <Button onPress={handleClearSearch} variant="outline" style={styles.clearButton}>
@@ -266,12 +254,10 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Meal History
-        </Text>
-        
+        <Text style={[styles.title, { color: theme.colors.text }]}>Meal History</Text>
+
         <Spacer size="md" />
-        
+
         <View style={styles.searchContainer}>
           <TextInput
             value={searchQuery}
@@ -285,7 +271,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
             Search
           </Button>
         </View>
-        
+
         {(filters.search || filters.mealType) && (
           <View style={styles.activeFilters}>
             <Text style={[styles.activeFiltersText, { color: theme.colors.textSecondary }]}>
@@ -322,7 +308,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
         onEndReachedThreshold={0.5}
       />
 
-      {isLoading && <Loading overlay message="Loading meals..." />}
+      {isLoading && <LoadingOverlay visible={true} message="Loading meals..." />}
     </Container>
   );
 });

@@ -45,9 +45,9 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
   ...props
 }) => {
   const { theme } = useTheme();
-  
+
   const isDisabled = disabled || loading;
-  
+
   const buttonStyles = [
     styles.button,
     styles[size],
@@ -56,7 +56,7 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
     isDisabled && styles.disabled,
     style,
   ];
-  
+
   const textStyles = [
     styles.text,
     styles[`${size}Text`],
@@ -64,13 +64,13 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
     isDisabled && styles.disabledText,
     textStyle,
   ];
-  
+
   const accessibilityProps = getButtonAccessibilityProps(
     accessibilityLabel || title,
     disabled,
     loading
   );
-  
+
   return (
     <TouchableOpacity
       {...props}
@@ -88,15 +88,11 @@ export const AccessibleButton: React.FC<AccessibleButtonProps> = ({
         />
       ) : (
         <View style={styles.content}>
-          {icon && iconPosition === 'left' && (
-            <View style={styles.iconLeft}>{icon}</View>
-          )}
+          {icon && iconPosition === 'left' && <View style={styles.iconLeft}>{icon}</View>}
           <Text style={textStyles} numberOfLines={1}>
             {title}
           </Text>
-          {icon && iconPosition === 'right' && (
-            <View style={styles.iconRight}>{icon}</View>
-          )}
+          {icon && iconPosition === 'right' && <View style={styles.iconRight}>{icon}</View>}
         </View>
       )}
     </TouchableOpacity>

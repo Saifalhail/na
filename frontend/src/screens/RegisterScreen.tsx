@@ -5,11 +5,16 @@ import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/TextInput';
 import { Spacer } from '@/components/layout/Spacer';
-import { Loading } from '@/components/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { AuthStackParamList } from '@/navigation/types';
-import { validateEmail, validatePassword, validateConfirmPassword, validateName } from '@/utils/validation';
+import {
+  validateEmail,
+  validatePassword,
+  validateConfirmPassword,
+  validateName,
+} from '@/utils/validation';
 import { ERROR_MESSAGES, LOADING_MESSAGES } from '@/constants';
 
 type RegisterScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Register'>;
@@ -67,13 +72,16 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       newErrors.password = passwordValidation.error || '';
     }
 
-    const confirmPasswordValidation = validateConfirmPassword(formData.password, formData.confirmPassword);
+    const confirmPasswordValidation = validateConfirmPassword(
+      formData.password,
+      formData.confirmPassword
+    );
     if (!confirmPasswordValidation.isValid) {
       newErrors.confirmPassword = confirmPasswordValidation.error || '';
     }
 
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
+    return !Object.values(newErrors).some((error) => error !== '');
   };
 
   const handleRegister = async () => {
@@ -87,7 +95,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         password: formData.password,
       });
     } catch (error: any) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         email: error.message || ERROR_MESSAGES.GENERIC_ERROR,
       }));
@@ -99,9 +107,9 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const updateFormData = (field: keyof typeof formData) => (value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -111,11 +119,12 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              Create Account
-            </Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Create Account</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
               Join us and start your nutrition journey
             </Text>
@@ -137,9 +146,9 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                   textContentType="givenName"
                 />
               </View>
-              
+
               <Spacer size="md" horizontal />
-              
+
               <View style={styles.nameField}>
                 <TextInput
                   label="Last Name"
@@ -197,7 +206,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="xl" />
 
             <Button
-              title={isLoading ? LOADING_MESSAGES.REGISTERING : "Create Account"}
+              title={isLoading ? LOADING_MESSAGES.REGISTERING : 'Create Account'}
               onPress={handleRegister}
               variant="primary"
               disabled={isLoading}
@@ -208,9 +217,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
             <View style={styles.divider}>
               <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-              <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>
-                or
-              </Text>
+              <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>or</Text>
               <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
             </View>
 
@@ -229,8 +236,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
               By creating an account, you agree to our{' '}
               <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
                 Terms of Service
-              </Text>
-              {' '}and{' '}
+              </Text>{' '}
+              and{' '}
               <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
                 Privacy Policy
               </Text>
@@ -238,7 +245,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </ScrollView>
 
-        {isLoading && <Loading overlay message={LOADING_MESSAGES.REGISTERING} />}
+        {isLoading && <LoadingOverlay visible={true} message={LOADING_MESSAGES.REGISTERING} />}
       </Container>
     </KeyboardAvoidingView>
   );

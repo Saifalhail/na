@@ -10,17 +10,17 @@ export function withLazyLoad<P extends object>(
 ): ComponentType<P> {
   return React.memo((props: P) => {
     const [isReady, setIsReady] = React.useState(false);
-    
+
     React.useEffect(() => {
       InteractionManager.runAfterInteractions(() => {
         setIsReady(true);
       });
     }, []);
-    
+
     if (!isReady && Placeholder) {
       return React.createElement(Placeholder);
     }
-    
+
     return React.createElement(Component, props);
   });
 }
@@ -30,35 +30,32 @@ export function withLazyLoad<P extends object>(
  */
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = React.useState<T>(value);
-  
+
   React.useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
-    
+
     return () => {
       clearTimeout(handler);
     };
   }, [value, delay]);
-  
+
   return debouncedValue;
 }
 
 /**
  * Custom hook for throttling function calls
  */
-export function useThrottle<T extends (...args: any[]) => any>(
-  callback: T,
-  delay: number
-): T {
+export function useThrottle<T extends (...args: any[]) => any>(callback: T, delay: number): T {
   const lastCall = React.useRef(0);
   const lastCallTimer = React.useRef<NodeJS.Timeout>();
-  
+
   return React.useCallback(
     ((...args) => {
       const now = Date.now();
       const timeSinceLastCall = now - lastCall.current;
-      
+
       if (timeSinceLastCall >= delay) {
         lastCall.current = now;
         callback(...args);
@@ -77,9 +74,7 @@ export function useThrottle<T extends (...args: any[]) => any>(
 /**
  * Utility to batch state updates
  */
-export function batchedUpdates<T extends (...args: any[]) => void>(
-  callback: T
-): T {
+export function batchedUpdates<T extends (...args: any[]) => void>(callback: T): T {
   return ((...args: Parameters<T>) => {
     InteractionManager.runAfterInteractions(() => {
       callback(...args);
@@ -93,20 +88,21 @@ export function batchedUpdates<T extends (...args: any[]) => void>(
 export function usePerformanceMonitor(componentName: string) {
   const renderCount = React.useRef(0);
   const renderStartTime = React.useRef<number>();
-  
+
   React.useEffect(() => {
     renderStartTime.current = performance.now();
-    
+
     return () => {
       if (renderStartTime.current) {
         const renderTime = performance.now() - renderStartTime.current;
-        if (renderTime > 16.67) { // More than one frame (60fps)
+        if (renderTime > 16.67) {
+          // More than one frame (60fps)
           console.warn(`[Performance] ${componentName} took ${renderTime.toFixed(2)}ms to render`);
         }
       }
     };
   });
-  
+
   React.useEffect(() => {
     renderCount.current++;
     if (__DEV__ && renderCount.current > 10) {
@@ -141,20 +137,20 @@ export const ImageOptimization = {
     const aspectRatio = originalWidth / originalHeight;
     let width = originalWidth;
     let height = originalHeight;
-    
+
     if (width > maxWidth) {
       width = maxWidth;
       height = width / aspectRatio;
     }
-    
+
     if (height > maxHeight) {
       height = maxHeight;
       width = height * aspectRatio;
     }
-    
+
     return { width: Math.round(width), height: Math.round(height) };
   },
-  
+
   /**
    * Generate image cache key
    */
@@ -170,22 +166,21 @@ export const ListOptimization = {
   /**
    * Get item layout for FlatList optimization
    */
-  getItemLayout: (itemHeight: number) => (
-    data: any,
-    index: number
-  ): { length: number; offset: number; index: number } => ({
-    length: itemHeight,
-    offset: itemHeight * index,
-    index,
-  }),
-  
+  getItemLayout:
+    (itemHeight: number) =>
+    (data: any, index: number): { length: number; offset: number; index: number } => ({
+      length: itemHeight,
+      offset: itemHeight * index,
+      index,
+    }),
+
   /**
    * Key extractor for list items
    */
   keyExtractor: (item: any): string => {
     return item.id || item.key || String(item);
   },
-  
+
   /**
    * Default viewport configuration for virtualized lists
    */
@@ -208,7 +203,7 @@ export const MemoryOptimization = {
       global.gc();
     }
   },
-  
+
   /**
    * Monitor memory usage in development
    */
@@ -220,13 +215,13 @@ export const MemoryOptimization = {
           // @ts-ignore
           const { usedJSHeapSize, totalJSHeapSize } = performance.memory;
           const usagePercent = (usedJSHeapSize / totalJSHeapSize) * 100;
-          
+
           if (usagePercent > 90) {
             console.warn(`[Memory] High memory usage: ${usagePercent.toFixed(2)}%`);
           }
         }
       }, 30000); // Check every 30 seconds
-      
+
       return () => clearInterval(memoryInterval);
     }
   },

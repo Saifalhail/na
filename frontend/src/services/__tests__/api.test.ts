@@ -49,7 +49,7 @@ describe('API Client', () => {
         user: { id: '1', email: 'test@example.com' },
         tokens: { access: 'access-token', refresh: 'refresh-token' },
       };
-      
+
       mockAxiosInstance.post.mockResolvedValue({
         data: mockResponse,
         status: 200,
@@ -74,7 +74,7 @@ describe('API Client', () => {
         user: { id: '1', email: 'test@example.com' },
         tokens: { access: 'access-token', refresh: 'refresh-token' },
       };
-      
+
       mockAxiosInstance.post.mockResolvedValue({
         data: mockResponse,
         status: 201,
@@ -158,20 +158,22 @@ describe('API Client', () => {
     });
 
     it('handles API errors correctly', async () => {
-      const errorResponse = { 
+      const errorResponse = {
         response: {
           status: 400,
           statusText: 'Bad Request',
           data: { error: 'Bad Request' },
-        }
+        },
       };
-      
+
       mockAxiosInstance.post.mockRejectedValue(errorResponse);
 
-      await expect(authApi.login({
-        email: 'test@example.com',
-        password: 'wrong-password',
-      })).rejects.toEqual(errorResponse);
+      await expect(
+        authApi.login({
+          email: 'test@example.com',
+          password: 'wrong-password',
+        })
+      ).rejects.toEqual(errorResponse);
     });
   });
 });

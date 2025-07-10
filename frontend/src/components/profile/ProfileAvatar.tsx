@@ -32,29 +32,29 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     if (user?.avatar) {
       return { uri: user.avatar };
     }
-    
+
     if (user?.socialAvatarUrl) {
       return { uri: user.socialAvatarUrl };
     }
-    
+
     // Return null for default avatar (will show initials)
     return null;
   };
 
   const getInitials = () => {
     if (!user) return '?';
-    
+
     const firstName = user.firstName || '';
     const lastName = user.lastName || '';
-    
+
     if (firstName && lastName) {
       return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
     }
-    
+
     if (user.email) {
       return user.email.charAt(0).toUpperCase();
     }
-    
+
     return '?';
   };
 
@@ -88,17 +88,17 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 
   const openImagePicker = async (source: 'camera' | 'library') => {
     setIsLoading(true);
-    
+
     try {
       let result;
-      
+
       if (source === 'camera') {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted) {
           Alert.alert('Permission required', 'Camera permission is required to take photos.');
           return;
         }
-        
+
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
           allowsEditing: true,
@@ -108,10 +108,13 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
       } else {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert('Permission required', 'Photo library permission is required to select photos.');
+          Alert.alert(
+            'Permission required',
+            'Photo library permission is required to select photos.'
+          );
           return;
         }
-        
+
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
           allowsEditing: true,
@@ -123,7 +126,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
       if (!result.canceled && result.assets[0]) {
         const imageUri = result.assets[0].uri;
         onImageSelect?.(imageUri);
-        
+
         // Update user avatar in store
         // This would typically upload to server first
         // updateUser({ avatar: imageUri });
@@ -175,13 +178,18 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
           resizeMode="cover"
         />
       ) : (
-        <View style={[styles.placeholder, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]}>
+        <View
+          style={[
+            styles.placeholder,
+            { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
+          ]}
+        >
           <Text style={[styles.initials, { fontSize: avatarSize * 0.4, color: theme.colors.text }]}>
             {getInitials()}
           </Text>
         </View>
       )}
-      
+
       {editable && (
         <View style={[styles.editOverlay, { borderRadius: avatarSize / 2 }]}>
           <Text style={styles.editText}>Edit</Text>

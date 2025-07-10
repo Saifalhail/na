@@ -4,12 +4,12 @@ import { Alert, Clipboard } from 'react-native';
 import { TwoFactorSetupScreen } from '../TwoFactorSetupScreen';
 
 // Mock the store
-jest.mock('@/store/twoFactorStore', () => ({
+jest.mock('../../store/twoFactorStore', () => ({
   useTwoFactorStore: () => ({
     setupData: {
       qr_code: 'otpauth://totp/NutritionAI:test@example.com?secret=TESTSECRET&issuer=NutritionAI',
       manual_entry_key: 'TEST SECRET KEY',
-      secret: 'TESTSECRET'
+      secret: 'TESTSECRET',
     },
     getQRCode: jest.fn().mockResolvedValue({}),
     isLoading: false,
@@ -57,7 +57,7 @@ describe('TwoFactorSetupScreen', () => {
     );
 
     expect(getByTestId('QRCode')).toBeTruthy();
-    expect(getByText('Can\'t scan? Enter this code manually:')).toBeTruthy();
+    expect(getByText("Can't scan? Enter this code manually:")).toBeTruthy();
     expect(getByText('TEST SECRET KEY')).toBeTruthy();
     expect(getByText('Tap to copy')).toBeTruthy();
   });
@@ -95,7 +95,7 @@ describe('TwoFactorSetupScreen', () => {
     fireEvent.press(continueButton);
 
     expect(mockNavigation.navigate).toHaveBeenCalledWith('TwoFactorVerify', {
-      secret: 'TESTSECRET'
+      secret: 'TESTSECRET',
     });
   });
 
@@ -116,7 +116,7 @@ describe('TwoFactorSetupScreen', () => {
       'You can set this up later in your profile settings.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Skip', style: 'destructive', onPress: expect.any(Function) }
+        { text: 'Skip', style: 'destructive', onPress: expect.any(Function) },
       ]
     );
   });
@@ -161,7 +161,7 @@ describe('TwoFactorSetupScreen', () => {
     );
 
     const continueButton = getByText('Continue to Verification');
-    
+
     // Check if button is disabled (this may depend on your Button component implementation)
     expect(continueButton).toBeTruthy();
   });

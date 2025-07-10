@@ -9,7 +9,7 @@ declare module 'react-native' {
 // Global type augmentations for React Native components
 declare global {
   const __DEV__: boolean;
-  
+
   namespace ReactNative {
     interface ProcessEnv {
       NODE_ENV: 'development' | 'production' | 'test';

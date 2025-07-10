@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ScrollView,
+  TouchableOpacity,
   Alert,
   Animated,
   PanResponder,
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Dimensions
+  Dimensions,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -21,7 +21,7 @@ import { Container, Spacer, Row } from '@/components/layout';
 import { Card } from '@/components/base/Card';
 import { Button } from '@/components/base/Button';
 import { Modal } from '@/components/base/Modal';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay, Spinner } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useMealStore } from '@/store/mealStore';
 import { useAuthStore } from '@/store/authStore';
@@ -30,7 +30,10 @@ import { formatCalories, formatMacros } from '@/utils/formatting';
 import { LOADING_MESSAGES } from '@/constants';
 import { aiApi } from '@/services/api/endpoints/ai';
 
-type AnalysisResultsScreenNavigationProp = StackNavigationProp<MainStackParamList, 'AnalysisResults'>;
+type AnalysisResultsScreenNavigationProp = StackNavigationProp<
+  MainStackParamList,
+  'AnalysisResults'
+>;
 type AnalysisResultsScreenRouteProp = RouteProp<MainStackParamList, 'AnalysisResults'>;
 
 interface Props {
@@ -81,10 +84,10 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
   const [isSaving, setIsSaving] = useState(false);
   const [mealName, setMealName] = useState('');
   const [notes, setNotes] = useState('');
-  
+
   const { addMeal } = useMealStore();
   const { user } = useAuthStore();
-  
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -95,16 +98,16 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
   const analyzeImage = async () => {
     setIsAnalyzing(true);
-    
+
     try {
       // Convert image URI to base64
       const response = await fetch(imageUri);
       const blob = await response.blob();
       const reader = new FileReader();
-      
+
       reader.onloadend = async () => {
         const base64 = reader.result?.toString().split(',')[1];
-        
+
         if (base64) {
           // Call AI analysis API
           const result = await aiApi.analyzeImage({
@@ -112,9 +115,9 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
             context: {
               meal_type: getMealType(),
               user_preferences: user?.dietary_restrictions || [],
-            }
+            },
           });
-          
+
           // Transform API response to our format
           const transformedData: AnalysisData = {
             total_calories: result.total_calories,
@@ -141,10 +144,10 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
             meal_type: result.meal_type,
             cuisine_type: result.cuisine_type,
           };
-          
+
           setAnalysisData(transformedData);
           setMealName(generateMealName(transformedData));
-          
+
           // Animate in results
           Animated.parallel([
             Animated.timing(fadeAnim, {
@@ -161,18 +164,14 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           ]).start();
         }
       };
-      
+
       reader.readAsDataURL(blob);
     } catch (error) {
       console.error('Error analyzing image:', error);
-      Alert.alert(
-        'Analysis Failed',
-        'Unable to analyze the image. Please try again.',
-        [
-          { text: 'Retry', onPress: analyzeImage },
-          { text: 'Go Back', onPress: () => navigation.goBack() },
-        ]
-      );
+      Alert.alert('Analysis Failed', 'Unable to analyze the image. Please try again.', [
+        { text: 'Retry', onPress: analyzeImage },
+        { text: 'Go Back', onPress: () => navigation.goBack() },
+      ]);
     } finally {
       setIsAnalyzing(false);
     }
@@ -187,7 +186,10 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
   };
 
   const generateMealName = (data: AnalysisData) => {
-    const mainItems = data.items.slice(0, 2).map(item => item.name).join(' & ');
+    const mainItems = data.items
+      .slice(0, 2)
+      .map((item) => item.name)
+      .join(' & ');
     return mainItems || 'My Meal';
   };
 
@@ -198,25 +200,25 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
   const handlePortionUpdate = async () => {
     if (!editingItem || !analysisData) return;
-    
+
     setShowPortionModal(false);
     setIsRecalculating(true);
-    
+
     try {
       // Recalculate nutrition based on new portion
-      const updatedItems = analysisData.items.map(item => 
+      const updatedItems = analysisData.items.map((item) =>
         item.id === editingItem.id ? editingItem : item
       );
-      
+
       // Call recalculation API
       const result = await aiApi.recalculateNutrition({
-        items: updatedItems.map(item => ({
+        items: updatedItems.map((item) => ({
           name: item.name,
           quantity: item.quantity,
           unit: item.unit,
         })),
       });
-      
+
       // Update analysis data
       const newData: AnalysisData = {
         ...analysisData,
@@ -229,7 +231,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
         sodium: result.micronutrients?.sodium || 0,
         items: updatedItems,
       };
-      
+
       setAnalysisData(newData);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
@@ -241,30 +243,28 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
   const handleItemRemove = async (itemId: string) => {
     if (!analysisData) return;
-    
+
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    Alert.alert(
-      'Remove Item',
-      'Are you sure you want to remove this item?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            const updatedItems = analysisData.items.filter(item => item.id !== itemId);
-            
-            if (updatedItems.length === 0) {
-              Alert.alert('Cannot Remove', 'You must have at least one item in your meal.');
-              return;
-            }
-            
-            setIsRecalculating(true);
-            
-            try {
-              // Recalculate totals
-              const newTotals = updatedItems.reduce((acc, item) => ({
+
+    Alert.alert('Remove Item', 'Are you sure you want to remove this item?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          const updatedItems = analysisData.items.filter((item) => item.id !== itemId);
+
+          if (updatedItems.length === 0) {
+            Alert.alert('Cannot Remove', 'You must have at least one item in your meal.');
+            return;
+          }
+
+          setIsRecalculating(true);
+
+          try {
+            // Recalculate totals
+            const newTotals = updatedItems.reduce(
+              (acc, item) => ({
                 total_calories: acc.total_calories + item.calories,
                 protein: acc.protein + item.protein,
                 carbs: acc.carbs + item.carbs,
@@ -272,7 +272,8 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
                 fiber: acc.fiber + (item.fiber || 0),
                 sugar: acc.sugar + (item.sugar || 0),
                 sodium: acc.sodium + (item.sodium || 0),
-              }), {
+              }),
+              {
                 total_calories: 0,
                 protein: 0,
                 carbs: 0,
@@ -280,22 +281,22 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
                 fiber: 0,
                 sugar: 0,
                 sodium: 0,
-              });
-              
-              setAnalysisData({
-                ...analysisData,
-                ...newTotals,
-                items: updatedItems,
-              });
-              
-              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } finally {
-              setIsRecalculating(false);
-            }
-          },
+              }
+            );
+
+            setAnalysisData({
+              ...analysisData,
+              ...newTotals,
+              items: updatedItems,
+            });
+
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } finally {
+            setIsRecalculating(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleAddItem = async () => {
@@ -303,15 +304,15 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
       Alert.alert('Error', 'Please enter an item name');
       return;
     }
-    
+
     setShowAddItemModal(false);
     setIsRecalculating(true);
-    
+
     try {
       // Get nutrition for new item
       const result = await aiApi.recalculateNutrition({
         items: [
-          ...analysisData.items.map(item => ({
+          ...analysisData.items.map((item) => ({
             name: item.name,
             quantity: item.quantity,
             unit: item.unit,
@@ -323,7 +324,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           },
         ],
       });
-      
+
       // Create new item from result
       const newItem: FoodItem = {
         id: `item-${Date.now()}`,
@@ -335,7 +336,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
         quantity: 1,
         unit: 'serving',
       };
-      
+
       setAnalysisData({
         ...analysisData,
         total_calories: result.total_calories,
@@ -344,7 +345,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
         fat: result.macronutrients.fat,
         items: [...analysisData.items, newItem],
       });
-      
+
       setNewItemName('');
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
@@ -356,9 +357,9 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
   const handleSaveMeal = async () => {
     if (!analysisData) return;
-    
+
     setIsSaving(true);
-    
+
     try {
       await addMeal({
         name: mealName,
@@ -374,11 +375,11 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
         items: analysisData.items,
         notes: notes,
       });
-      
+
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
+
       Alert.alert('Success', 'Meal saved successfully!', [
-        { text: 'OK', onPress: () => navigation.navigate('HomeTabs') }
+        { text: 'OK', onPress: () => navigation.navigate('HomeTabs') },
       ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to save meal. Please try again.');
@@ -412,8 +413,8 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
   }
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -421,11 +422,9 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.navigate('HomeTabs')}>
-              <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>
-                ← Home
-              </Text>
+              <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Home</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity onPress={() => setShowAddItemModal(true)}>
               <Text style={[styles.addButton, { color: theme.colors.primary[500] }]}>
                 + Add Item
@@ -436,7 +435,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           <Spacer size="lg" />
 
           {/* Image with overlay */}
-          <Animated.View 
+          <Animated.View
             style={[
               styles.imageContainer,
               {
@@ -473,16 +472,16 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
             <Text style={[styles.caloriesTitle, { color: theme.colors.textSecondary }]}>
               Total Calories
             </Text>
-            <Animated.Text 
+            <Animated.Text
               style={[
-                styles.caloriesValue, 
+                styles.caloriesValue,
                 { color: theme.colors.primary[500] },
                 isRecalculating && styles.recalculatingValue,
               ]}
             >
               {formatCalories(analysisData.total_calories)}
             </Animated.Text>
-            
+
             {/* Confidence indicator */}
             <View style={styles.confidenceContainer}>
               <View style={[styles.confidenceDot, { backgroundColor: '#4CAF50' }]} />
@@ -496,12 +495,10 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
           {/* Interactive Macros Bubbles */}
           <Card style={styles.macrosCard}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Macronutrients
-            </Text>
-            
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Macronutrients</Text>
+
             <Spacer size="md" />
-            
+
             <View style={styles.bubblesContainer}>
               <MacroBubble
                 label="Protein"
@@ -525,7 +522,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
                 isAnimating={isRecalculating}
               />
             </View>
-            
+
             {/* Additional nutrients */}
             <View style={styles.additionalNutrients}>
               <NutrientRow label="Fiber" value={analysisData.fiber} unit="g" theme={theme} />
@@ -541,9 +538,9 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Detected Items ({analysisData.items.length})
             </Text>
-            
+
             <Spacer size="md" />
-            
+
             {analysisData.items.map((item, index) => (
               <InteractiveFoodItem
                 key={item.id}
@@ -560,9 +557,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
           {/* Notes */}
           <Card style={styles.notesCard}>
-            <Text style={[styles.notesLabel, { color: theme.colors.text }]}>
-              Notes (optional)
-            </Text>
+            <Text style={[styles.notesLabel, { color: theme.colors.text }]}>Notes (optional)</Text>
             <TextInput
               style={[styles.notesInput, { color: theme.colors.text }]}
               value={notes}
@@ -579,15 +574,15 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           {/* Actions */}
           <View style={styles.actions}>
             <Button
-              title={isSaving ? "Saving..." : "Save Meal"}
+              title={isSaving ? 'Saving...' : 'Save Meal'}
               onPress={handleSaveMeal}
               variant="primary"
               disabled={isSaving || isRecalculating}
               style={styles.saveButton}
             />
-            
+
             <Spacer size="md" />
-            
+
             <Button
               title="Retake Photo"
               onPress={handleRetakePhoto}
@@ -610,9 +605,9 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
               <Text style={[styles.modalItemName, { color: theme.colors.text }]}>
                 {editingItem.name}
               </Text>
-              
+
               <Spacer size="lg" />
-              
+
               <View style={styles.portionInputContainer}>
                 <TextInput
                   style={[styles.portionInput, { color: theme.colors.text }]}
@@ -631,15 +626,10 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
                   placeholder="serving"
                 />
               </View>
-              
+
               <Spacer size="lg" />
-              
-              <Button
-                title="Update"
-                onPress={handlePortionUpdate}
-                variant="primary"
-                fullWidth
-              />
+
+              <Button title="Update" onPress={handlePortionUpdate} variant="primary" fullWidth />
             </View>
           )}
         </Modal>
@@ -662,9 +652,9 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
               placeholderTextColor={theme.colors.textSecondary}
               autoFocus
             />
-            
+
             <Spacer size="lg" />
-            
+
             <Button
               title="Add"
               onPress={handleAddItem}
@@ -697,7 +687,7 @@ interface MacroBubbleProps {
 
 const MacroBubble: React.FC<MacroBubbleProps> = ({ label, value, color, theme, isAnimating }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  
+
   useEffect(() => {
     if (isAnimating) {
       Animated.sequence([
@@ -716,22 +706,13 @@ const MacroBubble: React.FC<MacroBubbleProps> = ({ label, value, color, theme, i
       ]).start();
     }
   }, [isAnimating]);
-  
+
   return (
-    <Animated.View 
-      style={[
-        styles.macroBubble,
-        { transform: [{ scale: scaleAnim }] },
-      ]}
-    >
+    <Animated.View style={[styles.macroBubble, { transform: [{ scale: scaleAnim }] }]}>
       <View style={[styles.macroBubbleInner, { backgroundColor: color + '20' }]}>
         <View style={[styles.macroIndicator, { backgroundColor: color }]} />
-        <Text style={[styles.macroValue, { color: theme.colors.text }]}>
-          {formatMacros(value)}
-        </Text>
-        <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>
-          {label}
-        </Text>
+        <Text style={[styles.macroValue, { color: theme.colors.text }]}>{formatMacros(value)}</Text>
+        <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
       </View>
     </Animated.View>
   );
@@ -747,11 +728,10 @@ interface NutrientRowProps {
 
 const NutrientRow: React.FC<NutrientRowProps> = ({ label, value, unit, theme }) => (
   <View style={styles.nutrientRow}>
-    <Text style={[styles.nutrientLabel, { color: theme.colors.textSecondary }]}>
-      {label}
-    </Text>
+    <Text style={[styles.nutrientLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
     <Text style={[styles.nutrientValue, { color: theme.colors.text }]}>
-      {value}{unit}
+      {value}
+      {unit}
     </Text>
   </View>
 );
@@ -765,15 +745,15 @@ interface InteractiveFoodItemProps {
   isLast: boolean;
 }
 
-const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({ 
-  item, 
-  theme, 
-  onEdit, 
+const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
+  item,
+  theme,
+  onEdit,
   onRemove,
-  isLast 
+  isLast,
 }) => {
   const translateX = useRef(new Animated.Value(0)).current;
-  
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
@@ -799,26 +779,17 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
       },
     })
   ).current;
-  
+
   return (
     <View style={styles.foodItemContainer}>
       <Animated.View
-        style={[
-          styles.foodItem,
-          { transform: [{ translateX }] },
-        ]}
+        style={[styles.foodItem, { transform: [{ translateX }] }]}
         {...panResponder.panHandlers}
       >
-        <TouchableOpacity 
-          style={styles.foodItemTouchable}
-          onPress={onEdit}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.foodItemTouchable} onPress={onEdit} activeOpacity={0.7}>
           <View style={styles.foodItemContent}>
             <View style={styles.foodItemHeader}>
-              <Text style={[styles.foodItemName, { color: theme.colors.text }]}>
-                {item.name}
-              </Text>
+              <Text style={[styles.foodItemName, { color: theme.colors.text }]}>{item.name}</Text>
               {item.confidence && item.confidence > 0.8 && (
                 <View style={styles.confidenceBadge}>
                   <Text style={styles.confidenceBadgeText}>✓</Text>
@@ -829,7 +800,8 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
               {item.quantity} {item.unit}
             </Text>
             <Text style={[styles.foodItemMacros, { color: theme.colors.textSecondary }]}>
-              P: {formatMacros(item.protein)} • C: {formatMacros(item.carbs)} • F: {formatMacros(item.fat)}
+              P: {formatMacros(item.protein)} • C: {formatMacros(item.carbs)} • F:{' '}
+              {formatMacros(item.fat)}
             </Text>
           </View>
           <View style={styles.foodItemRight}>
@@ -842,14 +814,11 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
           </View>
         </TouchableOpacity>
       </Animated.View>
-      
-      <TouchableOpacity 
-        style={styles.deleteButton}
-        onPress={onRemove}
-      >
+
+      <TouchableOpacity style={styles.deleteButton} onPress={onRemove}>
         <Text style={styles.deleteIcon}>🗑️</Text>
       </TouchableOpacity>
-      
+
       {!isLast && (
         <View style={[styles.itemDivider, { backgroundColor: theme.colors.borderLight }]} />
       )}

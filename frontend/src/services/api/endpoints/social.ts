@@ -6,7 +6,7 @@ import {
   SocialAuthResponse,
   SocialAccountInfo,
   SocialLinkRequest,
-} from '@types/api';
+} from '@/types/api';
 
 export const socialApi = {
   /**
@@ -14,12 +14,12 @@ export const socialApi = {
    */
   async loginWithGoogle(data: GoogleLoginRequest): Promise<SocialAuthResponse> {
     const response = await api.post<SocialAuthResponse>(API_ENDPOINTS.social.google, data);
-    
+
     // Save tokens if login successful
     if (response.tokens) {
       await TokenStorage.saveTokens(response.tokens);
     }
-    
+
     return response;
   },
 
@@ -28,12 +28,12 @@ export const socialApi = {
    */
   async loginWithApple(data: any): Promise<SocialAuthResponse> {
     const response = await api.post<SocialAuthResponse>(API_ENDPOINTS.social.apple, data);
-    
+
     // Save tokens if login successful
     if (response.tokens) {
       await TokenStorage.saveTokens(response.tokens);
     }
-    
+
     return response;
   },
 

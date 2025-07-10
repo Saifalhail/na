@@ -3,7 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { mmkvStorage } from './persist';
 import { mealsApi } from '@/services/api';
 import { OfflineManager } from '@/services/offline/OfflineManager';
-import type { Meal, MealType, MealFilters, PaginatedResponse } from '@types/models';
+import type { Meal, MealType } from '@/types/models';
+import type { MealFilters, PaginatedResponse } from '@/types/api';
 
 interface MealState {
   // State
@@ -25,7 +26,7 @@ interface MealState {
     carbs: number;
     fat: number;
   };
-  
+
   // Actions
   fetchMeals: (page?: number, filters?: MealFilters) => Promise<void>;
   fetchMealById: (id: string) => Promise<void>;
@@ -58,16 +59,16 @@ const offlineManager = OfflineManager.getInstance();
 // Helper to calculate today's stats
 const calculateTodayStats = (meals: Meal[]) => {
   const today = new Date();
-  const todaysMeals = meals.filter(meal => {
+  const todaysMeals = meals.filter((meal) => {
     const mealDate = new Date(meal.consumedAt || meal.createdAt);
     return mealDate.toDateString() === today.toDateString();
   });
-  
+
   return {
-    calories: todaysMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0),
-    protein: todaysMeals.reduce((sum, meal) => sum + (meal.protein || 0), 0),
-    carbs: todaysMeals.reduce((sum, meal) => sum + (meal.carbs || 0), 0),
-    fat: todaysMeals.reduce((sum, meal) => sum + (meal.fat || 0), 0),
+    calories: todaysMeals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0),
+    protein: todaysMeals.reduce((sum, meal) => sum + (meal.totalProtein || 0), 0),
+    carbs: todaysMeals.reduce((sum, meal) => sum + (meal.totalCarbs || 0), 0),
+    fat: todaysMeals.reduce((sum, meal) => sum + (meal.totalFat || 0), 0),
   };
 };
 
@@ -98,7 +99,7 @@ export const useMealStore = create<MealState>()(
         try {
           const appliedFilters = filters || get().filters;
           const cacheKey = `meals_page_${page}_${JSON.stringify(appliedFilters)}`;
-          
+
           // Check for cached data first
           const cachedData = offlineManager.getCachedData<PaginatedResponse<Meal>>(cacheKey);
           if (cachedData && offlineManager.isConnected()) {
@@ -113,13 +114,13 @@ export const useMealStore = create<MealState>()(
               todayStats: calculateTodayStats(cachedData.results),
             });
           }
-          
+
           if (offlineManager.isConnected()) {
             const response = await mealsApi.getMeals(page, get().pageSize, appliedFilters);
-            
+
             // Cache the response
             offlineManager.cacheData(cacheKey, response, 1000 * 60 * 30); // 30 minute cache
-            
+
             set({
               meals: response.results,
               totalCount: response.count,
@@ -164,7 +165,7 @@ export const useMealStore = create<MealState>()(
       // Create meal
       createMeal: async (mealData: Partial<Meal>) => {
         set({ isLoading: true, error: null });
-        
+
         // Create optimistic meal with temporary ID
         const tempMeal: Meal = {
           id: `temp_${Date.now()}`,
@@ -173,7 +174,7 @@ export const useMealStore = create<MealState>()(
           updatedAt: new Date().toISOString(),
           isPending: true,
         } as Meal;
-        
+
         // Add optimistic update immediately
         const { meals } = get();
         const newMeals = [tempMeal, ...meals];
@@ -183,32 +184,28 @@ export const useMealStore = create<MealState>()(
           error: null,
           todayStats: calculateTodayStats(newMeals),
         });
-        
+
         try {
           if (offlineManager.isConnected()) {
             // Online: create immediately
             const newMeal = await mealsApi.createMeal(mealData);
-            
+
             // Replace temp meal with real one
-            const updatedMeals = get().meals.map(meal => 
+            const updatedMeals = get().meals.map((meal) =>
               meal.id === tempMeal.id ? newMeal : meal
             );
             set({
               meals: updatedMeals,
               todayStats: calculateTodayStats(updatedMeals),
             });
-            
+
             return newMeal;
           } else {
             // Offline: queue the request
-            await offlineManager.queueRequest(
-              'POST',
-              '/api/meals/',
-              mealData
-            );
-            
+            await offlineManager.queueRequest('POST', '/api/meals/', mealData);
+
             set({ pendingActions: get().pendingActions + 1 });
-            
+
             // Listen for when request completes
             const unsubscribe = offlineManager.onConnectivityChange(async (isOnline) => {
               if (isOnline) {
@@ -216,13 +213,13 @@ export const useMealStore = create<MealState>()(
                 unsubscribe();
               }
             });
-            
+
             return tempMeal;
           }
         } catch (error: any) {
           // Remove optimistic update on error
           set({
-            meals: get().meals.filter(meal => meal.id !== tempMeal.id),
+            meals: get().meals.filter((meal) => meal.id !== tempMeal.id),
             error: error.message || 'Failed to create meal',
           });
           throw error;
@@ -232,49 +229,46 @@ export const useMealStore = create<MealState>()(
       // Update meal
       updateMeal: async (id: string, data: Partial<Meal>) => {
         set({ isLoading: true, error: null });
-        
+
         // Store original meal for rollback
-        const originalMeal = get().meals.find(m => m.id === id);
-        
+        const originalMeal = get().meals.find((m) => m.id === id);
+
         // Optimistic update
         const { meals } = get();
         set({
-          meals: meals.map(meal => 
-            meal.id === id 
+          meals: meals.map((meal) =>
+            meal.id === id
               ? { ...meal, ...data, updatedAt: new Date().toISOString(), isPending: true }
               : meal
           ),
-          currentMeal: get().currentMeal?.id === id 
-            ? { ...get().currentMeal, ...data, updatedAt: new Date().toISOString() }
-            : get().currentMeal,
+          currentMeal:
+            get().currentMeal?.id === id
+              ? { ...get().currentMeal, ...data, updatedAt: new Date().toISOString() }
+              : get().currentMeal,
           isLoading: false,
           error: null,
         });
-        
+
         try {
           if (offlineManager.isConnected()) {
             const updatedMeal = await mealsApi.updateMeal(id, data);
-            
+
             // Update with real data
             set({
-              meals: get().meals.map(meal => meal.id === id ? updatedMeal : meal),
+              meals: get().meals.map((meal) => (meal.id === id ? updatedMeal : meal)),
               currentMeal: get().currentMeal?.id === id ? updatedMeal : get().currentMeal,
             });
           } else {
             // Queue the update
-            await offlineManager.queueRequest(
-              'PATCH',
-              `/api/meals/${id}/`,
-              data
-            );
-            
+            await offlineManager.queueRequest('PATCH', `/api/meals/${id}/`, data);
+
             set({ pendingActions: get().pendingActions + 1 });
           }
         } catch (error: any) {
           // Rollback on error
           if (originalMeal) {
             set({
-              meals: get().meals.map(meal => meal.id === id ? originalMeal : meal),
+              meals: get().meals.map((meal) => (meal.id === id ? originalMeal : meal)),
               currentMeal: get().currentMeal?.id === id ? originalMeal : get().currentMeal,
               error: error.message || 'Failed to update meal',
             });
@@ -286,30 +280,27 @@ export const useMealStore = create<MealState>()(
       // Delete meal
       deleteMeal: async (id: string) => {
         set({ isLoading: true, error: null });
-        
+
         // Store meal for rollback
-        const mealToDelete = get().meals.find(m => m.id === id);
-        const mealIndex = get().meals.findIndex(m => m.id === id);
-        
+        const mealToDelete = get().meals.find((m) => m.id === id);
+        const mealIndex = get().meals.findIndex((m) => m.id === id);
+
         // Optimistic delete
         const { meals } = get();
         set({
-          meals: meals.filter(meal => meal.id !== id),
+          meals: meals.filter((meal) => meal.id !== id),
           currentMeal: get().currentMeal?.id === id ? null : get().currentMeal,
           isLoading: false,
           error: null,
         });
-        
+
         try {
           if (offlineManager.isConnected()) {
             await mealsApi.deleteMeal(id);
           } else {
             // Queue the delete
-            await offlineManager.queueRequest(
-              'DELETE',
-              `/api/meals/${id}/`
-            );
-            
+            await offlineManager.queueRequest('DELETE', `/api/meals/${id}/`);
+
             set({ pendingActions: get().pendingActions + 1 });
           }
         } catch (error: any) {
@@ -329,23 +320,23 @@ export const useMealStore = create<MealState>()(
       // Toggle favorite
       toggleFavorite: async (id: string) => {
         const { meals, favoriteMeals } = get();
-        const meal = meals.find(m => m.id === id);
-        
+        const meal = meals.find((m) => m.id === id);
+
         if (!meal) return;
 
         set({ isLoading: true, error: null });
         try {
           if (meal.isFavorite) {
-            await mealsApi.unfavorite(id);
+            await mealsApi.removeFromFavorites(id);
             set({
-              meals: meals.map(m => m.id === id ? { ...m, isFavorite: false } : m),
-              favoriteMeals: favoriteMeals.filter(m => m.id !== id),
+              meals: meals.map((m) => (m.id === id ? { ...m, isFavorite: false } : m)),
+              favoriteMeals: favoriteMeals.filter((m) => m.id !== id),
               isLoading: false,
             });
           } else {
-            await mealsApi.favorite(id);
+            await mealsApi.addToFavorites(id);
             set({
-              meals: meals.map(m => m.id === id ? { ...m, isFavorite: true } : m),
+              meals: meals.map((m) => (m.id === id ? { ...m, isFavorite: true } : m)),
               favoriteMeals: [...favoriteMeals, { ...meal, isFavorite: true }],
               isLoading: false,
             });
@@ -363,8 +354,8 @@ export const useMealStore = create<MealState>()(
       duplicateMeal: async (id: string) => {
         set({ isLoading: true, error: null });
         try {
-          const duplicatedMeal = await mealsApi.duplicate(id);
-          
+          const duplicatedMeal = await mealsApi.duplicateMeal(id);
+
           // Add to meals list
           const { meals } = get();
           set({
@@ -372,7 +363,7 @@ export const useMealStore = create<MealState>()(
             isLoading: false,
             error: null,
           });
-          
+
           return duplicatedMeal;
         } catch (error: any) {
           set({
@@ -433,24 +424,25 @@ export const useMealStore = create<MealState>()(
       clearError: () => set({ error: null }),
 
       // Reset store
-      reset: () => set({
-        meals: [],
-        favoriteMeals: [],
-        currentMeal: null,
-        totalCount: 0,
-        currentPage: 1,
-        filters: defaultFilters,
-        isLoading: false,
-        error: null,
-        pendingActions: 0,
-        todayStats: {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        },
-      }),
-      
+      reset: () =>
+        set({
+          meals: [],
+          favoriteMeals: [],
+          currentMeal: null,
+          totalCount: 0,
+          currentPage: 1,
+          filters: defaultFilters,
+          isLoading: false,
+          error: null,
+          pendingActions: 0,
+          todayStats: {
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+          },
+        }),
+
       // Alias for createMeal to match AnalysisResultsScreen usage
       addMeal: async (mealData: Partial<Meal>) => {
         return get().createMeal(mealData);
@@ -471,18 +463,18 @@ export const useMealStore = create<MealState>()(
 export const useMealSelectors = () => {
   const meals = useMealStore((state) => state.meals);
   const filters = useMealStore((state) => state.filters);
-  
-  const todaysMeals = meals.filter(meal => {
-    const mealDate = new Date(meal.eatenAt);
+
+  const todaysMeals = meals.filter((meal) => {
+    const mealDate = new Date(meal.consumedAt);
     const today = new Date();
     return mealDate.toDateString() === today.toDateString();
   });
-  
+
   const todaysCalories = todaysMeals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0);
   const todaysProtein = todaysMeals.reduce((sum, meal) => sum + (meal.totalProtein || 0), 0);
-  const todaysCarbs = todaysMeals.reduce((sum, meal) => sum + (meal.totalCarbohydrates || 0), 0);
+  const todaysCarbs = todaysMeals.reduce((sum, meal) => sum + (meal.totalCarbs || 0), 0);
   const todaysFat = todaysMeals.reduce((sum, meal) => sum + (meal.totalFat || 0), 0);
-  
+
   return {
     todaysMeals,
     todaysNutrition: {
@@ -491,9 +483,9 @@ export const useMealSelectors = () => {
       carbs: todaysCarbs,
       fat: todaysFat,
     },
-    mealsByType: (type: MealType) => meals.filter(meal => meal.mealType === type),
-    hasActiveFilters: Object.entries(filters).some(([key, value]) => 
-      key !== 'search' && value !== undefined && value !== false && value !== ''
+    mealsByType: (type: MealType) => meals.filter((meal) => meal.mealType === type),
+    hasActiveFilters: Object.entries(filters).some(
+      ([key, value]) => key !== 'search' && value !== undefined && value !== false && value !== ''
     ),
   };
 };

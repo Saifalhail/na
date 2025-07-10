@@ -10,6 +10,8 @@ import {
   Platform,
   ScrollView,
   AccessibilityInfo,
+  ViewStyle,
+  DimensionValue,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
@@ -45,13 +47,13 @@ export const Modal: React.FC<ModalProps> = ({
   const insets = useSafeAreaInsets();
   const { firstElementRef, lastElementRef } = useFocusTrap(visible);
   const modalRef = useRef<View>(null);
-  
+
   useEffect(() => {
     if (visible) {
       // Announce modal opening
       const message = title ? `${title} dialog opened` : 'Dialog opened';
       announce(message);
-      
+
       // Set focus to modal
       if (modalRef.current) {
         const reactTag = modalRef.current as any;
@@ -59,50 +61,53 @@ export const Modal: React.FC<ModalProps> = ({
       }
     }
   }, [visible, title]);
-  
+
   const handleClose = () => {
     announce('Dialog closed');
     onClose();
   };
-  
-  const getModalSize = () => {
+
+  const getModalSize = (): ViewStyle => {
+    const baseStyle: ViewStyle = {};
+
     switch (size) {
       case 'small':
-        return { maxWidth: 320, maxHeight: '40%' };
+        return { ...baseStyle, maxWidth: 320, maxHeight: '40%' as DimensionValue };
       case 'medium':
-        return { maxWidth: 400, maxHeight: '70%' };
+        return { ...baseStyle, maxWidth: 400, maxHeight: '70%' as DimensionValue };
       case 'large':
-        return { maxWidth: 600, maxHeight: '90%' };
+        return { ...baseStyle, maxWidth: 600, maxHeight: '90%' as DimensionValue };
       case 'full':
-        return { maxWidth: '100%', maxHeight: '100%', margin: 0 };
+        return {
+          ...baseStyle,
+          width: '100%' as DimensionValue,
+          height: '100%' as DimensionValue,
+          margin: 0,
+        };
       default:
-        return { maxWidth: 400, maxHeight: '70%' };
+        return { ...baseStyle, maxWidth: 400, maxHeight: '70%' as DimensionValue };
     }
   };
-  
+
   const sizeStyles = getModalSize();
-  
+
   const content = (
     <View
       ref={modalRef}
-      style={[
-        styles.modalContent,
-        sizeStyles,
-        { backgroundColor: theme.colors.surface },
-      ]}
+      style={[styles.modalContent, sizeStyles, { backgroundColor: theme.colors.surface }]}
       accessible={true}
-      accessibilityRole="dialog"
+      accessibilityRole="none"
       accessibilityLabel={accessibilityLabel || title || 'Modal dialog'}
       accessibilityHint={accessibilityHint}
       accessibilityViewIsModal={true}
     >
       {(title || showCloseButton) && (
-        <View 
+        <View
           style={[styles.header, { borderBottomColor: theme.colors.borderLight }]}
           ref={firstElementRef}
         >
           {title && (
-            <Text 
+            <Text
               style={[styles.title, { color: theme.colors.text }]}
               accessible={true}
               accessibilityRole="header"
@@ -118,14 +123,12 @@ export const Modal: React.FC<ModalProps> = ({
               accessibilityLabel="Close dialog"
               accessibilityRole="button"
             >
-              <Text style={[styles.closeButtonText, { color: theme.colors.textSecondary }]}>
-                ✕
-              </Text>
+              <Text style={[styles.closeButtonText, { color: theme.colors.textSecondary }]}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
       )}
-      
+
       {scrollable ? (
         <ScrollView
           style={styles.body}
@@ -135,16 +138,14 @@ export const Modal: React.FC<ModalProps> = ({
           {children}
         </ScrollView>
       ) : (
-        <View style={styles.body}>
-          {children}
-        </View>
+        <View style={styles.body}>{children}</View>
       )}
-      
+
       {/* Focus trap anchor */}
       <View ref={lastElementRef} accessible={false} />
     </View>
   );
-  
+
   return (
     <RNModal
       visible={visible}

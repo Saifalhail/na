@@ -53,18 +53,16 @@ export const Select: React.FC<SelectProps> = ({
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = options.find((option) => option.value === value);
   const selectedLabel = selectedOption?.label || placeholder;
 
   const filteredOptions = searchable
-    ? options.filter(option =>
-        option.label.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    ? options.filter((option) => option.label.toLowerCase().includes(searchQuery.toLowerCase()))
     : options;
 
   const handleSelectOption = (option: SelectOption) => {
     if (option.disabled) return;
-    
+
     onValueChange(option.value);
     setModalVisible(false);
     setSearchQuery('');
@@ -72,7 +70,7 @@ export const Select: React.FC<SelectProps> = ({
 
   const renderSelectOption: ListRenderItem<SelectOption> = ({ item }) => {
     const isSelected = item.value === value;
-    
+
     if (renderOption) {
       return (
         <TouchableOpacity
@@ -96,25 +94,22 @@ export const Select: React.FC<SelectProps> = ({
         disabled={item.disabled}
       >
         <View style={styles.optionContent}>
-          <Text style={[
-            styles.optionLabel,
-            isSelected && styles.selectedOptionLabel,
-            item.disabled && styles.disabledOptionLabel,
-          ]}>
+          <Text
+            style={[
+              styles.optionLabel,
+              isSelected && styles.selectedOptionLabel,
+              item.disabled && styles.disabledOptionLabel,
+            ]}
+          >
             {item.label}
           </Text>
           {item.description && (
-            <Text style={[
-              styles.optionDescription,
-              item.disabled && styles.disabledOptionLabel,
-            ]}>
+            <Text style={[styles.optionDescription, item.disabled && styles.disabledOptionLabel]}>
               {item.description}
             </Text>
           )}
         </View>
-        {isSelected && (
-          <Text style={styles.checkmark}>✓</Text>
-        )}
+        {isSelected && <Text style={styles.checkmark}>✓</Text>}
       </TouchableOpacity>
     );
   };
@@ -123,14 +118,11 @@ export const Select: React.FC<SelectProps> = ({
     <View style={styles.modalContent}>
       <View style={styles.modalHeader}>
         <Text style={styles.modalTitle}>{label || 'Select Option'}</Text>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => setModalVisible(false)}
-        >
+        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
           <Text style={styles.closeButtonText}>✕</Text>
         </TouchableOpacity>
       </View>
-      
+
       {searchable && (
         <TextInput
           value={searchQuery}
@@ -139,7 +131,7 @@ export const Select: React.FC<SelectProps> = ({
           style={styles.searchInput}
         />
       )}
-      
+
       <FlatList
         data={filteredOptions}
         renderItem={renderSelectOption}
@@ -148,12 +140,9 @@ export const Select: React.FC<SelectProps> = ({
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
-      
+
       <View style={styles.modalFooter}>
-        <Button
-          variant="outline"
-          onPress={() => setModalVisible(false)}
-        >
+        <Button variant="outline" onPress={() => setModalVisible(false)}>
           <Text>Cancel</Text>
         </Button>
       </View>
@@ -162,33 +151,20 @@ export const Select: React.FC<SelectProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      {label && (
-        <Text style={styles.label}>{label}</Text>
-      )}
-      
+      {label && <Text style={styles.label}>{label}</Text>}
+
       <TouchableOpacity
-        style={[
-          styles.selectButton,
-          disabled && styles.disabled,
-          error && styles.errorBorder,
-        ]}
+        style={[styles.selectButton, disabled && styles.disabled, error && styles.errorBorder]}
         onPress={() => setModalVisible(true)}
         disabled={disabled}
       >
-        <Text style={[
-          styles.selectButtonText,
-          !selectedOption && styles.placeholderText,
-        ]}>
+        <Text style={[styles.selectButtonText, !selectedOption && styles.placeholderText]}>
           {selectedLabel}
         </Text>
-        <Text style={[styles.arrow, modalVisible && styles.arrowUp]}>
-          ▼
-        </Text>
+        <Text style={[styles.arrow, modalVisible && styles.arrowUp]}>▼</Text>
       </TouchableOpacity>
-      
-      {error && (
-        <Text style={styles.error}>{error}</Text>
-      )}
+
+      {error && <Text style={styles.error}>{error}</Text>}
 
       <Modal
         visible={modalVisible}
@@ -197,9 +173,7 @@ export const Select: React.FC<SelectProps> = ({
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            {renderModalContent()}
-          </View>
+          <View style={styles.modalContainer}>{renderModalContent()}</View>
         </View>
       </Modal>
     </View>
@@ -221,9 +195,9 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   const handleValueChange = (optionValue: string | number) => {
     const currentValues = value || [];
     const isSelected = currentValues.includes(optionValue);
-    
+
     if (isSelected) {
-      onValueChange(currentValues.filter(v => v !== optionValue));
+      onValueChange(currentValues.filter((v) => v !== optionValue));
     } else {
       if (maxSelections && currentValues.length >= maxSelections) {
         return;
@@ -242,146 +216,147 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   );
 };
 
-const createStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    marginVertical: theme.spacing.xs,
-  },
-  label: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: '600',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.xs,
-  },
-  selectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.m,
-    paddingVertical: theme.spacing.s,
-    borderWidth: 1,
-    borderColor: theme.colors.neutral[300],
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surface,
-    minHeight: 48,
-  },
-  selectButtonText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.primary,
-    flex: 1,
-  },
-  placeholderText: {
-    color: theme.colors.text.secondary,
-  },
-  arrow: {
-    fontSize: 12,
-    color: theme.colors.text.secondary,
-    marginLeft: theme.spacing.s,
-  },
-  arrowUp: {
-    transform: [{ rotate: '180deg' }],
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  errorBorder: {
-    borderColor: theme.colors.error[500],
-  },
-  error: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.error[500],
-    marginTop: theme.spacing.xs,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    maxWidth: '90%',
-    maxHeight: '80%',
-    width: '100%',
-    ...theme.shadows.lg,
-  },
-  modalContent: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: theme.spacing.m,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.neutral[300],
-  },
-  modalTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.text.primary,
-  },
-  closeButton: {
-    padding: theme.spacing.xs,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: theme.colors.text.secondary,
-  },
-  searchInput: {
-    margin: theme.spacing.m,
-    marginBottom: theme.spacing.s,
-  },
-  optionsList: {
-    flex: 1,
-  },
-  optionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.m,
-    paddingVertical: theme.spacing.s,
-    minHeight: 48,
-  },
-  selectedOption: {
-    backgroundColor: theme.colors.primary[50],
-  },
-  disabledOption: {
-    opacity: 0.5,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionLabel: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.primary,
-  },
-  selectedOptionLabel: {
-    color: theme.colors.primary[500],
-    fontWeight: '600',
-  },
-  disabledOptionLabel: {
-    color: theme.colors.text.secondary,
-  },
-  optionDescription: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.text.secondary,
-    marginTop: theme.spacing.xs,
-  },
-  checkmark: {
-    fontSize: 16,
-    color: theme.colors.primary[500],
-    fontWeight: 'bold',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: theme.colors.neutral[300],
-    marginHorizontal: theme.spacing.m,
-  },
-  modalFooter: {
-    padding: theme.spacing.m,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.neutral[300],
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      marginVertical: theme.spacing.xs,
+    },
+    label: {
+      fontSize: theme.typography.fontSize.base,
+      fontWeight: '600',
+      color: theme.colors.text.primary,
+      marginBottom: theme.spacing.xs,
+    },
+    selectButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: theme.spacing.m,
+      paddingVertical: theme.spacing.s,
+      borderWidth: 1,
+      borderColor: theme.colors.neutral[300],
+      borderRadius: theme.borderRadius.md,
+      backgroundColor: theme.colors.surface,
+      minHeight: 48,
+    },
+    selectButtonText: {
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.text.primary,
+      flex: 1,
+    },
+    placeholderText: {
+      color: theme.colors.text.secondary,
+    },
+    arrow: {
+      fontSize: 12,
+      color: theme.colors.text.secondary,
+      marginLeft: theme.spacing.s,
+    },
+    arrowUp: {
+      transform: [{ rotate: '180deg' }],
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    errorBorder: {
+      borderColor: theme.colors.error[500],
+    },
+    error: {
+      fontSize: theme.typography.fontSize.xs,
+      color: theme.colors.error[500],
+      marginTop: theme.spacing.xs,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.borderRadius.lg,
+      maxWidth: '90%',
+      maxHeight: '80%',
+      width: '100%',
+      ...theme.shadows.lg,
+    },
+    modalContent: {
+      flex: 1,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: theme.spacing.m,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.neutral[300],
+    },
+    modalTitle: {
+      fontSize: theme.typography.fontSize.lg,
+      fontWeight: theme.typography.fontWeight.semibold,
+      color: theme.colors.text.primary,
+    },
+    closeButton: {
+      padding: theme.spacing.xs,
+    },
+    closeButtonText: {
+      fontSize: 18,
+      color: theme.colors.text.secondary,
+    },
+    searchInput: {
+      margin: theme.spacing.m,
+      marginBottom: theme.spacing.s,
+    },
+    optionsList: {
+      flex: 1,
+    },
+    optionContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: theme.spacing.m,
+      paddingVertical: theme.spacing.s,
+      minHeight: 48,
+    },
+    selectedOption: {
+      backgroundColor: theme.colors.primary[50],
+    },
+    disabledOption: {
+      opacity: 0.5,
+    },
+    optionContent: {
+      flex: 1,
+    },
+    optionLabel: {
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.text.primary,
+    },
+    selectedOptionLabel: {
+      color: theme.colors.primary[500],
+      fontWeight: '600',
+    },
+    disabledOptionLabel: {
+      color: theme.colors.text.secondary,
+    },
+    optionDescription: {
+      fontSize: theme.typography.fontSize.xs,
+      color: theme.colors.text.secondary,
+      marginTop: theme.spacing.xs,
+    },
+    checkmark: {
+      fontSize: 16,
+      color: theme.colors.primary[500],
+      fontWeight: 'bold',
+    },
+    separator: {
+      height: 1,
+      backgroundColor: theme.colors.neutral[300],
+      marginHorizontal: theme.spacing.m,
+    },
+    modalFooter: {
+      padding: theme.spacing.m,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.neutral[300],
+    },
+  });
 
 export default Select;

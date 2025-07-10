@@ -65,9 +65,12 @@ export const twoFactorApi = {
    * Generate new backup codes
    */
   async generateBackupCodes(password: string): Promise<TwoFactorBackupCodesResponse> {
-    return await api.post<TwoFactorBackupCodesResponse>(API_ENDPOINTS.twoFactor.generateBackupCodes, {
-      password,
-    });
+    return await api.post<TwoFactorBackupCodesResponse>(
+      API_ENDPOINTS.twoFactor.generateBackupCodes,
+      {
+        password,
+      }
+    );
   },
 
   /**

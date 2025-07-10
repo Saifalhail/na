@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       errorInfo,
     });
@@ -79,12 +79,10 @@ export class ErrorBoundary extends Component<Props, State> {
                 <View style={styles.errorDetails}>
                   <Text style={styles.errorTitle}>Error Details:</Text>
                   <Text style={styles.errorText}>{this.state.error.toString()}</Text>
-                  
+
                   {this.state.errorInfo && (
                     <ScrollView style={styles.stackTrace}>
-                      <Text style={styles.stackText}>
-                        {this.state.errorInfo.componentStack}
-                      </Text>
+                      <Text style={styles.stackText}>{this.state.errorInfo.componentStack}</Text>
                     </ScrollView>
                   )}
                 </View>

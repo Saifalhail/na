@@ -25,147 +25,140 @@ interface OptimizedImageProps extends Omit<ImageProps, 'source'> {
   onLoadEnd?: () => void;
 }
 
-export const OptimizedImage: React.FC<OptimizedImageProps> = React.memo(({
-  source,
-  width,
-  height,
-  fallbackSource,
-  showLoading = true,
-  fadeInDuration = 300,
-  cacheKey,
-  priority = 'normal',
-  placeholder,
-  style,
-  onLoadStart,
-  onLoadEnd,
-  onError,
-  ...props
-}) => {
-  const { theme } = useTheme();
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [imageSource, setImageSource] = useState(source);
-  
-  // Calculate cache key if not provided
-  const imageCacheKey = cacheKey || (
-    typeof source === 'object' && 'uri' in source
-      ? ImageOptimization.getCacheKey(source.uri, width, height)
-      : undefined
-  );
-  
-  useEffect(() => {
-    if (!isLoading) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: fadeInDuration,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [isLoading, fadeInDuration]);
-  
-  const handleLoadStart = () => {
-    setIsLoading(true);
-    onLoadStart?.();
-  };
-  
-  const handleLoadEnd = () => {
-    setIsLoading(false);
-    setHasError(false);
-    onLoadEnd?.();
-  };
-  
-  const handleError = (error: any) => {
-    setIsLoading(false);
-    setHasError(true);
-    
-    if (fallbackSource && imageSource !== fallbackSource) {
-      setImageSource(fallbackSource);
-    }
-    
-    onError?.(error);
-  };
-  
-  const imageStyle: ImageStyle = StyleSheet.flatten([
-    {
-      width,
-      height,
-    },
+export const OptimizedImage: React.FC<OptimizedImageProps> = React.memo(
+  ({
+    source,
+    width,
+    height,
+    fallbackSource,
+    showLoading = true,
+    fadeInDuration = 300,
+    cacheKey,
+    priority = 'normal',
+    placeholder,
     style,
-  ]);
-  
-  if (hasError && !fallbackSource) {
+    onLoadStart,
+    onLoadEnd,
+    onError,
+    ...props
+  }) => {
+    const { theme } = useTheme();
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const [imageSource, setImageSource] = useState(source);
+
+    // Calculate cache key if not provided
+    const imageCacheKey =
+      cacheKey ||
+      (typeof source === 'object' && 'uri' in source
+        ? ImageOptimization.getCacheKey(source.uri, width, height)
+        : undefined);
+
+    useEffect(() => {
+      if (!isLoading) {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: fadeInDuration,
+          useNativeDriver: true,
+        }).start();
+      }
+    }, [isLoading, fadeInDuration]);
+
+    const handleLoadStart = () => {
+      setIsLoading(true);
+      onLoadStart?.();
+    };
+
+    const handleLoadEnd = () => {
+      setIsLoading(false);
+      setHasError(false);
+      onLoadEnd?.();
+    };
+
+    const handleError = (error: any) => {
+      setIsLoading(false);
+      setHasError(true);
+
+      if (fallbackSource && imageSource !== fallbackSource) {
+        setImageSource(fallbackSource);
+      }
+
+      onError?.(error);
+    };
+
+    const imageStyle: ImageStyle = StyleSheet.flatten([
+      {
+        width,
+        height,
+      },
+      style,
+    ]);
+
+    if (hasError && !fallbackSource) {
+      return (
+        <View
+          style={[
+            styles.errorContainer,
+            imageStyle,
+            { backgroundColor: theme.colors.neutral[200] },
+          ]}
+        >
+          <Text style={{ color: theme.colors.textSecondary }}>Failed to load image</Text>
+        </View>
+      );
+    }
+
     return (
-      <View
-        style={[
-          styles.errorContainer,
-          imageStyle,
-          { backgroundColor: theme.colors.gray[200] },
-        ]}
-      >
-        <Text style={{ color: theme.colors.textSecondary }}>
-          Failed to load image
-        </Text>
+      <View style={imageStyle}>
+        {isLoading && showLoading && (
+          <View style={[styles.loadingContainer, imageStyle]}>
+            {placeholder || <ActivityIndicator size="small" color={theme.colors.primary[500]} />}
+          </View>
+        )}
+
+        <Animated.Image
+          {...props}
+          source={imageSource}
+          style={[
+            imageStyle,
+            {
+              opacity: fadeAnim,
+            },
+          ]}
+          onLoadStart={handleLoadStart}
+          onLoadEnd={handleLoadEnd}
+          onError={handleError}
+          resizeMode={props.resizeMode || 'cover'}
+          // Performance optimizations
+          fadeDuration={0} // Disable Android fade
+          progressiveRenderingEnabled={true}
+        />
       </View>
     );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison for memo
+    return (
+      prevProps.source === nextProps.source &&
+      prevProps.width === nextProps.width &&
+      prevProps.height === nextProps.height &&
+      prevProps.style === nextProps.style
+    );
   }
-  
-  return (
-    <View style={imageStyle}>
-      {isLoading && showLoading && (
-        <View style={[styles.loadingContainer, imageStyle]}>
-          {placeholder || (
-            <ActivityIndicator
-              size="small"
-              color={theme.colors.primary[500]}
-            />
-          )}
-        </View>
-      )}
-      
-      <Animated.Image
-        {...props}
-        source={imageSource}
-        style={[
-          imageStyle,
-          {
-            opacity: fadeAnim,
-          },
-        ]}
-        onLoadStart={handleLoadStart}
-        onLoadEnd={handleLoadEnd}
-        onError={handleError}
-        resizeMode={props.resizeMode || 'cover'}
-        // Performance optimizations
-        fadeDuration={0} // Disable Android fade
-        progressiveRenderingEnabled={true}
-        cache={priority}
-      />
-    </View>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison for memo
-  return (
-    prevProps.source === nextProps.source &&
-    prevProps.width === nextProps.width &&
-    prevProps.height === nextProps.height &&
-    prevProps.style === nextProps.style
-  );
-});
+);
 
 OptimizedImage.displayName = 'OptimizedImage';
 
 // Preload images for better performance
-export const preloadImages = async (
-  sources: Array<{ uri: string } | number>
-): Promise<void> => {
-  const promises = sources.map(source => {
+export const preloadImages = async (sources: Array<{ uri: string } | number>): Promise<void> => {
+  const promises = sources.map((source) => {
     if (typeof source === 'object' && 'uri' in source) {
       return Image.prefetch(source.uri);
     }
     return Promise.resolve();
   });
-  
+
   await Promise.all(promises);
 };
 

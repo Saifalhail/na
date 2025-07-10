@@ -4,7 +4,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
 import { TextInput } from '@/components/base/TextInput';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { SocialLoginButton } from '@/components/auth/SocialLoginButton';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -49,7 +49,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
+    return !Object.values(newErrors).some((error) => error !== '');
   };
 
   const handleLogin = async () => {
@@ -74,9 +74,9 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const updateFormData = (field: keyof typeof formData) => (value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -86,11 +86,12 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              Welcome Back
-            </Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Welcome Back</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
               Sign in to continue your nutrition journey
             </Text>
@@ -126,11 +127,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="md" />
 
-            <Button
-              onPress={handleForgotPassword}
-              variant="text"
-              style={styles.forgotButton}
-            >
+            <Button onPress={handleForgotPassword} variant="text" style={styles.forgotButton}>
               Forgot Password?
             </Button>
 
@@ -142,16 +139,14 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               disabled={isLoading}
               style={styles.loginButton}
             >
-              {isLoading ? LOADING_MESSAGES.LOGGING_IN : "Sign In"}
+              {isLoading ? LOADING_MESSAGES.LOGGING_IN : 'Sign In'}
             </Button>
 
             <Spacer size="lg" />
 
             <View style={styles.divider}>
               <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-              <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>
-                or
-              </Text>
+              <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>or</Text>
               <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
             </View>
 
@@ -173,17 +168,13 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="md" />
 
-            <Button
-              onPress={handleRegister}
-              variant="outline"
-              style={styles.registerButton}
-            >
+            <Button onPress={handleRegister} variant="outline" style={styles.registerButton}>
               Create New Account
             </Button>
           </View>
         </ScrollView>
 
-        {isLoading && <Loading overlay message={LOADING_MESSAGES.LOGGING_IN} />}
+        {isLoading && <LoadingOverlay visible={true} message={LOADING_MESSAGES.LOGGING_IN} />}
       </Container>
     </KeyboardAvoidingView>
   );

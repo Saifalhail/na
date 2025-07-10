@@ -30,16 +30,12 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.content}>
         {/* Logo/Icon placeholder */}
         <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
-          <Text style={[styles.logoText, { color: theme.colors.background }]}>
-            🍽️
-          </Text>
+          <Text style={[styles.logoText, { color: theme.colors.background }]}>🍽️</Text>
         </View>
 
         <Spacer size="xl" />
 
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          {APP_CONFIG.NAME}
-        </Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>{APP_CONFIG.NAME}</Text>
 
         <Spacer size="md" />
 
@@ -56,18 +52,18 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
             description="Instantly analyze your meals with advanced AI"
             theme={theme}
           />
-          
+
           <Spacer size="lg" />
-          
+
           <FeatureItem
             icon="📊"
             title="Detailed Nutrition"
             description="Get complete nutritional breakdown"
             theme={theme}
           />
-          
+
           <Spacer size="lg" />
-          
+
           <FeatureItem
             icon="📈"
             title="Track Progress"
@@ -89,11 +85,7 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 
         <Spacer size="md" />
 
-        <Button
-          title="Already have an account? Sign In"
-          onPress={handleLogin}
-          variant="text"
-        />
+        <Button title="Already have an account? Sign In" onPress={handleLogin} variant="text" />
       </View>
     </Container>
   );
@@ -112,9 +104,7 @@ const FeatureItem: React.FC<FeatureItemProps> = ({ icon, title, description, the
       <Text style={styles.featureIconText}>{icon}</Text>
     </View>
     <View style={styles.featureContent}>
-      <Text style={[styles.featureTitle, { color: theme.colors.text }]}>
-        {title}
-      </Text>
+      <Text style={[styles.featureTitle, { color: theme.colors.text }]}>{title}</Text>
       <Text style={[styles.featureDescription, { color: theme.colors.textSecondary }]}>
         {description}
       </Text>

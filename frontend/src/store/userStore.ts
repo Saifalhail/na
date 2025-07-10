@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { mmkvStorage } from './persist';
 import { authApi } from '@services/api';
-import type { UserProfile, DietaryRestriction } from '@types/models';
+import type { UserProfile, DietaryRestriction } from '@/types/models';
 
 interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
@@ -24,7 +24,7 @@ interface UserState {
   preferences: UserPreferences;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   fetchProfile: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
@@ -114,7 +114,7 @@ export const useUserStore = create<UserState>()(
       removeDietaryRestriction: (id: string) => {
         const { dietaryRestrictions } = get();
         set({
-          dietaryRestrictions: dietaryRestrictions.filter(r => r.id !== id),
+          dietaryRestrictions: dietaryRestrictions.filter((r) => r.id !== id),
         });
       },
 
@@ -141,13 +141,14 @@ export const useUserStore = create<UserState>()(
       clearError: () => set({ error: null }),
 
       // Reset store
-      reset: () => set({
-        profile: null,
-        dietaryRestrictions: [],
-        preferences: defaultPreferences,
-        isLoading: false,
-        error: null,
-      }),
+      reset: () =>
+        set({
+          profile: null,
+          dietaryRestrictions: [],
+          preferences: defaultPreferences,
+          isLoading: false,
+          error: null,
+        }),
     }),
     {
       name: 'user-storage',
@@ -164,22 +165,19 @@ export const useUserStore = create<UserState>()(
 // Computed selectors
 export const useUserSelectors = () => {
   const profile = useUserStore((state) => state.profile);
-  
+
   return {
-    hasCompletedProfile: profile && 
-      profile.height && 
-      profile.weight && 
-      profile.activityLevel &&
-      profile.gender,
-    
+    hasCompletedProfile:
+      profile && profile.height && profile.weight && profile.activityLevel && profile.gender,
+
     dailyCalorieGoal: profile?.dailyCalorieGoal || profile?.tdee || 2000,
-    
+
     macroGoals: {
       protein: profile?.dailyProteinGoal || 50,
       carbs: profile?.dailyCarbsGoal || 250,
       fat: profile?.dailyFatGoal || 65,
     },
-    
+
     bmi: profile?.bmi || null,
     bmr: profile?.bmr || null,
     tdee: profile?.tdee || null,

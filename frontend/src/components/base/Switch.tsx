@@ -70,11 +70,7 @@ export const Switch: React.FC<SwitchProps> = ({
       >
         <View style={styles.cardContent}>
           <View style={styles.textContainer}>
-            {label && (
-              <Text style={[styles.label, disabled && styles.disabledText]}>
-                {label}
-              </Text>
-            )}
+            {label && <Text style={[styles.label, disabled && styles.disabledText]}>{label}</Text>}
             {description && (
               <Text style={[styles.description, disabled && styles.disabledText]}>
                 {description}
@@ -83,9 +79,7 @@ export const Switch: React.FC<SwitchProps> = ({
           </View>
           {switchComponent}
         </View>
-        {error && (
-          <Text style={styles.error}>{error}</Text>
-        )}
+        {error && <Text style={styles.error}>{error}</Text>}
       </TouchableOpacity>
     );
   }
@@ -100,11 +94,7 @@ export const Switch: React.FC<SwitchProps> = ({
       >
         <View style={styles.content}>
           <View style={styles.textContainer}>
-            {label && (
-              <Text style={[styles.label, disabled && styles.disabledText]}>
-                {label}
-              </Text>
-            )}
+            {label && <Text style={[styles.label, disabled && styles.disabledText]}>{label}</Text>}
             {description && (
               <Text style={[styles.description, disabled && styles.disabledText]}>
                 {description}
@@ -114,9 +104,7 @@ export const Switch: React.FC<SwitchProps> = ({
           {switchComponent}
         </View>
       </TouchableOpacity>
-      {error && (
-        <Text style={styles.error}>{error}</Text>
-      )}
+      {error && <Text style={styles.error}>{error}</Text>}
     </View>
   );
 };
@@ -127,100 +115,93 @@ interface SwitchGroupProps {
   style?: ViewStyle;
 }
 
-export const SwitchGroup: React.FC<SwitchGroupProps> = ({
-  children,
-  title,
-  style,
-}) => {
+export const SwitchGroup: React.FC<SwitchGroupProps> = ({ children, title, style }) => {
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
   return (
     <View style={[styles.group, style]}>
-      {title && (
-        <Text style={styles.groupTitle}>{title}</Text>
-      )}
-      <View style={styles.groupContent}>
-        {children}
-      </View>
+      {title && <Text style={styles.groupTitle}>{title}</Text>}
+      <View style={styles.groupContent}>{children}</View>
     </View>
   );
 };
 
-const createStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    marginVertical: theme.spacing.xs,
-  },
-  touchable: {
-    borderRadius: theme.borderRadius.md,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: theme.spacing.s,
-  },
-  cardContainer: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.m,
-    ...theme.shadows.sm,
-  },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  textContainer: {
-    flex: 1,
-    marginRight: theme.spacing.m,
-  },
-  label: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: '600',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.xs,
-  },
-  description: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.text.secondary,
-    lineHeight: 18,
-  },
-  switch: {
-    // Default switch styles
-  },
-  smallSwitch: {
-    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-  },
-  mediumSwitch: {
-    // Default size
-  },
-  largeSwitch: {
-    transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  disabledText: {
-    opacity: 0.5,
-  },
-  error: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.error[500],
-    marginTop: theme.spacing.xs,
-  },
-  group: {
-    marginBottom: theme.spacing.m,
-  },
-  groupTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.s,
-  },
-  groupContent: {
-    gap: theme.spacing.xs,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      marginVertical: theme.spacing.xs,
+    },
+    touchable: {
+      borderRadius: theme.borderRadius.md,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: theme.spacing.s,
+    },
+    cardContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.borderRadius.md,
+      padding: theme.spacing.m,
+      ...theme.shadows.sm,
+    },
+    cardContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    textContainer: {
+      flex: 1,
+      marginRight: theme.spacing.m,
+    },
+    label: {
+      fontSize: theme.typography.fontSize.base,
+      fontWeight: '600',
+      color: theme.colors.text.primary,
+      marginBottom: theme.spacing.xs,
+    },
+    description: {
+      fontSize: theme.typography.fontSize.xs,
+      color: theme.colors.text.secondary,
+      lineHeight: 18,
+    },
+    switch: {
+      // Default switch styles
+    },
+    smallSwitch: {
+      transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
+    },
+    mediumSwitch: {
+      // Default size
+    },
+    largeSwitch: {
+      transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    disabledText: {
+      opacity: 0.5,
+    },
+    error: {
+      fontSize: theme.typography.fontSize.xs,
+      color: theme.colors.error[500],
+      marginTop: theme.spacing.xs,
+    },
+    group: {
+      marginBottom: theme.spacing.m,
+    },
+    groupTitle: {
+      fontSize: theme.typography.fontSize.lg,
+      fontWeight: theme.typography.fontWeight.semibold,
+      color: theme.colors.text.primary,
+      marginBottom: theme.spacing.s,
+    },
+    groupContent: {
+      gap: theme.spacing.xs,
+    },
+  });
 
 export default Switch;

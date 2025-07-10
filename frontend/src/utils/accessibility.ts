@@ -46,11 +46,7 @@ export interface AccessibilityState {
 /**
  * Generate accessibility label for nutrition values
  */
-export const getNutritionLabel = (
-  value: number,
-  unit: string,
-  nutrient: string
-): string => {
+export const getNutritionLabel = (value: number, unit: string, nutrient: string): string => {
   return `${value} ${unit} of ${nutrient}`;
 };
 
@@ -64,20 +60,20 @@ export const getMealCardLabel = (meal: {
   mealType?: string;
 }): string => {
   const parts = [meal.name];
-  
+
   if (meal.calories) {
     parts.push(`${meal.calories} calories`);
   }
-  
+
   if (meal.mealType) {
     parts.push(meal.mealType);
   }
-  
+
   if (meal.consumedAt) {
     const date = new Date(meal.consumedAt);
     parts.push(`consumed on ${date.toLocaleDateString()}`);
   }
-  
+
   return parts.join(', ');
 };
 
@@ -129,26 +125,22 @@ export const isScreenReaderEnabled = async (): Promise<boolean> => {
 /**
  * Get accessibility props for form inputs
  */
-export const getInputAccessibilityProps = (
-  label: string,
-  error?: string,
-  required?: boolean
-) => {
+export const getInputAccessibilityProps = (label: string, error?: string, required?: boolean) => {
   const props: any = {
     accessible: true,
     accessibilityLabel: label,
     accessibilityRole: 'text' as AccessibilityRole,
   };
-  
+
   if (error) {
     props.accessibilityState = { invalid: true };
     props.accessibilityErrorMessage = error;
   }
-  
+
   if (required) {
     props.accessibilityRequired = true;
   }
-  
+
   return props;
 };
 
@@ -166,26 +158,23 @@ export const getButtonAccessibilityProps = (
     accessibilityRole: 'button' as AccessibilityRole,
     accessibilityState: {} as AccessibilityState,
   };
-  
+
   if (disabled) {
     props.accessibilityState.disabled = true;
   }
-  
+
   if (loading) {
     props.accessibilityState.busy = true;
     props.accessibilityLabel = `${label}, loading`;
   }
-  
+
   return props;
 };
 
 /**
  * Get accessibility props for images
  */
-export const getImageAccessibilityProps = (
-  description: string,
-  decorative?: boolean
-) => {
+export const getImageAccessibilityProps = (description: string, decorative?: boolean) => {
   if (decorative) {
     return {
       accessible: false,
@@ -193,7 +182,7 @@ export const getImageAccessibilityProps = (
       importantForAccessibility: 'no' as const,
     };
   }
-  
+
   return {
     accessible: true,
     accessibilityLabel: description,
@@ -221,7 +210,7 @@ export const formatTimeForScreenReader = (date: Date): string => {
     minute: 'numeric',
     hour12: true,
   };
-  
+
   return date.toLocaleTimeString('en-US', options);
 };
 
@@ -235,7 +224,7 @@ export const formatDateForScreenReader = (date: Date): string => {
     month: 'long',
     day: 'numeric',
   };
-  
+
   return date.toLocaleDateString('en-US', options);
 };
 
@@ -249,7 +238,7 @@ export const getFocusOrder = (index: number, important?: boolean) => {
       accessibilityLiveRegion: important ? 'polite' : 'none',
     };
   }
-  
+
   return {
     accessibilityViewIsModal: important,
   };
@@ -268,7 +257,7 @@ export const KeyboardNavigation = {
     }
     return currentIndex > 0 ? currentIndex - 1 : totalItems - 1;
   },
-  
+
   /**
    * Handle arrow key navigation
    */
@@ -302,7 +291,7 @@ export const ColorContrast = {
     // Simplified check - in production, use a proper color contrast library
     return true;
   },
-  
+
   /**
    * Get high contrast version of color
    */

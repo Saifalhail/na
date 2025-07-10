@@ -3,8 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { mmkvStorage } from './persist';
 import { authApi } from '@services/api';
 import { TokenStorage } from '@services/storage/tokenStorage';
-import type { User } from '@types/models';
-import type { TokenPair, LoginCredentials, RegisterData } from '@types/api';
+import type { User } from '@/types/models';
+import type { TokenPair, LoginCredentials, RegisterData } from '@/types/api';
 
 interface AuthState {
   // State
@@ -13,7 +13,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.login(credentials);
-          
+
           set({
             user: response.user,
             tokens: response.tokens,
@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.register(data);
-          
+
           set({
             user: response.user,
             tokens: response.tokens,
@@ -89,10 +89,10 @@ export const useAuthStore = create<AuthState>()(
           // Continue with logout even if API call fails
           console.error('Logout API call failed:', error);
         }
-        
+
         // Clear tokens from storage
         await TokenStorage.clearTokens();
-        
+
         // Reset state
         set({
           user: null,
@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const response = await authApi.refreshToken(tokens.refresh);
-          
+
           set({
             tokens: response,
             error: null,
@@ -143,15 +143,15 @@ export const useAuthStore = create<AuthState>()(
         try {
           // Check if we have stored tokens
           const storedTokens = await TokenStorage.getTokens();
-          
+
           if (storedTokens?.access) {
             // Verify token is still valid
             const isValid = await authApi.verifyToken();
-            
+
             if (isValid) {
               // Get current user profile
               const profile = await authApi.getProfile();
-              
+
               set({
                 user: profile.user,
                 tokens: storedTokens,
@@ -163,7 +163,7 @@ export const useAuthStore = create<AuthState>()(
               if (storedTokens.refresh) {
                 await get().refreshTokens();
                 const profile = await authApi.getProfile();
-                
+
                 set({
                   user: profile.user,
                   isAuthenticated: true,

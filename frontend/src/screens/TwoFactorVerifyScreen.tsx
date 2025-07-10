@@ -6,12 +6,15 @@ import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
 import { TextInput } from '@/components/base/TextInput';
 import { Card } from '@/components/base/Card';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useTwoFactorStore } from '@/store/twoFactorStore';
 import { AuthStackParamList } from '@/navigation/types';
 
-type TwoFactorVerifyScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'TwoFactorVerify'>;
+type TwoFactorVerifyScreenNavigationProp = StackNavigationProp<
+  AuthStackParamList,
+  'TwoFactorVerify'
+>;
 type TwoFactorVerifyScreenRouteProp = RouteProp<AuthStackParamList, 'TwoFactorVerify'>;
 
 interface Props {
@@ -26,7 +29,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
   const [codeError, setCodeError] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  
+
   const inputRef = useRef<any>(null);
 
   useEffect(() => {
@@ -72,8 +75,8 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
           onPress: () => {
             // Navigate back to profile or wherever appropriate
             navigation.navigate('Profile');
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -82,44 +85,42 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
     Alert.alert(
       'Backup Codes Saved',
       'Make sure you have saved these backup codes in a secure location.',
-      [
-        { text: 'I have saved them', onPress: handleComplete }
-      ]
+      [{ text: 'I have saved them', onPress: handleComplete }]
     );
   };
 
   if (isLoading) {
-    return <Loading message="Verifying code..." />;
+    return <LoadingOverlay visible={true} message="Verifying code..." />;
   }
 
   if (isVerified && backupCodes.length > 0) {
     return (
       <Container padding="large">
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Save Your Backup Codes
-        </Text>
-        
+        <Text style={[styles.title, { color: theme.colors.text }]}>Save Your Backup Codes</Text>
+
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-          Store these codes in a safe place. You can use them to access your account if you lose your authenticator device.
+          Store these codes in a safe place. You can use them to access your account if you lose
+          your authenticator device.
         </Text>
 
         <Spacer size="xl" />
 
         <Card style={styles.backupCodesCard}>
-          <Text style={[styles.backupCodesTitle, { color: theme.colors.text }]}>
-            Backup Codes
-          </Text>
+          <Text style={[styles.backupCodesTitle, { color: theme.colors.text }]}>Backup Codes</Text>
           <Text style={[styles.backupCodesSubtitle, { color: theme.colors.textSecondary }]}>
             Each code can only be used once
           </Text>
-          
+
           <Spacer size="md" />
-          
+
           <View style={styles.codesGrid}>
             {backupCodes.map((code, index) => (
               <Text
                 key={index}
-                style={[styles.backupCode, { color: theme.colors.text, backgroundColor: theme.colors.neutral[100] }]}
+                style={[
+                  styles.backupCode,
+                  { color: theme.colors.text, backgroundColor: theme.colors.neutral[100] },
+                ]}
               >
                 {code}
               </Text>
@@ -129,11 +130,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
 
         <Spacer size="xl" />
 
-        <Button
-          onPress={handleBackupCodesSaved}
-          variant="primary"
-          style={styles.completeButton}
-        >
+        <Button onPress={handleBackupCodesSaved} variant="primary" style={styles.completeButton}>
           I have saved my backup codes
         </Button>
       </Container>
@@ -142,10 +139,8 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
 
   return (
     <Container padding="large">
-      <Text style={[styles.title, { color: theme.colors.text }]}>
-        Verify Your Setup
-      </Text>
-      
+      <Text style={[styles.title, { color: theme.colors.text }]}>Verify Your Setup</Text>
+
       <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
         Enter the 6-digit code from your authenticator app
       </Text>
@@ -168,9 +163,9 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
           autoFocus
           style={styles.codeInput}
         />
-        
+
         <Spacer size="md" />
-        
+
         <Text style={[styles.codeHint, { color: theme.colors.textSecondary }]}>
           Open your authenticator app and enter the 6-digit code for Nutrition AI
         </Text>
@@ -187,14 +182,10 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
         >
           Verify Code
         </Button>
-        
+
         <Spacer size="md" />
-        
-        <Button
-          onPress={() => navigation.goBack()}
-          variant="outline"
-          style={styles.backButton}
-        >
+
+        <Button onPress={() => navigation.goBack()} variant="outline" style={styles.backButton}>
           Back to QR Code
         </Button>
       </View>
@@ -202,9 +193,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
       {error && (
         <>
           <Spacer size="md" />
-          <Text style={[styles.error, { color: theme.colors.error[500] }]}>
-            {error}
-          </Text>
+          <Text style={[styles.error, { color: theme.colors.error[500] }]}>{error}</Text>
         </>
       )}
     </Container>

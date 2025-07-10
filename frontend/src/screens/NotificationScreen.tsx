@@ -11,7 +11,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { ErrorDisplay } from '@/components/base/ErrorDisplay';
 import { NotificationItem } from '@/components/notifications';
 import { useTheme } from '@/hooks/useTheme';
@@ -80,7 +80,7 @@ export const NotificationScreen: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     if (unreadCount === 0) return;
-    
+
     try {
       await markAllAsRead();
     } catch (error: any) {
@@ -89,24 +89,20 @@ export const NotificationScreen: React.FC = () => {
   };
 
   const handleDelete = async (notification: Notification) => {
-    Alert.alert(
-      'Delete Notification',
-      'Are you sure you want to delete this notification?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteNotification(notification.id);
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to delete notification');
-            }
-          },
+    Alert.alert('Delete Notification', 'Are you sure you want to delete this notification?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteNotification(notification.id);
+          } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to delete notification');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleNotificationPress = (notification: Notification) => {
@@ -129,22 +125,18 @@ export const NotificationScreen: React.FC = () => {
 
   const renderFooter = () => {
     if (!isLoading || refreshing) return null;
-    
+
     return (
       <View style={styles.footer}>
-        <Loading message="Loading more notifications..." />
+        <LoadingOverlay visible={true} message="Loading more notifications..." />
       </View>
     );
   };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={[styles.emptyIcon, { color: theme.colors.textSecondary }]}>
-        🔔
-      </Text>
-      <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-        No Notifications
-      </Text>
+      <Text style={[styles.emptyIcon, { color: theme.colors.textSecondary }]}>🔔</Text>
+      <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No Notifications</Text>
       <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
         You're all caught up! Notifications will appear here when you receive them.
       </Text>
@@ -168,10 +160,8 @@ export const NotificationScreen: React.FC = () => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Notifications
-        </Text>
-        
+        <Text style={[styles.title, { color: theme.colors.text }]}>Notifications</Text>
+
         {unreadCount > 0 && (
           <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllButton}>
             <Text style={[styles.markAllText, { color: theme.colors.primary[500] }]}>
@@ -205,7 +195,7 @@ export const NotificationScreen: React.FC = () => {
       />
 
       {isLoading && notifications.length === 0 && (
-        <Loading overlay message="Loading notifications..." />
+        <LoadingOverlay visible={true} message="Loading notifications..." />
       )}
     </Container>
   );

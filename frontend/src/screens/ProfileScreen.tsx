@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   Alert,
   TextInput,
   Image,
   Switch,
-  Platform
+  Platform,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,7 +17,7 @@ import { Container, Spacer, Row } from '@/components/layout';
 import { Card } from '@/components/base/Card';
 import { Button } from '@/components/base/Button';
 import { Modal } from '@/components/base/Modal';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { Badge } from '@/components/base/Badge';
 import { ProgressBar } from '@/components/base/ProgressBar';
 import { useTheme } from '@/hooks/useTheme';
@@ -117,7 +117,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   });
 
   const [dietaryRestrictions, setDietaryRestrictions] = useState<DietaryRestriction[]>(
-    DIETARY_RESTRICTIONS.map(restriction => ({
+    DIETARY_RESTRICTIONS.map((restriction) => ({
       ...restriction,
       selected: user?.dietary_restrictions?.includes(restriction.id) || false,
     }))
@@ -132,20 +132,26 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   useEffect(() => {
     calculateHealthMetrics();
-  }, [healthMetrics.height, healthMetrics.weight, healthMetrics.age, healthMetrics.gender, healthMetrics.activityLevel]);
+  }, [
+    healthMetrics.height,
+    healthMetrics.weight,
+    healthMetrics.age,
+    healthMetrics.gender,
+    healthMetrics.activityLevel,
+  ]);
 
   const calculateHealthMetrics = () => {
     const heightInM = healthMetrics.height / 100;
     const bmi = healthMetrics.weight / (heightInM * heightInM);
-    
+
     // Calculate BMR using Mifflin-St Jeor equation
     let bmr = 0;
     if (healthMetrics.gender === 'male') {
-      bmr = (10 * healthMetrics.weight) + (6.25 * healthMetrics.height) - (5 * healthMetrics.age) + 5;
+      bmr = 10 * healthMetrics.weight + 6.25 * healthMetrics.height - 5 * healthMetrics.age + 5;
     } else {
-      bmr = (10 * healthMetrics.weight) + (6.25 * healthMetrics.height) - (5 * healthMetrics.age) - 161;
+      bmr = 10 * healthMetrics.weight + 6.25 * healthMetrics.height - 5 * healthMetrics.age - 161;
     }
-    
+
     // Calculate TDEE based on activity level
     const activityMultipliers = {
       sedentary: 1.2,
@@ -154,10 +160,10 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       active: 1.725,
       very_active: 1.9,
     };
-    
+
     const tdee = bmr * activityMultipliers[healthMetrics.activityLevel];
-    
-    setHealthMetrics(prev => ({
+
+    setHealthMetrics((prev) => ({
       ...prev,
       bmi: Math.round(bmi * 10) / 10,
       bmr: Math.round(bmr),
@@ -170,14 +176,10 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: () => logout() }
-      ]
-    );
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: () => logout() },
+    ]);
   };
 
   const handleSaveProfile = async () => {
@@ -225,10 +227,8 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSaveDietaryRestrictions = async () => {
     try {
-      const selectedRestrictions = dietaryRestrictions
-        .filter(r => r.selected)
-        .map(r => r.id);
-      
+      const selectedRestrictions = dietaryRestrictions.filter((r) => r.selected).map((r) => r.id);
+
       await updateProfile({
         dietary_restrictions: selectedRestrictions,
       });
@@ -302,11 +302,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack}>
-            <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>
-              ← Back
-            </Text>
+            <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Back</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity onPress={() => navigation.navigate('NotificationScreen')}>
             <Text style={styles.notificationIcon}>🔔</Text>
           </TouchableOpacity>
@@ -330,31 +328,29 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             </View>
           </TouchableOpacity>
-          
+
           <Spacer size="lg" />
-          
+
           <View style={styles.nameContainer}>
             <Text style={[styles.name, { color: theme.colors.text }]}>
               {user?.first_name} {user?.last_name}
             </Text>
-            <Badge 
-              text={accountType.label} 
+            <Badge
+              text={accountType.label}
               color={accountType.color}
               icon={accountType.icon}
               style={styles.accountBadge}
             />
           </View>
-          
-          <Text style={[styles.email, { color: theme.colors.textSecondary }]}>
-            {user?.email}
-          </Text>
-          
+
+          <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{user?.email}</Text>
+
           <Text style={[styles.joinDate, { color: theme.colors.textSecondary }]}>
             Member since {formatDate(user?.created_at || new Date().toISOString())}
           </Text>
-          
+
           <Spacer size="lg" />
-          
+
           <Button
             title="Edit Profile"
             onPress={() => setShowEditModal(true)}
@@ -367,28 +363,24 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Today's Progress */}
         <Card style={styles.progressCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Today's Progress
-          </Text>
-          
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Today's Progress</Text>
+
           <Spacer size="lg" />
-          
+
           <View style={styles.progressItem}>
             <View style={styles.progressHeader}>
-              <Text style={[styles.progressLabel, { color: theme.colors.text }]}>
-                Calories
-              </Text>
+              <Text style={[styles.progressLabel, { color: theme.colors.text }]}>Calories</Text>
               <Text style={[styles.progressValue, { color: theme.colors.primary[500] }]}>
                 {todayStats.calories} / {nutritionGoals.calories}
               </Text>
             </View>
-            <ProgressBar 
-              progress={todayStats.calories / nutritionGoals.calories} 
+            <ProgressBar
+              progress={todayStats.calories / nutritionGoals.calories}
               color={theme.colors.primary[500]}
               style={styles.progressBar}
             />
           </View>
-          
+
           <View style={styles.macrosRow}>
             <View style={styles.macroItem}>
               <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>
@@ -399,17 +391,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               </Text>
             </View>
             <View style={styles.macroItem}>
-              <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>
-                Carbs
-              </Text>
+              <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Carbs</Text>
               <Text style={[styles.macroValue, { color: theme.colors.text }]}>
                 {todayStats.carbs}g
               </Text>
             </View>
             <View style={styles.macroItem}>
-              <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>
-                Fat
-              </Text>
+              <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Fat</Text>
               <Text style={[styles.macroValue, { color: theme.colors.text }]}>
                 {todayStats.fat}g
               </Text>
@@ -422,50 +410,44 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         {/* Health Metrics */}
         <Card style={styles.healthCard}>
           <View style={styles.cardHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Health Metrics
-            </Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Health Metrics</Text>
             <TouchableOpacity onPress={() => setShowHealthModal(true)}>
-              <Text style={[styles.editLink, { color: theme.colors.primary[500] }]}>
-                Edit
-              </Text>
+              <Text style={[styles.editLink, { color: theme.colors.primary[500] }]}>Edit</Text>
             </TouchableOpacity>
           </View>
-          
+
           <Spacer size="lg" />
-          
+
           <View style={styles.metricsGrid}>
             {healthMetrics.bmi && (
               <View style={styles.metricItem}>
                 <Text style={[styles.metricValue, { color: theme.colors.text }]}>
                   {healthMetrics.bmi}
                 </Text>
-                <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>
-                  BMI
-                </Text>
-                <Text style={[
-                  styles.metricCategory, 
-                  { color: getBMICategory(healthMetrics.bmi).color }
-                ]}>
+                <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMI</Text>
+                <Text
+                  style={[
+                    styles.metricCategory,
+                    { color: getBMICategory(healthMetrics.bmi).color },
+                  ]}
+                >
                   {getBMICategory(healthMetrics.bmi).label}
                 </Text>
               </View>
             )}
-            
+
             {healthMetrics.bmr && (
               <View style={styles.metricItem}>
                 <Text style={[styles.metricValue, { color: theme.colors.text }]}>
                   {healthMetrics.bmr}
                 </Text>
-                <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>
-                  BMR
-                </Text>
+                <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMR</Text>
                 <Text style={[styles.metricCategory, { color: theme.colors.textSecondary }]}>
                   kcal/day
                 </Text>
               </View>
             )}
-            
+
             {healthMetrics.tdee && (
               <View style={styles.metricItem}>
                 <Text style={[styles.metricValue, { color: theme.colors.text }]}>
@@ -480,13 +462,19 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             )}
           </View>
-          
+
           <Spacer size="md" />
-          
+
           <View style={[styles.metricDetails, { backgroundColor: theme.colors.surface }]}>
             <MetricRow label="Height" value={`${healthMetrics.height} cm`} theme={theme} />
             <MetricRow label="Weight" value={`${healthMetrics.weight} kg`} theme={theme} />
-            <MetricRow label="Activity" value={ACTIVITY_LEVELS.find(a => a.value === healthMetrics.activityLevel)?.label || ''} theme={theme} />
+            <MetricRow
+              label="Activity"
+              value={
+                ACTIVITY_LEVELS.find((a) => a.value === healthMetrics.activityLevel)?.label || ''
+              }
+              theme={theme}
+            />
           </View>
         </Card>
 
@@ -494,12 +482,10 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Settings */}
         <Card style={styles.settingsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Settings
-          </Text>
-          
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Settings</Text>
+
           <Spacer size="lg" />
-          
+
           <SettingItem
             title="Nutrition Goals"
             subtitle="Set your daily targets"
@@ -508,25 +494,25 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             theme={theme}
             showBadge={false}
           />
-          
+
           <SettingItem
             title="Dietary Preferences"
-            subtitle={`${dietaryRestrictions.filter(r => r.selected).length} restrictions set`}
+            subtitle={`${dietaryRestrictions.filter((r) => r.selected).length} restrictions set`}
             icon="🥗"
             onPress={() => setShowDietaryModal(true)}
             theme={theme}
-            showBadge={dietaryRestrictions.filter(r => r.selected).length > 0}
+            showBadge={dietaryRestrictions.filter((r) => r.selected).length > 0}
           />
-          
+
           <SettingItem
             title="Two-Factor Authentication"
-            subtitle={authUser?.two_factor_enabled ? "Enabled" : "Secure your account"}
+            subtitle={authUser?.two_factor_enabled ? 'Enabled' : 'Secure your account'}
             icon="🔐"
             onPress={() => navigation.navigate('TwoFactorSetup')}
             theme={theme}
             showBadge={authUser?.two_factor_enabled}
           />
-          
+
           <SettingItem
             title="Notifications"
             subtitle="Manage your alerts"
@@ -535,14 +521,12 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             theme={theme}
             showBadge={false}
           />
-          
+
           <View style={styles.settingItem}>
             <View style={styles.settingContent}>
               <Text style={styles.settingIcon}>🌙</Text>
               <View style={styles.settingText}>
-                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
-                  Dark Mode
-                </Text>
+                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Dark Mode</Text>
                 <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
                   {themeMode === 'dark' ? 'Enabled' : 'Disabled'}
                 </Text>
@@ -555,7 +539,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               thumbColor={theme.colors.background}
             />
           </View>
-          
+
           <SettingItem
             title="Privacy & Security"
             subtitle="Manage your data"
@@ -564,7 +548,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             theme={theme}
             showBadge={false}
           />
-          
+
           <SettingItem
             title="Help & Support"
             subtitle="Get help or contact us"
@@ -579,18 +563,16 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Account Actions */}
         <Card style={styles.accountCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Account
-          </Text>
-          
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Account</Text>
+
           <Spacer size="lg" />
-          
+
           <TouchableOpacity onPress={handleExportData} style={styles.accountAction}>
             <Text style={[styles.accountActionText, { color: theme.colors.primary[500] }]}>
               Export My Data
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity onPress={() => setShowDeleteModal(true)} style={styles.accountAction}>
             <Text style={[styles.accountActionText, { color: theme.colors.error[500] }]}>
               Delete Account
@@ -612,11 +594,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       </ScrollView>
 
       {/* Edit Profile Modal */}
-      <Modal
-        visible={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title="Edit Profile"
-      >
+      <Modal visible={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Profile">
         <View style={styles.modalContent}>
           <TextInput
             style={[styles.input, { color: theme.colors.text }]}
@@ -625,9 +603,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             placeholder="First Name"
             placeholderTextColor={theme.colors.textSecondary}
           />
-          
+
           <Spacer size="md" />
-          
+
           <TextInput
             style={[styles.input, { color: theme.colors.text }]}
             value={profileData.last_name}
@@ -635,9 +613,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             placeholder="Last Name"
             placeholderTextColor={theme.colors.textSecondary}
           />
-          
+
           <Spacer size="md" />
-          
+
           <TextInput
             style={[styles.input, { color: theme.colors.text }]}
             value={profileData.phone}
@@ -646,9 +624,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             placeholderTextColor={theme.colors.textSecondary}
             keyboardType="phone-pad"
           />
-          
+
           <Spacer size="lg" />
-          
+
           <Button
             title="Save Changes"
             onPress={handleSaveProfile}
@@ -668,64 +646,71 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <ScrollView style={styles.modalScrollContent}>
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Height (cm)
-              </Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Height (cm)</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={healthMetrics.height.toString()}
-                onChangeText={(text) => setHealthMetrics({ ...healthMetrics, height: parseInt(text) || 0 })}
+                onChangeText={(text) =>
+                  setHealthMetrics({ ...healthMetrics, height: parseInt(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="md" />
-            
+
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Weight (kg)
-              </Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Weight (kg)</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={healthMetrics.weight.toString()}
-                onChangeText={(text) => setHealthMetrics({ ...healthMetrics, weight: parseFloat(text) || 0 })}
+                onChangeText={(text) =>
+                  setHealthMetrics({ ...healthMetrics, weight: parseFloat(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="md" />
-            
+
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Age
-              </Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Age</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={healthMetrics.age.toString()}
-                onChangeText={(text) => setHealthMetrics({ ...healthMetrics, age: parseInt(text) || 0 })}
+                onChangeText={(text) =>
+                  setHealthMetrics({ ...healthMetrics, age: parseInt(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="md" />
-            
+
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Activity Level
-              </Text>
-              {ACTIVITY_LEVELS.map(level => (
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Activity Level</Text>
+              {ACTIVITY_LEVELS.map((level) => (
                 <TouchableOpacity
                   key={level.value}
                   style={[
                     styles.radioOption,
                     healthMetrics.activityLevel === level.value && styles.radioOptionSelected,
-                    healthMetrics.activityLevel === level.value && { backgroundColor: theme.colors.primary[100] },
+                    healthMetrics.activityLevel === level.value && {
+                      backgroundColor: theme.colors.primary[100],
+                    },
                   ]}
-                  onPress={() => setHealthMetrics({ ...healthMetrics, activityLevel: level.value as any })}
+                  onPress={() =>
+                    setHealthMetrics({ ...healthMetrics, activityLevel: level.value as any })
+                  }
                 >
                   <View style={styles.radioCircle}>
                     {healthMetrics.activityLevel === level.value && (
-                      <View style={[styles.radioCircleSelected, { backgroundColor: theme.colors.primary[500] }]} />
+                      <View
+                        style={[
+                          styles.radioCircleSelected,
+                          { backgroundColor: theme.colors.primary[500] },
+                        ]}
+                      />
                     )}
                   </View>
                   <View style={styles.radioText}>
@@ -739,9 +724,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                 </TouchableOpacity>
               ))}
             </View>
-            
+
             <Spacer size="lg" />
-            
+
             <Button
               title="Save"
               onPress={handleSaveHealthMetrics}
@@ -762,33 +747,33 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <ScrollView style={styles.modalScrollContent}>
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Daily Calories
-              </Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Daily Calories</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={nutritionGoals.calories.toString()}
-                onChangeText={(text) => setNutritionGoals({ ...nutritionGoals, calories: parseInt(text) || 0 })}
+                onChangeText={(text) =>
+                  setNutritionGoals({ ...nutritionGoals, calories: parseInt(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="md" />
-            
+
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Protein (g)
-              </Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Protein (g)</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={nutritionGoals.protein.toString()}
-                onChangeText={(text) => setNutritionGoals({ ...nutritionGoals, protein: parseInt(text) || 0 })}
+                onChangeText={(text) =>
+                  setNutritionGoals({ ...nutritionGoals, protein: parseInt(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="md" />
-            
+
             <View style={styles.inputGroup}>
               <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
                 Carbohydrates (g)
@@ -796,55 +781,57 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={nutritionGoals.carbs.toString()}
-                onChangeText={(text) => setNutritionGoals({ ...nutritionGoals, carbs: parseInt(text) || 0 })}
+                onChangeText={(text) =>
+                  setNutritionGoals({ ...nutritionGoals, carbs: parseInt(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="md" />
-            
+
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Fat (g)
-              </Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Fat (g)</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={nutritionGoals.fat.toString()}
-                onChangeText={(text) => setNutritionGoals({ ...nutritionGoals, fat: parseInt(text) || 0 })}
+                onChangeText={(text) =>
+                  setNutritionGoals({ ...nutritionGoals, fat: parseInt(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="md" />
-            
+
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Fiber (g)
-              </Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Fiber (g)</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={nutritionGoals.fiber.toString()}
-                onChangeText={(text) => setNutritionGoals({ ...nutritionGoals, fiber: parseInt(text) || 0 })}
+                onChangeText={(text) =>
+                  setNutritionGoals({ ...nutritionGoals, fiber: parseInt(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="md" />
-            
+
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                Water (ml)
-              </Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Water (ml)</Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text }]}
                 value={nutritionGoals.water.toString()}
-                onChangeText={(text) => setNutritionGoals({ ...nutritionGoals, water: parseInt(text) || 0 })}
+                onChangeText={(text) =>
+                  setNutritionGoals({ ...nutritionGoals, water: parseInt(text) || 0 })
+                }
                 keyboardType="numeric"
               />
             </View>
-            
+
             <Spacer size="lg" />
-            
+
             <Button
               title="Save Goals"
               onPress={handleSaveGoals}
@@ -864,7 +851,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       >
         <ScrollView style={styles.modalScrollContent}>
           <View style={styles.modalContent}>
-            {dietaryRestrictions.map(restriction => (
+            {dietaryRestrictions.map((restriction) => (
               <TouchableOpacity
                 key={restriction.id}
                 style={[
@@ -873,29 +860,27 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                   restriction.selected && { backgroundColor: theme.colors.primary[50] },
                 ]}
                 onPress={() => {
-                  setDietaryRestrictions(prev =>
-                    prev.map(r =>
-                      r.id === restriction.id ? { ...r, selected: !r.selected } : r
-                    )
+                  setDietaryRestrictions((prev) =>
+                    prev.map((r) => (r.id === restriction.id ? { ...r, selected: !r.selected } : r))
                   );
                 }}
               >
-                <View style={[
-                  styles.checkbox,
-                  restriction.selected && { backgroundColor: theme.colors.primary[500] },
-                ]}>
-                  {restriction.selected && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
+                <View
+                  style={[
+                    styles.checkbox,
+                    restriction.selected && { backgroundColor: theme.colors.primary[500] },
+                  ]}
+                >
+                  {restriction.selected && <Text style={styles.checkmark}>✓</Text>}
                 </View>
                 <Text style={[styles.checkboxLabel, { color: theme.colors.text }]}>
                   {restriction.name}
                 </Text>
               </TouchableOpacity>
             ))}
-            
+
             <Spacer size="lg" />
-            
+
             <Button
               title="Save Preferences"
               onPress={handleSaveDietaryRestrictions}
@@ -914,27 +899,26 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         title="Delete Account"
       >
         <View style={styles.modalContent}>
-          <Text style={[styles.deleteWarning, { color: theme.colors.error[500] }]}>
-            ⚠️ Warning
-          </Text>
-          
+          <Text style={[styles.deleteWarning, { color: theme.colors.error[500] }]}>⚠️ Warning</Text>
+
           <Spacer size="md" />
-          
+
           <Text style={[styles.deleteText, { color: theme.colors.text }]}>
-            This action cannot be undone. All your data including meals, favorites, and analysis history will be permanently deleted.
+            This action cannot be undone. All your data including meals, favorites, and analysis
+            history will be permanently deleted.
           </Text>
-          
+
           <Spacer size="lg" />
-          
+
           <Button
             title="Cancel"
             onPress={() => setShowDeleteModal(false)}
             variant="outline"
             fullWidth
           />
-          
+
           <Spacer size="md" />
-          
+
           <Button
             title="Delete My Account"
             onPress={handleDeleteAccount}
@@ -956,14 +940,19 @@ interface SettingItemProps {
   showBadge: boolean;
 }
 
-const SettingItem: React.FC<SettingItemProps> = ({ title, subtitle, icon, onPress, theme, showBadge }) => (
+const SettingItem: React.FC<SettingItemProps> = ({
+  title,
+  subtitle,
+  icon,
+  onPress,
+  theme,
+  showBadge,
+}) => (
   <TouchableOpacity onPress={onPress} style={styles.settingItem}>
     <View style={styles.settingContent}>
       <Text style={styles.settingIcon}>{icon}</Text>
       <View style={styles.settingText}>
-        <Text style={[styles.settingTitle, { color: theme.colors.text }]}>
-          {title}
-        </Text>
+        <Text style={[styles.settingTitle, { color: theme.colors.text }]}>{title}</Text>
         <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
           {subtitle}
         </Text>
@@ -973,9 +962,7 @@ const SettingItem: React.FC<SettingItemProps> = ({ title, subtitle, icon, onPres
       {showBadge && (
         <View style={[styles.settingBadge, { backgroundColor: theme.colors.primary[500] }]} />
       )}
-      <Text style={[styles.settingArrow, { color: theme.colors.textSecondary }]}>
-        →
-      </Text>
+      <Text style={[styles.settingArrow, { color: theme.colors.textSecondary }]}>→</Text>
     </View>
   </TouchableOpacity>
 );
@@ -988,12 +975,8 @@ interface MetricRowProps {
 
 const MetricRow: React.FC<MetricRowProps> = ({ label, value, theme }) => (
   <View style={styles.metricRow}>
-    <Text style={[styles.metricRowLabel, { color: theme.colors.textSecondary }]}>
-      {label}
-    </Text>
-    <Text style={[styles.metricRowValue, { color: theme.colors.text }]}>
-      {value}
-    </Text>
+    <Text style={[styles.metricRowLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
+    <Text style={[styles.metricRowValue, { color: theme.colors.text }]}>{value}</Text>
   </View>
 );
 

@@ -1,22 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
   Alert,
   Platform,
   Dimensions,
-  Animated
+  Animated,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { Camera, CameraType, FlashMode } from 'expo-camera';
+import { Camera, CameraType as CameraTypeEnum, FlashMode as FlashModeEnum } from 'expo-camera';
+
+// Use the values directly from the enums
+const CameraType = {
+  back: 'back' as const,
+  front: 'front' as const,
+};
+
+const FlashMode = {
+  off: 'off' as const,
+  on: 'on' as const,
+  auto: 'auto' as const,
+};
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { MainStackParamList } from '@/navigation/types';
 import { CAMERA_CONFIG, ERROR_MESSAGES, LOADING_MESSAGES } from '@/constants';
@@ -41,7 +53,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   const [flashMode, setFlashMode] = useState(FlashMode.off);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showGuidance, setShowGuidance] = useState(true);
-  
+
   const cameraRef = useRef<Camera>(null);
   const guideAnimation = useRef(new Animated.Value(0)).current;
   const pulseAnimation = useRef(new Animated.Value(1)).current;
@@ -155,13 +167,11 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const toggleCameraType = () => {
-    setType(current => 
-      current === CameraType.back ? CameraType.front : CameraType.back
-    );
+    setType((current) => (current === CameraType.back ? CameraType.front : CameraType.back));
   };
 
   const toggleFlash = () => {
-    setFlashMode(current => {
+    setFlashMode((current) => {
       if (current === FlashMode.off) return FlashMode.on;
       if (current === FlashMode.on) return FlashMode.auto;
       return FlashMode.off;
@@ -190,9 +200,9 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   if (showCamera) {
     return (
       <View style={styles.cameraContainer}>
-        <Camera 
+        <Camera
           ref={cameraRef}
-          style={styles.camera} 
+          style={styles.camera}
           type={type}
           flashMode={flashMode}
           ratio="16:9"
@@ -200,23 +210,17 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.cameraOverlay}>
             {/* Header Controls */}
             <View style={styles.cameraHeader}>
-              <TouchableOpacity 
-                onPress={handleGoBack} 
-                style={styles.cameraControl}
-              >
+              <TouchableOpacity onPress={handleGoBack} style={styles.cameraControl}>
                 <Text style={styles.controlIcon}>✕</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.cameraHeaderRight}>
-                <TouchableOpacity 
-                  onPress={toggleFlash} 
-                  style={styles.cameraControl}
-                >
+                <TouchableOpacity onPress={toggleFlash} style={styles.cameraControl}>
                   <Text style={styles.controlIcon}>{getFlashIcon()}</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  onPress={toggleCameraType} 
+
+                <TouchableOpacity
+                  onPress={toggleCameraType}
                   style={[styles.cameraControl, { marginLeft: 16 }]}
                 >
                   <Text style={styles.controlIcon}>🔄</Text>
@@ -227,13 +231,13 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
             {/* Guided Capture Overlay */}
             {showGuidance && (
               <View style={styles.guidanceContainer}>
-                <Animated.View 
+                <Animated.View
                   style={[
                     styles.plateGuide,
                     {
                       opacity: guideAnimation,
                       borderColor: theme.colors.primary[500],
-                    }
+                    },
                   ]}
                 >
                   <View style={[styles.corner, styles.cornerTopLeft]} />
@@ -241,10 +245,8 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
                   <View style={[styles.corner, styles.cornerBottomLeft]} />
                   <View style={[styles.corner, styles.cornerBottomRight]} />
                 </Animated.View>
-                
-                <Text style={styles.guidanceText}>
-                  Center your meal within the frame
-                </Text>
+
+                <Text style={styles.guidanceText}>Center your meal within the frame</Text>
               </View>
             )}
 
@@ -261,18 +263,13 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
                 accessibilityHint={getActionHint('toggle guidance')}
                 accessibilityRole="button"
               >
-                <Text style={styles.guidanceToggleText}>
-                  {showGuidance ? '📐' : '📐'}
-                </Text>
+                <Text style={styles.guidanceToggleText}>{showGuidance ? '📐' : '📐'}</Text>
               </TouchableOpacity>
 
               <Animated.View style={{ transform: [{ scale: pulseAnimation }] }}>
                 <TouchableOpacity
                   onPress={handleTakePicture}
-                  style={[
-                    styles.captureButton,
-                    isCapturing && styles.captureButtonActive
-                  ]}
+                  style={[styles.captureButton, isCapturing && styles.captureButtonActive]}
                   disabled={isCapturing}
                   accessible={true}
                   accessibilityLabel="Capture photo"
@@ -306,9 +303,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.content}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack}>
-            <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>
-              ← Back
-            </Text>
+            <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Back</Text>
           </TouchableOpacity>
         </View>
 
@@ -321,14 +316,13 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
 
           <Spacer size="xl" />
 
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            Capture Your Meal
-          </Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Capture Your Meal</Text>
 
           <Spacer size="md" />
 
           <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-            Take a photo of your meal or select from your gallery to get instant nutritional analysis
+            Take a photo of your meal or select from your gallery to get instant nutritional
+            analysis
           </Text>
 
           <Spacer size="xxl" />
@@ -362,30 +356,30 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={[styles.tipsTitle, { color: theme.colors.text }]}>
             Tips for best results:
           </Text>
-          
+
           <Spacer size="sm" />
-          
+
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>💡</Text>
             <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
               Ensure good lighting - natural light works best
             </Text>
           </View>
-          
+
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>🍽️</Text>
             <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
               Show the entire meal in frame
             </Text>
           </View>
-          
+
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>📐</Text>
             <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
               Take photo from above at 45° angle
             </Text>
           </View>
-          
+
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>🚫</Text>
             <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
@@ -395,9 +389,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </View>
 
-      {isLoading && (
-        <Loading overlay message={LOADING_MESSAGES.PREPARING_CAMERA} />
-      )}
+      {isLoading && <LoadingOverlay visible={true} message={LOADING_MESSAGES.PREPARING_CAMERA} />}
     </Container>
   );
 };

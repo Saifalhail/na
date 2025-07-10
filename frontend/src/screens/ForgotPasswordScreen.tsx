@@ -34,7 +34,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
     try {
       // TODO: Implement password reset API call
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate API call
       setIsSubmitted(true);
     } catch (error: any) {
       setError(error.message || 'An error occurred. Please try again.');
@@ -54,21 +54,19 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.successIcon}>
             <Text style={styles.successIconText}>📧</Text>
           </View>
-          
+
           <Spacer size="xl" />
-          
-          <Text style={[styles.title, { color: theme.colors.text }]}>
-            Check Your Email
-          </Text>
-          
+
+          <Text style={[styles.title, { color: theme.colors.text }]}>Check Your Email</Text>
+
           <Spacer size="md" />
-          
+
           <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
             We've sent a password reset link to {email}
           </Text>
-          
+
           <Spacer size="xxl" />
-          
+
           <Button
             title="Back to Sign In"
             onPress={handleBackToLogin}
@@ -83,18 +81,16 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Reset Password
-        </Text>
-        
+        <Text style={[styles.title, { color: theme.colors.text }]}>Reset Password</Text>
+
         <Spacer size="md" />
-        
+
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           Enter your email address and we'll send you a link to reset your password
         </Text>
-        
+
         <Spacer size="xxl" />
-        
+
         <TextInput
           label="Email"
           value={email}
@@ -109,24 +105,20 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
           autoComplete="email"
           textContentType="emailAddress"
         />
-        
+
         <Spacer size="xl" />
-        
+
         <Button
-          title={isLoading ? "Sending..." : "Send Reset Link"}
+          title={isLoading ? 'Sending...' : 'Send Reset Link'}
           onPress={handleResetPassword}
           variant="primary"
           disabled={isLoading}
           style={styles.button}
         />
-        
+
         <Spacer size="lg" />
-        
-        <Button
-          title="Back to Sign In"
-          onPress={handleBackToLogin}
-          variant="text"
-        />
+
+        <Button title="Back to Sign In" onPress={handleBackToLogin} variant="text" />
       </View>
     </Container>
   );

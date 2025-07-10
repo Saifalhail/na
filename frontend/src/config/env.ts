@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 interface Environment {
   apiUrl: string;
   apiVersion: string;
+  appVersion: string;
   googleOAuthClientId: string;
   environment: 'development' | 'staging' | 'production';
   enableAnalytics: boolean;
@@ -17,6 +18,7 @@ const getEnvVars = (): Environment => {
   return {
     apiUrl: Constants.expoConfig?.extra?.apiUrl || 'http://127.0.0.1:8000',
     apiVersion: Constants.expoConfig?.extra?.apiVersion || 'v1',
+    appVersion: Constants.expoConfig?.version || '1.0.0',
     googleOAuthClientId: Constants.expoConfig?.extra?.googleOAuthClientId || '',
     environment: Constants.expoConfig?.extra?.environment || 'development',
     enableAnalytics: Constants.expoConfig?.extra?.enableAnalytics || false,
@@ -40,6 +42,7 @@ export const getApiUrl = (endpoint: string): string => {
 export const {
   apiUrl,
   apiVersion,
+  appVersion,
   googleOAuthClientId,
   environment,
   enableAnalytics,
@@ -49,3 +52,10 @@ export const {
   enableOfflineMode,
   sentryDsn,
 } = env;
+
+// Export API_CONFIG for backward compatibility
+export const API_CONFIG = {
+  API_URL: apiUrl,
+  API_VERSION: apiVersion,
+  APP_VERSION: appVersion,
+};

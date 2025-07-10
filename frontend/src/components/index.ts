@@ -15,7 +15,7 @@ export { ErrorBoundary } from './ErrorBoundary';
 
 // Re-export specific components for convenience
 export { Container, Row, Column, Spacer, Divider } from './layout';
-export { Button, TextInput, Card, Loading, ErrorDisplay, Form, Switch, Select } from './base';
+export { Button, TextInput, Card, ErrorDisplay, Form, Switch, Select } from './base';
 
 // Component type exports
 export type { ButtonVariant, ButtonSize } from './base';

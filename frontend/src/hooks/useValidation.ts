@@ -19,89 +19,98 @@ export const useValidation = (rules?: ValidationRules) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const validate = useCallback((name: string, value: any): string | null => {
-    if (!rules) return null;
+  const validate = useCallback(
+    (name: string, value: any): string | null => {
+      if (!rules) return null;
 
-    // Required validation
-    if (rules.required && !value) {
-      return 'This field is required';
-    }
-
-    // String validations
-    if (typeof value === 'string') {
-      // Min length
-      if (rules.minLength && value.length < rules.minLength) {
-        return `Must be at least ${rules.minLength} characters`;
+      // Required validation
+      if (rules.required && !value) {
+        return 'This field is required';
       }
 
-      // Max length
-      if (rules.maxLength && value.length > rules.maxLength) {
-        return `Must be no more than ${rules.maxLength} characters`;
-      }
+      // String validations
+      if (typeof value === 'string') {
+        // Min length
+        if (rules.minLength && value.length < rules.minLength) {
+          return `Must be at least ${rules.minLength} characters`;
+        }
 
-      // Email validation
-      if (rules.email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) {
-          return 'Please enter a valid email address';
+        // Max length
+        if (rules.maxLength && value.length > rules.maxLength) {
+          return `Must be no more than ${rules.maxLength} characters`;
+        }
+
+        // Email validation
+        if (rules.email) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            return 'Please enter a valid email address';
+          }
+        }
+
+        // Pattern validation
+        if (rules.pattern && !rules.pattern.test(value)) {
+          return 'Invalid format';
         }
       }
 
-      // Pattern validation
-      if (rules.pattern && !rules.pattern.test(value)) {
-        return 'Invalid format';
-      }
-    }
-
-    // Numeric validation
-    if (rules.numeric) {
-      const numValue = Number(value);
-      if (isNaN(numValue)) {
-        return 'Must be a number';
-      }
-    }
-
-    // Custom validations
-    if (rules.custom) {
-      for (const rule of rules.custom) {
-        if (!rule.validate(value)) {
-          return rule.message;
+      // Numeric validation
+      if (rules.numeric) {
+        const numValue = Number(value);
+        if (isNaN(numValue)) {
+          return 'Must be a number';
         }
       }
-    }
 
-    return null;
-  }, [rules]);
+      // Custom validations
+      if (rules.custom) {
+        for (const rule of rules.custom) {
+          if (!rule.validate(value)) {
+            return rule.message;
+          }
+        }
+      }
 
-  const validateField = useCallback((name: string, value: any) => {
-    const error = validate(name, value);
-    
-    setErrors(prev => ({
-      ...prev,
-      [name]: error || '',
-    }));
+      return null;
+    },
+    [rules]
+  );
 
-    return !error;
-  }, [validate]);
-
-  const validateAll = useCallback((values: Record<string, any>) => {
-    const newErrors: Record<string, string> = {};
-    let isValid = true;
-
-    Object.entries(values).forEach(([name, value]) => {
+  const validateField = useCallback(
+    (name: string, value: any) => {
       const error = validate(name, value);
-      if (error) {
-        newErrors[name] = error;
-        isValid = false;
-      }
-    });
 
-    setErrors(newErrors);
-    return isValid;
-  }, [validate]);
+      setErrors((prev) => ({
+        ...prev,
+        [name]: error || '',
+      }));
+
+      return !error;
+    },
+    [validate]
+  );
+
+  const validateAll = useCallback(
+    (values: Record<string, any>) => {
+      const newErrors: Record<string, string> = {};
+      let isValid = true;
+
+      Object.entries(values).forEach(([name, value]) => {
+        const error = validate(name, value);
+        if (error) {
+          newErrors[name] = error;
+          isValid = false;
+        }
+      });
+
+      setErrors(newErrors);
+      return isValid;
+    },
+    [validate]
+  );
 
   const setFieldTouched = useCallback((name: string, isTouched = true) => {
-    setTouched(prev => ({
+    setTouched((prev) => ({
       ...prev,
       [name]: isTouched,
     }));
@@ -112,9 +121,12 @@ export const useValidation = (rules?: ValidationRules) => {
     setTouched({});
   }, []);
 
-  const getFieldError = useCallback((name: string) => {
-    return touched[name] ? errors[name] : undefined;
-  }, [errors, touched]);
+  const getFieldError = useCallback(
+    (name: string) => {
+      return touched[name] ? errors[name] : undefined;
+    },
+    [errors, touched]
+  );
 
   return {
     errors,
@@ -133,7 +145,7 @@ export const commonRules = {
     required: true,
     email: true,
   } as ValidationRules,
-  
+
   password: {
     required: true,
     minLength: 8,
@@ -152,14 +164,14 @@ export const commonRules = {
       },
     ],
   } as ValidationRules,
-  
+
   phoneNumber: {
     required: true,
     pattern: /^\+?[\d\s-()]+$/,
     minLength: 10,
     maxLength: 20,
   } as ValidationRules,
-  
+
   numeric: {
     required: true,
     numeric: true,

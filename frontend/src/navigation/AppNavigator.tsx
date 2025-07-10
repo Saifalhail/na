@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/hooks/useTheme';
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
-import { Loading } from '@/components/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 
 const Stack = createStackNavigator();
 
@@ -14,7 +14,7 @@ export const AppNavigator: React.FC = () => {
   const { theme } = useTheme();
 
   if (isLoading) {
-    return <Loading overlay />;
+    return <LoadingOverlay visible={true} />;
   }
 
   return (

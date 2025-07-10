@@ -27,7 +27,7 @@ interface Props {
 
 export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
   usePerformanceMonitor('HomeScreen');
-  
+
   const { theme } = useTheme();
   const { user } = useUserStore();
   const { todayStats, meals } = useMealStore();
@@ -68,7 +68,7 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
               {user?.first_name || 'Welcome'}
             </Text>
           </View>
-          
+
           <TouchableOpacity onPress={handleProfilePress}>
             <View style={[styles.avatar, { backgroundColor: theme.colors.primary[500] }]}>
               <Text style={[styles.avatarText, { color: theme.colors.background }]}>
@@ -82,15 +82,13 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
 
         {/* Quick Action - Camera */}
         <Card style={styles.cameraCard}>
-          <Text style={[styles.cameraTitle, { color: theme.colors.text }]}>
-            Analyze Your Meal
-          </Text>
+          <Text style={[styles.cameraTitle, { color: theme.colors.text }]}>Analyze Your Meal</Text>
           <Text style={[styles.cameraSubtitle, { color: theme.colors.textSecondary }]}>
             Take a photo to get instant nutritional analysis
           </Text>
-          
+
           <Spacer size="lg" />
-          
+
           <Button
             title="📸 Start Analysis"
             onPress={handleCameraPress}
@@ -103,12 +101,10 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
 
         {/* Today's Stats */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Today's Summary
-          </Text>
-          
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Today's Summary</Text>
+
           <Spacer size="md" />
-          
+
           <Row style={styles.statsRow}>
             <StatCard
               title="Calories"
@@ -117,9 +113,9 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
               color={theme.colors.primary[500]}
               theme={theme}
             />
-            
+
             <Spacer size="md" horizontal />
-            
+
             <StatCard
               title="Meals"
               value={(todayStats?.meals || 0).toString()}
@@ -135,28 +131,20 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
         {/* Recent Meals */}
         <View style={styles.section}>
           <Row style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Recent Meals
-            </Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Recent Meals</Text>
             <TouchableOpacity onPress={handleViewHistory}>
-              <Text style={[styles.seeAllText, { color: theme.colors.primary[500] }]}>
-                See All
-              </Text>
+              <Text style={[styles.seeAllText, { color: theme.colors.primary[500] }]}>See All</Text>
             </TouchableOpacity>
           </Row>
-          
+
           <Spacer size="md" />
-          
+
           {todaysMeals.length > 0 ? (
             <OptimizedList
               data={todaysMeals.slice(0, 3)}
               renderItem={({ item, index }) => (
                 <View>
-                  <MealCard
-                    meal={item}
-                    onPress={() => handleMealPress(item.id)}
-                    theme={theme}
-                  />
+                  <MealCard meal={item} onPress={() => handleMealPress(item.id)} theme={theme} />
                   {index < 2 && <Spacer size="md" />}
                 </View>
               )}
@@ -177,33 +165,27 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Quick Actions
-          </Text>
-          
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Quick Actions</Text>
+
           <Spacer size="md" />
-          
+
           <Row style={styles.quickActions}>
             <TouchableOpacity
               style={[styles.quickAction, { backgroundColor: theme.colors.surface }]}
               onPress={handleViewFavorites}
             >
               <Text style={styles.quickActionIcon}>❤️</Text>
-              <Text style={[styles.quickActionText, { color: theme.colors.text }]}>
-                Favorites
-              </Text>
+              <Text style={[styles.quickActionText, { color: theme.colors.text }]}>Favorites</Text>
             </TouchableOpacity>
-            
+
             <Spacer size="md" horizontal />
-            
+
             <TouchableOpacity
               style={[styles.quickAction, { backgroundColor: theme.colors.surface }]}
               onPress={handleViewHistory}
             >
               <Text style={styles.quickActionIcon}>📊</Text>
-              <Text style={[styles.quickActionText, { color: theme.colors.text }]}>
-                History
-              </Text>
+              <Text style={[styles.quickActionText, { color: theme.colors.text }]}>History</Text>
             </TouchableOpacity>
           </Row>
         </View>
@@ -231,15 +213,9 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = React.memo(({ title, value, subtitle, color, theme }) => (
   <Card style={[styles.statCard, { flex: 1 }]}>
-    <Text style={[styles.statTitle, { color: theme.colors.textSecondary }]}>
-      {title}
-    </Text>
-    <Text style={[styles.statValue, { color }]}>
-      {value}
-    </Text>
-    <Text style={[styles.statSubtitle, { color: theme.colors.textSecondary }]}>
-      {subtitle}
-    </Text>
+    <Text style={[styles.statTitle, { color: theme.colors.textSecondary }]}>{title}</Text>
+    <Text style={[styles.statValue, { color }]}>{value}</Text>
+    <Text style={[styles.statSubtitle, { color: theme.colors.textSecondary }]}>{subtitle}</Text>
   </Card>
 ));
 
@@ -249,37 +225,41 @@ interface MealCardProps {
   theme: any;
 }
 
-const MealCard: React.FC<MealCardProps> = React.memo(({ meal, onPress, theme }) => (
-  <TouchableOpacity onPress={onPress}>
-    <Card style={styles.mealCard}>
-      <Row>
-        {meal.image_url && (
-          <OptimizedImage
-            source={{ uri: meal.image_url }}
-            width={60}
-            height={60}
-            style={styles.mealImage}
-            priority="normal"
-          />
-        )}
-        <View style={[styles.mealInfo, meal.image_url && styles.mealInfoWithImage]}>
-          <Text style={[styles.mealName, { color: theme.colors.text }]}>
-            {meal.name || 'Untitled Meal'}
+const MealCard: React.FC<MealCardProps> = React.memo(
+  ({ meal, onPress, theme }) => (
+    <TouchableOpacity onPress={onPress}>
+      <Card style={styles.mealCard}>
+        <Row>
+          {meal.image_url && (
+            <OptimizedImage
+              source={{ uri: meal.image_url }}
+              width={60}
+              height={60}
+              style={styles.mealImage}
+              priority="normal"
+            />
+          )}
+          <View style={[styles.mealInfo, meal.image_url && styles.mealInfoWithImage]}>
+            <Text style={[styles.mealName, { color: theme.colors.text }]}>
+              {meal.name || 'Untitled Meal'}
+            </Text>
+            <Text style={[styles.mealTime, { color: theme.colors.textSecondary }]}>
+              {formatDate(new Date(meal.consumedAt || meal.created_at))}
+            </Text>
+          </View>
+          <Text style={[styles.mealCalories, { color: theme.colors.primary[500] }]}>
+            {formatCalories(meal.calories || meal.total_calories || 0)}
           </Text>
-          <Text style={[styles.mealTime, { color: theme.colors.textSecondary }]}>
-            {formatDate(new Date(meal.consumedAt || meal.created_at))}
-          </Text>
-        </View>
-        <Text style={[styles.mealCalories, { color: theme.colors.primary[500] }]}>
-          {formatCalories(meal.calories || meal.total_calories || 0)}
-        </Text>
-      </Row>
-    </Card>
-  </TouchableOpacity>
-), (prevProps, nextProps) => {
-  return prevProps.meal.id === nextProps.meal.id &&
-         prevProps.meal.calories === nextProps.meal.calories;
-});
+        </Row>
+      </Card>
+    </TouchableOpacity>
+  ),
+  (prevProps, nextProps) => {
+    return (
+      prevProps.meal.id === nextProps.meal.id && prevProps.meal.calories === nextProps.meal.calories
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   container: {

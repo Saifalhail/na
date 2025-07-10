@@ -12,7 +12,7 @@ export function useStyles<T extends StyleSheet.NamedStyles<T>>(
   createStyles: (theme: Theme) => T
 ): T {
   const theme = useAppTheme();
-  
+
   return useMemo(() => {
     return StyleSheet.create(createStyles(theme));
   }, [theme, createStyles]);
@@ -29,7 +29,7 @@ export function useDynamicStyles<T extends StyleSheet.NamedStyles<T>, P>(
   props: P
 ): T {
   const theme = useAppTheme();
-  
+
   return useMemo(() => {
     return StyleSheet.create(createStyles(theme, props));
   }, [theme, props, createStyles]);

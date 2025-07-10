@@ -18,20 +18,10 @@ interface SpinnerProps {
   style?: ViewStyle;
 }
 
-export const Spinner: React.FC<SpinnerProps> = ({
-  size = 'large',
-  color,
-  style,
-}) => {
+export const Spinner: React.FC<SpinnerProps> = ({ size = 'large', color, style }) => {
   const { theme } = useTheme();
-  
-  return (
-    <ActivityIndicator
-      size={size}
-      color={color || theme.colors.primary[500]}
-      style={style}
-    />
-  );
+
+  return <ActivityIndicator size={size} color={color || theme.colors.primary[500]} style={style} />;
 };
 
 // Loading overlay component
@@ -188,55 +178,56 @@ export const LoadingContainer: React.FC<LoadingContainerProps> = ({
   return <>{children}</>;
 };
 
-const createStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.l,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    ...theme.shadows.md,
-  },
-  message: {
-    marginTop: theme.spacing.m,
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.primary,
-  },
-  skeleton: {
-    backgroundColor: theme.colors.neutral[200],
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.l,
-  },
-  errorText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.error[500],
-    textAlign: 'center',
-    marginBottom: theme.spacing.m,
-  },
-  retryButton: {
-    paddingHorizontal: theme.spacing.m,
-    paddingVertical: theme.spacing.s,
-  },
-  retryText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.primary[500],
-    fontWeight: '600',
-  },
-  emptyText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.secondary,
-    textAlign: 'center',
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    content: {
+      backgroundColor: theme.colors.surface,
+      padding: theme.spacing.l,
+      borderRadius: theme.borderRadius.md,
+      alignItems: 'center',
+      ...theme.shadows.md,
+    },
+    message: {
+      marginTop: theme.spacing.m,
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.text.primary,
+    },
+    skeleton: {
+      backgroundColor: theme.colors.neutral[200],
+    },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: theme.spacing.l,
+    },
+    errorText: {
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.error[500],
+      textAlign: 'center',
+      marginBottom: theme.spacing.m,
+    },
+    retryButton: {
+      paddingHorizontal: theme.spacing.m,
+      paddingVertical: theme.spacing.s,
+    },
+    retryText: {
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.primary[500],
+      fontWeight: '600',
+    },
+    emptyText: {
+      fontSize: theme.typography.fontSize.base,
+      color: theme.colors.text.secondary,
+      textAlign: 'center',
+    },
+  });
 
 // Export all components
 export default {

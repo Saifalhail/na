@@ -2,50 +2,59 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// Performance optimizations
-config.transformer = {
-  ...config.transformer,
-  minifierPath: 'metro-minify-terser',
-  minifierConfig: {
-    keep_fnames: true,
-    mangle: {
-      keep_fnames: true,
-    },
-    compress: {
-      drop_console: true, // Remove console logs in production
-      reduce_funcs: false,
-    },
-    output: {
-      ascii_only: true,
-      quote_style: 3,
-      wrap_iife: true,
-    },
+// Enhanced file exclusions for WSL + OneDrive compatibility
+const existingBlockList = config.resolver.blockList || [];
+const additionalBlocks = [
+  // Exclude temporary files and OneDrive sync files
+  /node_modules\/.*\/\..*/, // Hidden files in node_modules
+  /.*\.(tmp|lock|swp|swo)$/, // Temporary files
+  /.*-[A-Fa-f0-9]{8}$/, // Random suffix temp files (like acorn)
+  /\.bin\/\..+/, // Hidden files in .bin directories
+  /.*\.tmp$/, // Additional tmp files
+  /.*~$/, // Backup files
+  /.*\.(crdownload|part|download)$/, // Download files
+];
+
+config.resolver.blockList = Array.isArray(existingBlockList) 
+  ? [...existingBlockList, ...additionalBlocks]
+  : additionalBlocks;
+
+// Optimized file watching for WSL + OneDrive
+config.watchFolders = [__dirname];
+
+// Enhanced server configuration to handle permission issues
+config.server = {
+  enhanceMiddleware: (middleware) => {
+    return (req, res, next) => {
+      // Bypass temp file requests that cause permission errors
+      if (
+        req.url?.includes('.bin/.') ||
+        req.url?.match(/-[A-Fa-f0-9]{8}$/) ||
+        req.url?.includes('.tmp') ||
+        req.url?.endsWith('~')
+      ) {
+        res.statusCode = 200;
+        res.end();
+        return;
+      }
+      return middleware(req, res, next);
+    };
   },
 };
 
-// Optimize resolution
-config.resolver = {
-  ...config.resolver,
-  // Improve module resolution performance
-  hasteImplModulePath: null,
-  // Block list for files we don't need
-  blockList: [
-    /.*\.test\.(js|jsx|ts|tsx)$/,
-    /.*\/__tests__\/.*/,
-    /.*\.spec\.(js|jsx|ts|tsx)$/,
-    /.*\.stories\.(js|jsx|ts|tsx)$/,
-  ],
+// Optimize for WSL file system performance
+config.transformer = {
+  ...config.transformer,
+  // Reduce file system calls
+  enableBabelRCLookup: false,
+  enableBabelRuntime: false,
 };
 
-// Cache configuration for faster rebuilds
+// Cache configuration for faster rebuilds on WSL
 config.cacheStores = [
   new (require('metro-cache').FileStore)({
     root: './.metro-cache',
   }),
 ];
-
-// Watcher configuration
-config.watchFolders = [__dirname];
-config.resetCache = false;
 
 module.exports = config;

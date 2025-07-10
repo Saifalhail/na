@@ -5,20 +5,24 @@ global.__TEST__ = true;
 // Mock React Native with proper React components
 jest.mock('react-native', () => {
   const React = require('react');
-  
+
   const mockComponent = (name) => {
     const Component = React.forwardRef((props, ref) => {
-      return React.createElement('div', {
-        ...props,
-        ref,
-        'data-testid': props.testID || name,
-        'data-component': name,
-      }, props.children);
+      return React.createElement(
+        'div',
+        {
+          ...props,
+          ref,
+          'data-testid': props.testID || name,
+          'data-component': name,
+        },
+        props.children
+      );
     });
     Component.displayName = name;
     return Component;
   };
-  
+
   return {
     Platform: {
       OS: 'ios',
@@ -147,20 +151,24 @@ jest.mock('react-native-mmkv', () => ({
 // Mock react-native-gesture-handler
 jest.mock('react-native-gesture-handler', () => {
   const React = require('react');
-  
+
   const mockComponent = (name) => {
     const Component = React.forwardRef((props, ref) => {
-      return React.createElement('div', {
-        ...props,
-        ref,
-        'data-testid': props.testID || name,
-        'data-component': name,
-      }, props.children);
+      return React.createElement(
+        'div',
+        {
+          ...props,
+          ref,
+          'data-testid': props.testID || name,
+          'data-component': name,
+        },
+        props.children
+      );
     });
     Component.displayName = name;
     return Component;
   };
-  
+
   return {
     GestureHandlerRootView: mockComponent('GestureHandlerRootView'),
     TapGestureHandler: mockComponent('TapGestureHandler'),
@@ -178,20 +186,24 @@ jest.mock('react-native-gesture-handler', () => {
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => {
   const React = require('react');
-  
+
   const mockComponent = (name) => {
     const Component = React.forwardRef((props, ref) => {
-      return React.createElement('div', {
-        ...props,
-        ref,
-        'data-testid': props.testID || name,
-        'data-component': name,
-      }, props.children);
+      return React.createElement(
+        'div',
+        {
+          ...props,
+          ref,
+          'data-testid': props.testID || name,
+          'data-component': name,
+        },
+        props.children
+      );
     });
     Component.displayName = name;
     return Component;
   };
-  
+
   return {
     SafeAreaView: mockComponent('SafeAreaView'),
     SafeAreaProvider: mockComponent('SafeAreaProvider'),
@@ -350,6 +362,35 @@ jest.mock('./src/theme/index', () => ({
   darkTheme: mockTheme,
 }));
 
+// Mock layout components that use theme
+jest.mock('./src/components/layout/index', () => {
+  const React = require('react');
+
+  const mockComponent = (name) => {
+    const Component = React.forwardRef((props, ref) => {
+      return React.createElement(
+        'div',
+        {
+          ...props,
+          ref,
+          'data-testid': props.testID || name,
+          'data-component': name,
+        },
+        props.children
+      );
+    });
+    Component.displayName = name;
+    return Component;
+  };
+
+  return {
+    Container: mockComponent('Container'),
+    Row: mockComponent('Row'),
+    Column: mockComponent('Column'),
+    Spacer: mockComponent('Spacer'),
+    Divider: mockComponent('Divider'),
+  };
+});
 
 // Mock QR code library
 jest.mock('react-native-qrcode-svg', () => {
@@ -387,7 +428,6 @@ jest.mock('@react-native-google-signin/google-signin', () => ({
   },
 }));
 
-
 // Mock axios
 const mockAxiosInstance = {
   get: jest.fn().mockResolvedValue({ data: { success: true } }),
@@ -396,13 +436,13 @@ const mockAxiosInstance = {
   delete: jest.fn().mockResolvedValue({ data: { success: true } }),
   patch: jest.fn().mockResolvedValue({ data: { success: true } }),
   interceptors: {
-    request: { 
+    request: {
       use: jest.fn(),
-      eject: jest.fn() 
+      eject: jest.fn(),
     },
-    response: { 
+    response: {
       use: jest.fn(),
-      eject: jest.fn() 
+      eject: jest.fn(),
     },
   },
   defaults: {
@@ -440,6 +480,80 @@ jest.mock('./src/utils/accessibility', () => ({
     accessibilityState: { disabled, busy: loading },
   })),
 }));
+
+// Mock base components that use theme
+jest.mock('./src/components/base/TextInput', () => {
+  const React = require('react');
+
+  const TextInput = React.forwardRef((props, ref) => {
+    return React.createElement('input', {
+      ...props,
+      ref,
+      'data-testid': props.testID || 'TextInput',
+      'data-component': 'TextInput',
+      placeholder: props.placeholder,
+      value: props.value,
+      onChange: (e) => props.onChangeText && props.onChangeText(e.target.value),
+    });
+  });
+  TextInput.displayName = 'TextInput';
+  return { TextInput };
+});
+
+jest.mock('./src/components/base/Button', () => {
+  const React = require('react');
+
+  const Button = React.forwardRef((props, ref) => {
+    return React.createElement(
+      'button',
+      {
+        ...props,
+        ref,
+        'data-testid': props.testID || 'Button',
+        'data-component': 'Button',
+        onClick: props.onPress,
+        disabled: props.disabled || props.loading,
+      },
+      props.title || props.children
+    );
+  });
+  Button.displayName = 'Button';
+  return { Button };
+});
+
+jest.mock('./src/components/base/Loading', () => {
+  const React = require('react');
+
+  const Loading = (props) => {
+    return React.createElement(
+      'div',
+      {
+        ...props,
+        'data-testid': 'Loading',
+        'data-component': 'Loading',
+      },
+      'Loading...'
+    );
+  };
+  return { Loading };
+});
+
+jest.mock('./src/components/base/ErrorDisplay', () => {
+  const React = require('react');
+
+  const ErrorDisplay = (props) => {
+    return React.createElement(
+      'div',
+      {
+        ...props,
+        'data-testid': 'ErrorDisplay',
+        'data-component': 'ErrorDisplay',
+      },
+      props.message || props.error || 'Error'
+    );
+  };
+  return { ErrorDisplay };
+});
 
 // Additional testing utilities can be added here
 

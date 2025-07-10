@@ -36,31 +36,31 @@ class NotificationService {
   private pushToken: string | null = null;
   private notificationListener: any = null;
   private responseListener: any = null;
-  
+
   private constructor() {
     this.initialize();
   }
-  
+
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {
       NotificationService.instance = new NotificationService();
     }
     return NotificationService.instance;
   }
-  
+
   private async initialize() {
     // Register for push notifications
     await this.registerForPushNotifications();
-    
+
     // Set up notification listeners
     this.setupListeners();
-    
+
     // Configure notification categories (iOS)
     if (PlatformUtils.isIOS) {
       await this.setupNotificationCategories();
     }
   }
-  
+
   /**
    * Register for push notifications
    */
@@ -69,42 +69,42 @@ class NotificationService {
       console.log('Push notifications only work on physical devices');
       return null;
     }
-    
+
     try {
       // Get existing permissions
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
-      
+
       // Request permissions if not granted
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-      
+
       if (finalStatus !== 'granted') {
         console.log('Failed to get push notification permissions');
         return null;
       }
-      
+
       // Get push token
       const tokenData = await Notifications.getExpoPushTokenAsync({
         projectId: Constants.expoConfig?.extra?.eas?.projectId,
       });
-      
+
       this.pushToken = tokenData.data;
-      
+
       // Configure Android channel
       if (PlatformUtils.isAndroid) {
         await this.setupAndroidChannel();
       }
-      
+
       return this.pushToken;
     } catch (error) {
       console.error('Error registering for push notifications:', error);
       return null;
     }
   }
-  
+
   /**
    * Set up Android notification channel
    */
@@ -115,21 +115,21 @@ class NotificationService {
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
     });
-    
+
     await Notifications.setNotificationChannelAsync('meals', {
       name: 'Meal Reminders',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250],
       sound: 'default',
     });
-    
+
     await Notifications.setNotificationChannelAsync('goals', {
       name: 'Nutrition Goals',
       importance: Notifications.AndroidImportance.DEFAULT,
       vibrationPattern: [0, 100],
     });
   }
-  
+
   /**
    * Set up iOS notification categories
    */
@@ -150,7 +150,7 @@ class NotificationService {
         },
       },
     ]);
-    
+
     await Notifications.setNotificationCategoryAsync('goal_achieved', [
       {
         identifier: 'view_progress',
@@ -161,30 +161,30 @@ class NotificationService {
       },
     ]);
   }
-  
+
   /**
    * Set up notification listeners
    */
   private setupListeners() {
     // Listener for notifications received while app is foregrounded
-    this.notificationListener = Notifications.addNotificationReceivedListener(notification => {
+    this.notificationListener = Notifications.addNotificationReceivedListener((notification) => {
       console.log('Notification received:', notification);
       this.handleNotificationReceived(notification);
     });
-    
+
     // Listener for when user interacts with notification
-    this.responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+    this.responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
       console.log('Notification response:', response);
       this.handleNotificationResponse(response);
     });
   }
-  
+
   /**
    * Handle notification received
    */
   private handleNotificationReceived(notification: Notifications.Notification) {
     const { title, body, data } = notification.request.content;
-    
+
     // Handle based on notification type
     if (data?.type === 'meal_reminder') {
       // Could show an in-app banner
@@ -194,14 +194,14 @@ class NotificationService {
       console.log('Goal update received');
     }
   }
-  
+
   /**
    * Handle notification response
    */
   private handleNotificationResponse(response: Notifications.NotificationResponse) {
     const { data } = response.notification.request.content;
     const { actionIdentifier } = response;
-    
+
     // Handle action buttons
     if (actionIdentifier === 'log_meal') {
       // Navigate to camera screen
@@ -220,7 +220,7 @@ class NotificationService {
       // Navigate to progress screen
     }
   }
-  
+
   /**
    * Send local notification immediately
    */
@@ -236,10 +236,10 @@ class NotificationService {
       },
       trigger: null, // Immediate
     });
-    
+
     return id;
   }
-  
+
   /**
    * Schedule a local notification
    */
@@ -248,7 +248,7 @@ class NotificationService {
     trigger: { seconds?: number; date?: Date; repeats?: boolean }
   ): Promise<string> {
     let notificationTrigger: Notifications.NotificationTrigger;
-    
+
     if (trigger.date) {
       notificationTrigger = trigger.date;
     } else if (trigger.seconds) {
@@ -259,7 +259,7 @@ class NotificationService {
     } else {
       notificationTrigger = null; // Immediate
     }
-    
+
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title: content.title,
@@ -271,30 +271,30 @@ class NotificationService {
       },
       trigger: notificationTrigger,
     });
-    
+
     return id;
   }
-  
+
   /**
    * Cancel a scheduled notification
    */
   async cancelNotification(id: string): Promise<void> {
     await Notifications.cancelScheduledNotificationAsync(id);
   }
-  
+
   /**
    * Cancel all scheduled notifications
    */
   async cancelAllNotifications(): Promise<void> {
     await Notifications.cancelAllScheduledNotificationsAsync();
   }
-  
+
   /**
    * Get all scheduled notifications
    */
   async getScheduledNotifications(): Promise<ScheduledNotification[]> {
     const notifications = await Notifications.getAllScheduledNotificationsAsync();
-    return notifications.map(n => ({
+    return notifications.map((n) => ({
       id: n.identifier,
       content: {
         title: n.content.title || '',
@@ -307,7 +307,7 @@ class NotificationService {
       trigger: n.trigger,
     }));
   }
-  
+
   /**
    * Set badge count (iOS)
    */
@@ -317,7 +317,7 @@ class NotificationService {
     }
     return false;
   }
-  
+
   /**
    * Get badge count (iOS)
    */
@@ -327,19 +327,19 @@ class NotificationService {
     }
     return 0;
   }
-  
+
   /**
    * Schedule meal reminders
    */
   async scheduleMealReminders(times: { breakfast?: Date; lunch?: Date; dinner?: Date }) {
     // Cancel existing meal reminders
     const scheduled = await this.getScheduledNotifications();
-    const mealReminders = scheduled.filter(n => n.content.data?.type === 'meal_reminder');
-    await Promise.all(mealReminders.map(n => this.cancelNotification(n.id)));
-    
+    const mealReminders = scheduled.filter((n) => n.content.data?.type === 'meal_reminder');
+    await Promise.all(mealReminders.map((n) => this.cancelNotification(n.id)));
+
     // Schedule new reminders
     const reminders = [];
-    
+
     if (times.breakfast) {
       reminders.push(
         this.scheduleLocalNotification(
@@ -353,7 +353,7 @@ class NotificationService {
         )
       );
     }
-    
+
     if (times.lunch) {
       reminders.push(
         this.scheduleLocalNotification(
@@ -367,7 +367,7 @@ class NotificationService {
         )
       );
     }
-    
+
     if (times.dinner) {
       reminders.push(
         this.scheduleLocalNotification(
@@ -381,10 +381,10 @@ class NotificationService {
         )
       );
     }
-    
+
     await Promise.all(reminders);
   }
-  
+
   /**
    * Send goal achievement notification
    */
@@ -403,26 +403,26 @@ class NotificationService {
         body: `Well done! You've drunk ${value} glasses of water today!`,
       },
     };
-    
+
     const message = messages[goalType] || {
       title: '🎉 Goal Achieved!',
       body: `You've reached your ${goalType} goal!`,
     };
-    
+
     await this.sendLocalNotification({
       ...message,
       data: { type: 'goal_achieved', goalType },
       categoryId: 'goal_achieved',
     });
   }
-  
+
   /**
    * Get push token
    */
   getPushToken(): string | null {
     return this.pushToken;
   }
-  
+
   /**
    * Clean up listeners
    */

@@ -1,4 +1,4 @@
-import { ErrorResponse } from '@types/api';
+import { ErrorResponse } from '@/types/api';
 
 export class ApiError extends Error {
   constructor(
@@ -11,7 +11,7 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     Object.setPrototypeOf(this, ApiError.prototype);
   }
-  
+
   static fromResponse(response: ErrorResponse, statusCode: number): ApiError {
     return new ApiError(
       statusCode,
@@ -20,19 +20,19 @@ export class ApiError extends Error {
       response.details
     );
   }
-  
+
   isAuthError(): boolean {
     return this.statusCode === 401 || this.statusCode === 403;
   }
-  
+
   isValidationError(): boolean {
     return this.statusCode === 400 && this.errorCode === 'VALIDATION_ERROR';
   }
-  
+
   isRateLimitError(): boolean {
     return this.statusCode === 429;
   }
-  
+
   isServerError(): boolean {
     return this.statusCode >= 500;
   }
@@ -51,17 +51,17 @@ export class ValidationError extends ApiError {
     super(400, 'VALIDATION_ERROR', 'Validation failed', fields);
     Object.setPrototypeOf(this, ValidationError.prototype);
   }
-  
+
   getFieldErrors(): Record<string, string> {
     const errors: Record<string, string> = {};
-    
+
     for (const [field, messages] of Object.entries(this.fields)) {
       errors[field] = messages[0] || 'Invalid value';
     }
-    
+
     return errors;
   }
-  
+
   getFirstError(): string {
     const firstField = Object.keys(this.fields)[0];
     if (firstField && this.fields[firstField].length > 0) {
@@ -114,40 +114,40 @@ export const handleApiError = (error: any): never => {
   if (error.message === 'Network Error' || !error.response) {
     throw new NetworkError();
   }
-  
+
   const { status, data } = error.response;
-  
+
   // Validation error with field errors
   if (status === 400 && data.errors) {
     throw new ValidationError(data.errors);
   }
-  
+
   // Authentication error
   if (status === 401) {
     throw new AuthenticationError(data.message);
   }
-  
+
   // Authorization error
   if (status === 403) {
     throw new AuthorizationError(data.message);
   }
-  
+
   // Not found error
   if (status === 404) {
     throw new NotFoundError();
   }
-  
+
   // Rate limit error
   if (status === 429) {
     const retryAfter = error.response.headers['retry-after'];
     throw new RateLimitError(retryAfter ? parseInt(retryAfter, 10) : undefined, data.message);
   }
-  
+
   // Server error
   if (status >= 500) {
     throw new ServerError(data.message);
   }
-  
+
   // Generic API error
   throw ApiError.fromResponse(data, status);
 };

@@ -48,7 +48,7 @@ export const shadows: ShadowScale = {
 // Platform-specific shadow utilities
 export const getShadow = (level: keyof ShadowScale): Shadow => {
   const shadow = shadows[level];
-  
+
   if (Platform.OS === 'ios') {
     return {
       shadowColor: shadow.shadowColor,

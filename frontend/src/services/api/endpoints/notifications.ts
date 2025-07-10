@@ -7,16 +7,18 @@ import {
   CreateNotificationRequest,
   UpdateNotificationPreferencesRequest,
   PaginationParams,
-} from '@types/api';
+} from '@/types/api';
 
 export const notificationsApi = {
   /**
    * Get user notifications with pagination
    */
-  async getNotifications(params?: PaginationParams & {
-    unread_only?: boolean;
-    notification_type?: string;
-  }): Promise<NotificationListResponse> {
+  async getNotifications(
+    params?: PaginationParams & {
+      unread_only?: boolean;
+      notification_type?: string;
+    }
+  ): Promise<NotificationListResponse> {
     return await api.get<NotificationListResponse>(API_ENDPOINTS.notifications.list, {
       params,
     });
@@ -60,7 +62,9 @@ export const notificationsApi = {
   /**
    * Update notification preferences
    */
-  async updatePreferences(data: UpdateNotificationPreferencesRequest): Promise<NotificationPreferences> {
+  async updatePreferences(
+    data: UpdateNotificationPreferencesRequest
+  ): Promise<NotificationPreferences> {
     return await api.patch<NotificationPreferences>(API_ENDPOINTS.notifications.preferences, data);
   },
 

@@ -12,6 +12,9 @@ export interface User {
   isActive: boolean;
   dateJoined: string;
   lastLogin?: string;
+  avatar?: string;
+  socialAvatarUrl?: string;
+  dietary_restrictions?: string[];
 }
 
 export interface UserProfile {
@@ -24,29 +27,29 @@ export interface UserProfile {
   dietaryRestrictions: DietaryRestriction[];
   avatar?: string;
   socialAvatarUrl?: string;
-  
+
   // Goals
   dailyCalorieGoal?: number;
   dailyProteinGoal?: number;
   dailyCarbsGoal?: number;
   dailyFatGoal?: number;
-  
+
   // Preferences
   timezone: string;
   language: string;
   measurementSystem: 'metric' | 'imperial';
   receiveEmailNotifications: boolean;
   receivePushNotifications: boolean;
-  
+
   // Privacy
   profileVisibility: 'public' | 'private' | 'friends';
   dataSharing: 'none' | 'anonymous' | 'full';
-  
+
   // Computed properties
   bmi?: number;
   bmr?: number;
   tdee?: number;
-  
+
   // Metadata
   createdAt: string;
   updatedAt: string;
@@ -69,7 +72,7 @@ export interface FoodItem {
   barcode?: string;
   category?: string;
   description?: string;
-  
+
   // Nutrition per 100g
   calories: number;
   protein: number;
@@ -78,42 +81,44 @@ export interface FoodItem {
   fiber?: number;
   sugar?: number;
   sodium?: number;
-  
+
   // Additional nutrients
   vitamins?: Record<string, number>;
   minerals?: Record<string, number>;
-  
+
   // Serving info
   servingSize: number;
   servingUnit: string;
-  
+
   // Source
   source: 'ai' | 'database' | 'manual' | 'usda';
   confidence?: number;
-  
+
   // User specific
   userId?: string;
   isPublic: boolean;
-  
+
   // Metadata
   createdAt: string;
   updatedAt: string;
 }
 
 // Meal Types
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other';
+
 export interface Meal {
   id: string;
   userId: string;
   name: string;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other';
+  mealType: MealType;
   consumedAt: string;
   image?: string;
   notes?: string;
   location?: string;
-  
+
   // Relations
   mealItems: MealItem[];
-  
+
   // Computed totals
   totalCalories: number;
   totalProtein: number;
@@ -122,7 +127,7 @@ export interface Meal {
   totalFiber?: number;
   totalSugar?: number;
   totalSodium?: number;
-  
+
   // Metadata
   isFavorite: boolean;
   isTemplate: boolean;
@@ -136,7 +141,7 @@ export interface MealItem {
   foodItem: FoodItem;
   quantity: number;
   unit: string;
-  
+
   // Calculated nutrition based on quantity
   calories: number;
   protein: number;
@@ -145,7 +150,7 @@ export interface MealItem {
   fiber?: number;
   sugar?: number;
   sodium?: number;
-  
+
   notes?: string;
   order: number;
 }
@@ -156,11 +161,11 @@ export interface MealAnalysis {
   mealId: string;
   userId: string;
   imageUrl: string;
-  
+
   // Analysis data
   detectedItems: DetectedFoodItem[];
   confidence: number;
-  
+
   // Context
   metadata?: {
     mealType?: string;
@@ -168,16 +173,16 @@ export interface MealAnalysis {
     location?: string;
     deviceInfo?: string;
   };
-  
+
   // AI Service info
   aiProvider: 'gemini' | 'openai' | 'claude';
   aiModel: string;
   processingTime: number;
-  
+
   // Status
   status: 'pending' | 'processing' | 'completed' | 'failed';
   error?: string;
-  
+
   createdAt: string;
   updatedAt: string;
 }
@@ -206,7 +211,7 @@ export interface DetectedFoodItem {
 // Nutritional Information
 export interface NutritionalInfo {
   id: string;
-  
+
   // Macronutrients
   calories: number;
   protein: number;
@@ -218,7 +223,7 @@ export interface NutritionalInfo {
   transFat?: number;
   cholesterol?: number;
   sodium?: number;
-  
+
   // Vitamins
   vitaminA?: number;
   vitaminC?: number;
@@ -231,7 +236,7 @@ export interface NutritionalInfo {
   vitaminB6?: number;
   folate?: number;
   vitaminB12?: number;
-  
+
   // Minerals
   calcium?: number;
   iron?: number;
@@ -239,7 +244,7 @@ export interface NutritionalInfo {
   phosphorus?: number;
   potassium?: number;
   zinc?: number;
-  
+
   createdAt: string;
   updatedAt: string;
 }
@@ -276,13 +281,13 @@ export interface MealStatistics {
   favoriteMeals: number;
   averageCaloriesPerMeal: number;
   averageCaloriesPerDay: number;
-  
+
   macroBreakdown: {
     protein: number;
     carbs: number;
     fat: number;
   };
-  
+
   mealTypeDistribution: {
     breakfast: number;
     lunch: number;
@@ -290,17 +295,17 @@ export interface MealStatistics {
     snack: number;
     other: number;
   };
-  
+
   topFoods: Array<{
     foodItem: FoodItem;
     frequency: number;
   }>;
-  
+
   streaks: {
     current: number;
     longest: number;
   };
-  
+
   periodStart: string;
   periodEnd: string;
 }

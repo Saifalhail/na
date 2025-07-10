@@ -3,17 +3,17 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { ThemeProvider } from '@/hooks/useTheme';
+import { ThemeProvider } from '@/theme/ThemeContext';
 import { AppNavigator } from '@/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useAppOptimization } from '@/hooks/useAppOptimization';
-import { Loading } from '@/components/base/Loading';
+import LoadingComponents from '@/components/base/Loading';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 
 function AppContent() {
-  const { initialize, isLoading } = useAuthStore();
-  
+  const { checkAuthStatus, isLoading } = useAuthStore();
+
   // Enable app-wide performance optimizations
   useAppOptimization({
     enableMemoryManagement: true,
@@ -22,11 +22,11 @@ function AppContent() {
   });
 
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   if (isLoading) {
-    return <Loading overlay />;
+    return <LoadingComponents.LoadingOverlay visible={true} />;
   }
 
   return (

@@ -12,7 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
 import { Card } from '@/components/base/Card';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { ErrorDisplay } from '@/components/base/ErrorDisplay';
 import { useTheme } from '@/hooks/useTheme';
 import { useMealStore } from '@/store/mealStore';
@@ -32,7 +32,7 @@ const FavoriteMealCard: React.FC<FavoriteMealCardProps> = ({
   onViewDetails,
 }) => {
   const { theme } = useTheme();
-  
+
   const formatCalories = (calories: number) => {
     return `${Math.round(calories)} cal`;
   };
@@ -48,16 +48,11 @@ const FavoriteMealCard: React.FC<FavoriteMealCardProps> = ({
           <Text style={[styles.mealName, { color: theme.colors.text }]} numberOfLines={1}>
             {meal.name}
           </Text>
-          <TouchableOpacity
-            onPress={() => onRemoveFavorite(meal)}
-            style={styles.removeButton}
-          >
-            <Text style={[styles.removeIcon, { color: theme.colors.error[500] }]}>
-              ♥
-            </Text>
+          <TouchableOpacity onPress={() => onRemoveFavorite(meal)} style={styles.removeButton}>
+            <Text style={[styles.removeIcon, { color: theme.colors.error[500] }]}>♥</Text>
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.mealInfo}>
           <Text style={[styles.mealType, { color: theme.colors.primary[500] }]}>
             {meal.mealType?.charAt(0).toUpperCase() + meal.mealType?.slice(1)}
@@ -66,18 +61,14 @@ const FavoriteMealCard: React.FC<FavoriteMealCardProps> = ({
             {formatCalories(meal.totalCalories)}
           </Text>
         </View>
-        
+
         <Text style={[styles.macros, { color: theme.colors.textSecondary }]}>
           {formatMacros(meal.totalProtein, meal.totalCarbs, meal.totalFat)}
         </Text>
-        
+
         <Spacer size="md" />
-        
-        <Button
-          onPress={() => onQuickLog(meal)}
-          variant="primary"
-          style={styles.quickLogButton}
-        >
+
+        <Button onPress={() => onQuickLog(meal)} variant="primary" style={styles.quickLogButton}>
           Quick Log
         </Button>
       </TouchableOpacity>
@@ -87,14 +78,8 @@ const FavoriteMealCard: React.FC<FavoriteMealCardProps> = ({
 
 export const FavoritesScreen: React.FC = () => {
   const { theme } = useTheme();
-  const {
-    favoriteMeals,
-    isLoading,
-    error,
-    fetchFavorites,
-    toggleFavorite,
-    clearError,
-  } = useMealStore();
+  const { favoriteMeals, isLoading, error, fetchFavorites, toggleFavorite, clearError } =
+    useMealStore();
 
   const [refreshing, setRefreshing] = useState(false);
   const [quickLogging, setQuickLogging] = useState<string | null>(null);
@@ -125,56 +110,48 @@ export const FavoritesScreen: React.FC = () => {
   };
 
   const handleQuickLog = async (meal: Meal) => {
-    Alert.alert(
-      'Quick Log Meal',
-      `Log "${meal.name}" for now?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Now',
-          onPress: async () => {
-            setQuickLogging(meal.id);
-            try {
-              // Quick log the meal for current time
-              // await quickLogMeal({ mealId: meal.id });
-              Alert.alert('Success', `"${meal.name}" has been logged!`);
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to log meal');
-            } finally {
-              setQuickLogging(null);
-            }
-          },
+    Alert.alert('Quick Log Meal', `Log "${meal.name}" for now?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Now',
+        onPress: async () => {
+          setQuickLogging(meal.id);
+          try {
+            // Quick log the meal for current time
+            // await quickLogMeal({ mealId: meal.id });
+            Alert.alert('Success', `"${meal.name}" has been logged!`);
+          } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to log meal');
+          } finally {
+            setQuickLogging(null);
+          }
         },
-        {
-          text: 'Choose Time',
-          onPress: () => {
-            // Navigate to time picker or show time picker modal
-            Alert.alert('Time Picker', 'Time picker functionality coming soon!');
-          },
+      },
+      {
+        text: 'Choose Time',
+        onPress: () => {
+          // Navigate to time picker or show time picker modal
+          Alert.alert('Time Picker', 'Time picker functionality coming soon!');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleRemoveFavorite = (meal: Meal) => {
-    Alert.alert(
-      'Remove Favorite',
-      `Remove "${meal.name}" from favorites?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await toggleFavorite(meal.id);
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to remove favorite');
-            }
-          },
+    Alert.alert('Remove Favorite', `Remove "${meal.name}" from favorites?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await toggleFavorite(meal.id);
+          } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to remove favorite');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleViewDetails = (meal: Meal) => {
@@ -193,12 +170,8 @@ export const FavoritesScreen: React.FC = () => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={[styles.emptyIcon, { color: theme.colors.textSecondary }]}>
-        ♡
-      </Text>
-      <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
-        No Favorite Meals
-      </Text>
+      <Text style={[styles.emptyIcon, { color: theme.colors.textSecondary }]}>♡</Text>
+      <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No Favorite Meals</Text>
       <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
         Mark meals as favorites in your meal history to see them here for quick logging.
       </Text>
@@ -222,9 +195,7 @@ export const FavoritesScreen: React.FC = () => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Favorite Meals
-        </Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Favorite Meals</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           Quickly log your favorite meals
         </Text>
@@ -250,8 +221,8 @@ export const FavoritesScreen: React.FC = () => {
         ]}
       />
 
-      {isLoading && <Loading overlay message="Loading favorites..." />}
-      {quickLogging && <Loading overlay message="Logging meal..." />}
+      {isLoading && <LoadingOverlay visible={true} message="Loading favorites..." />}
+      {quickLogging && <LoadingOverlay visible={true} message="Logging meal..." />}
     </Container>
   );
 };

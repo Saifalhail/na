@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  ViewProps,
-  StyleSheet,
-  ViewStyle,
-  ScrollView,
-  ScrollViewProps,
-} from 'react-native';
+import { View, ViewProps, StyleSheet, ViewStyle, ScrollView, ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@theme/ThemeContext';
 import { Theme } from '@theme/index';
@@ -80,14 +73,26 @@ export const Row: React.FC<RowProps> = ({
 }) => {
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
-    alignItems: align === 'start' ? 'flex-start' : 
-               align === 'end' ? 'flex-end' : 
-               align === 'stretch' ? 'stretch' : 'center',
-    justifyContent: justify === 'start' ? 'flex-start' :
-                    justify === 'end' ? 'flex-end' :
-                    justify === 'between' ? 'space-between' :
-                    justify === 'around' ? 'space-around' :
-                    justify === 'evenly' ? 'space-evenly' : 'center',
+    alignItems:
+      align === 'start'
+        ? 'flex-start'
+        : align === 'end'
+          ? 'flex-end'
+          : align === 'stretch'
+            ? 'stretch'
+            : 'center',
+    justifyContent:
+      justify === 'start'
+        ? 'flex-start'
+        : justify === 'end'
+          ? 'flex-end'
+          : justify === 'between'
+            ? 'space-between'
+            : justify === 'around'
+              ? 'space-around'
+              : justify === 'evenly'
+                ? 'space-evenly'
+                : 'center',
     flexWrap: wrap ? 'wrap' : 'nowrap',
     gap,
   };
@@ -116,14 +121,26 @@ export const Column: React.FC<ColumnProps> = ({
 }) => {
   const columnStyle: ViewStyle = {
     flexDirection: 'column',
-    alignItems: align === 'start' ? 'flex-start' : 
-               align === 'end' ? 'flex-end' : 
-               align === 'center' ? 'center' : 'stretch',
-    justifyContent: justify === 'start' ? 'flex-start' :
-                    justify === 'end' ? 'flex-end' :
-                    justify === 'between' ? 'space-between' :
-                    justify === 'around' ? 'space-around' :
-                    justify === 'evenly' ? 'space-evenly' : 'center',
+    alignItems:
+      align === 'start'
+        ? 'flex-start'
+        : align === 'end'
+          ? 'flex-end'
+          : align === 'center'
+            ? 'center'
+            : 'stretch',
+    justifyContent:
+      justify === 'start'
+        ? 'flex-start'
+        : justify === 'end'
+          ? 'flex-end'
+          : justify === 'between'
+            ? 'space-between'
+            : justify === 'around'
+              ? 'space-around'
+              : justify === 'evenly'
+                ? 'space-evenly'
+                : 'center',
     gap,
   };
 
@@ -140,12 +157,9 @@ interface SpacerProps {
   horizontal?: boolean;
 }
 
-export const Spacer: React.FC<SpacerProps> = ({
-  size = 'medium',
-  horizontal = false,
-}) => {
+export const Spacer: React.FC<SpacerProps> = ({ size = 'medium', horizontal = false }) => {
   const { theme } = useTheme();
-  
+
   const spacing = {
     xs: theme.spacing.xs,
     xsmall: theme.spacing.xs,
@@ -160,9 +174,7 @@ export const Spacer: React.FC<SpacerProps> = ({
     xxl: theme.spacing.xxl || theme.spacing.xl * 1.5,
   };
 
-  const spacerStyle: ViewStyle = horizontal
-    ? { width: spacing[size] }
-    : { height: spacing[size] };
+  const spacerStyle: ViewStyle = horizontal ? { width: spacing[size] } : { height: spacing[size] };
 
   return <View style={spacerStyle} />;
 };
@@ -197,60 +209,53 @@ export const Divider: React.FC<DividerProps> = ({
   return <View style={dividerStyle} />;
 };
 
-const createStyles = (theme: Theme) => StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  nonePadding: {
-    padding: 0,
-  },
-  smallPadding: {
-    padding: theme.spacing.s,
-  },
-  mediumPadding: {
-    padding: theme.spacing.m,
-  },
-  largePadding: {
-    padding: theme.spacing.l,
-  },
-  divider: {
-    width: '100%',
-  },
-  noneSpacing: {
-    marginVertical: 0,
-  },
-  smallSpacing: {
-    marginVertical: theme.spacing.s,
-  },
-  mediumSpacing: {
-    marginVertical: theme.spacing.m,
-  },
-  largeSpacing: {
-    marginVertical: theme.spacing.l,
-  },
-});
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    center: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    nonePadding: {
+      padding: 0,
+    },
+    smallPadding: {
+      padding: theme.spacing.s,
+    },
+    mediumPadding: {
+      padding: theme.spacing.m,
+    },
+    largePadding: {
+      padding: theme.spacing.l,
+    },
+    divider: {
+      width: '100%',
+    },
+    noneSpacing: {
+      marginVertical: 0,
+    },
+    smallSpacing: {
+      marginVertical: theme.spacing.s,
+    },
+    mediumSpacing: {
+      marginVertical: theme.spacing.m,
+    },
+    largeSpacing: {
+      marginVertical: theme.spacing.l,
+    },
+  });
 
-// Export all components (both named and default export for flexibility)
-export {
-  Container,
-  Row,
-  Column,
-  Spacer,
-  Divider,
-};
-
+// Export all components as default for convenience
 export default {
   Container,
   Row,

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { twoFactorApi, socialApi } from '@/services/api';
-import type { 
+import type {
   TwoFactorSetupRequest,
   TwoFactorSetupResponse,
   TwoFactorVerifyRequest,
@@ -16,35 +16,35 @@ interface TwoFactorState {
   codesRemaining: number;
   isLoading: boolean;
   error: string | null;
-  
+
   // Login State
   requiresTwoFactor: boolean;
   sessionToken: string | null;
   isVerifying: boolean;
-  
+
   // Social Auth State
   isSocialLoading: boolean;
   socialError: string | null;
-  
+
   // Actions - 2FA Management
   setup2FA: (data: TwoFactorSetupRequest) => Promise<TwoFactorSetupResponse>;
   setupTwoFactor: () => Promise<void>;
   verifySetup: (code: string) => Promise<{ success: boolean }>;
   disable2FA: (password: string) => Promise<void>;
   getQRCode: () => Promise<{ qr_code: string; manual_entry_key: string }>;
-  
+
   // Actions - 2FA Verification
   verify2FA: (data: TwoFactorVerifyRequest) => Promise<any>;
   verifyBackupCode: (backupCode: string) => Promise<any>;
-  
+
   // Actions - Backup Codes
   getBackupCodes: () => Promise<void>;
   generateNewBackupCodes: (password: string) => Promise<void>;
   generateBackupCodes: () => Promise<string[]>;
-  
+
   // Actions - Social Authentication
   loginWithGoogle: (data: GoogleLoginRequest) => Promise<SocialAuthResponse>;
-  
+
   // Utility
   clearError: () => void;
   clearSocialError: () => void;
@@ -71,17 +71,17 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Setup 2FA with data
   setup2FA: async (data: TwoFactorSetupRequest) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await twoFactorApi.setup(data);
-      
+
       set({
         setupData: response,
         backupCodes: response.backup_codes || [],
         isLoading: false,
         error: null,
       });
-      
+
       return response;
     } catch (error: any) {
       set({
@@ -95,12 +95,12 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Setup 2FA (auto-setup for new users)
   setupTwoFactor: async () => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await twoFactorApi.setup({
         device_name: 'Authenticator App',
       });
-      
+
       set({
         setupData: response,
         isLoading: false,
@@ -118,24 +118,24 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Verify setup with TOTP code
   verifySetup: async (code: string) => {
     set({ isVerifying: true, error: null });
-    
+
     try {
       const setupData = get().setupData;
       if (!setupData?.device_id) {
         throw new Error('No device ID available for verification');
       }
-      
+
       const response = await twoFactorApi.verify({
         device_id: setupData.device_id,
         totp_code: code,
       });
-      
+
       set({
         isVerifying: false,
         error: null,
         backupCodes: response.backup_codes || [],
       });
-      
+
       return { success: true };
     } catch (error: any) {
       set({
@@ -149,10 +149,10 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Disable 2FA
   disable2FA: async (password: string) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       await twoFactorApi.disable(password);
-      
+
       set({
         setupData: null,
         backupCodes: [],
@@ -172,28 +172,28 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Get QR code for setup
   getQRCode: async () => {
     set({ isLoading: true, error: null });
-    
+
     try {
       // First, enable 2FA to get a device ID
       const setupResponse = await twoFactorApi.setup({
         device_name: 'Authenticator App',
       });
-      
+
       // Then get the QR code using the device ID
       const qrResponse = await twoFactorApi.getQRCode(setupResponse.device_id);
-      
+
       const combinedResponse = {
         ...setupResponse,
         ...qrResponse,
         manual_entry_key: qrResponse.secret,
       };
-      
+
       set({
         setupData: combinedResponse,
         isLoading: false,
         error: null,
       });
-      
+
       return combinedResponse;
     } catch (error: any) {
       set({
@@ -207,20 +207,20 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Verify 2FA during login
   verify2FA: async (data: TwoFactorVerifyRequest) => {
     set({ isVerifying: true, error: null });
-    
+
     try {
       const response = await twoFactorApi.verify({
         ...data,
         session_token: get().sessionToken || undefined,
       });
-      
+
       set({
         isVerifying: false,
         requiresTwoFactor: false,
         sessionToken: null,
         error: null,
       });
-      
+
       return response;
     } catch (error: any) {
       set({
@@ -234,10 +234,10 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Verify backup code
   verifyBackupCode: async (backupCode: string) => {
     set({ isVerifying: true, error: null });
-    
+
     try {
       const response = await twoFactorApi.verifyBackupCode(backupCode);
-      
+
       set({
         isVerifying: false,
         requiresTwoFactor: false,
@@ -245,7 +245,7 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
         codesRemaining: Math.max(0, get().codesRemaining - 1),
         error: null,
       });
-      
+
       return response;
     } catch (error: any) {
       set({
@@ -259,10 +259,10 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Get backup codes
   getBackupCodes: async () => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await twoFactorApi.getBackupCodes();
-      
+
       set({
         codesRemaining: response.count,
         isLoading: false,
@@ -280,10 +280,10 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Generate new backup codes
   generateNewBackupCodes: async (password: string) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await twoFactorApi.generateBackupCodes(password);
-      
+
       set({
         backupCodes: response.backup_codes || [],
         codesRemaining: response.backup_codes?.length || 0,
@@ -305,11 +305,11 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
       // Note: This is typically called after successful verification
       // The backup codes are returned from the verify endpoint
       const backupCodes = get().backupCodes;
-      
+
       if (backupCodes.length === 0) {
         throw new Error('No backup codes available. Please complete 2FA setup first.');
       }
-      
+
       return backupCodes;
     } catch (error: any) {
       set({
@@ -322,15 +322,15 @@ export const useTwoFactorStore = create<TwoFactorState>((set, get) => ({
   // Google Social Login
   loginWithGoogle: async (data: GoogleLoginRequest) => {
     set({ isSocialLoading: true, socialError: null });
-    
+
     try {
       const response = await socialApi.loginWithGoogle(data);
-      
+
       set({
         isSocialLoading: false,
         socialError: null,
       });
-      
+
       return response;
     } catch (error: any) {
       set({

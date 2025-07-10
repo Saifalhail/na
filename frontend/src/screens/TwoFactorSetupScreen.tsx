@@ -5,7 +5,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
 import { Card } from '@/components/base/Card';
-import { Loading } from '@/components/base/Loading';
+import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useTwoFactorStore } from '@/store/twoFactorStore';
 import { AuthStackParamList } from '@/navigation/types';
@@ -55,24 +55,20 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
       'You can set this up later in your profile settings.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Skip', style: 'destructive', onPress: () => navigation.goBack() }
+        { text: 'Skip', style: 'destructive', onPress: () => navigation.goBack() },
       ]
     );
   };
 
   if (isLoading) {
-    return <Loading message="Setting up Two-Factor Authentication..." />;
+    return <LoadingOverlay visible={true} message="Setting up Two-Factor Authentication..." />;
   }
 
   if (error) {
     return (
       <Container>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          Setup Failed
-        </Text>
-        <Text style={[styles.error, { color: theme.colors.error[500] }]}>
-          {error}
-        </Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Setup Failed</Text>
+        <Text style={[styles.error, { color: theme.colors.error[500] }]}>{error}</Text>
         <Spacer size="lg" />
         <Button onPress={handleGetQRCode} variant="primary">
           Try Again
@@ -86,7 +82,7 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
       <Text style={[styles.title, { color: theme.colors.text }]}>
         Set up Two-Factor Authentication
       </Text>
-      
+
       <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
         Add an extra layer of security to your account
       </Text>
@@ -94,27 +90,22 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
       <Spacer size="xl" />
 
       <Card style={styles.card}>
-        <Text style={[styles.stepNumber, { color: theme.colors.primary[500] }]}>
-          Step 1
-        </Text>
+        <Text style={[styles.stepNumber, { color: theme.colors.primary[500] }]}>Step 1</Text>
         <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
           Install an Authenticator App
         </Text>
         <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
-          Download and install an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator.
+          Download and install an authenticator app like Google Authenticator, Authy, or Microsoft
+          Authenticator.
         </Text>
       </Card>
 
       <Spacer size="lg" />
 
       <Card style={styles.card}>
-        <Text style={[styles.stepNumber, { color: theme.colors.primary[500] }]}>
-          Step 2
-        </Text>
-        <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
-          Scan QR Code
-        </Text>
-        
+        <Text style={[styles.stepNumber, { color: theme.colors.primary[500] }]}>Step 2</Text>
+        <Text style={[styles.stepTitle, { color: theme.colors.text }]}>Scan QR Code</Text>
+
         {setupData?.qr_code ? (
           <View style={styles.qrContainer}>
             <QRCode
@@ -125,13 +116,13 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
               logo={undefined}
               logoSize={0}
             />
-            
+
             <Spacer size="md" />
-            
+
             <Text style={[styles.manualEntry, { color: theme.colors.textSecondary }]}>
               Can't scan? Enter this code manually:
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.secretKeyContainer, { backgroundColor: theme.colors.neutral[100] }]}
               onPress={handleCopySecretKey}
             >
@@ -161,14 +152,10 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
         >
           Continue to Verification
         </Button>
-        
+
         <Spacer size="md" />
-        
-        <Button
-          onPress={handleSkip}
-          variant="text"
-          style={styles.skipButton}
-        >
+
+        <Button onPress={handleSkip} variant="text" style={styles.skipButton}>
           Skip for now
         </Button>
       </View>

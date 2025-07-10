@@ -18,25 +18,25 @@ interface UIState {
   // Theme
   theme: Theme;
   systemTheme: 'light' | 'dark';
-  
+
   // Loading states
   loadingStates: LoadingState;
   globalLoading: boolean;
-  
+
   // Toast notifications
   toasts: Toast[];
-  
+
   // Modal states
   activeModal: string | null;
   modalData: any;
-  
+
   // Navigation
   currentRoute: string;
   previousRoute: string | null;
-  
+
   // Network status
   isOnline: boolean;
-  
+
   // Actions
   setTheme: (theme: Theme) => void;
   setSystemTheme: (theme: 'light' | 'dark') => void;
@@ -91,7 +91,7 @@ export const useUIStore = create<UIState>()(
       showToast: (toast: Omit<Toast, 'id'>) => {
         const id = Date.now().toString();
         const newToast = { ...toast, id };
-        
+
         set((state) => ({
           toasts: [...state.toasts, newToast],
         }));
@@ -107,7 +107,7 @@ export const useUIStore = create<UIState>()(
       // Hide toast
       hideToast: (id: string) => {
         set((state) => ({
-          toasts: state.toasts.filter(toast => toast.id !== id),
+          toasts: state.toasts.filter((toast) => toast.id !== id),
         }));
       },
 
@@ -143,16 +143,17 @@ export const useUIStore = create<UIState>()(
       setOnlineStatus: (isOnline: boolean) => set({ isOnline }),
 
       // Reset store
-      reset: () => set({
-        loadingStates: {},
-        globalLoading: false,
-        toasts: [],
-        activeModal: null,
-        modalData: null,
-        currentRoute: 'Home',
-        previousRoute: null,
-        isOnline: true,
-      }),
+      reset: () =>
+        set({
+          loadingStates: {},
+          globalLoading: false,
+          toasts: [],
+          activeModal: null,
+          modalData: null,
+          currentRoute: 'Home',
+          previousRoute: null,
+          isOnline: true,
+        }),
     }),
     {
       name: 'ui-storage',
@@ -168,17 +169,17 @@ export const useUIStore = create<UIState>()(
 export const useTheme = () => {
   const theme = useUIStore((state) => state.theme);
   const systemTheme = useUIStore((state) => state.systemTheme);
-  
+
   const actualTheme = theme === 'system' ? systemTheme : theme;
   const isDark = actualTheme === 'dark';
-  
+
   return { theme: actualTheme, isDark };
 };
 
 export const useLoading = (key: string) => {
   const isLoading = useUIStore((state) => state.loadingStates[key] || false);
   const setLoading = useUIStore((state) => state.setLoading);
-  
+
   return {
     isLoading,
     setLoading: (loading: boolean) => setLoading(key, loading),
@@ -187,7 +188,7 @@ export const useLoading = (key: string) => {
 
 export const useToast = () => {
   const showToast = useUIStore((state) => state.showToast);
-  
+
   return {
     showSuccess: (message: string, duration?: number) =>
       showToast({ type: 'success', message, duration }),

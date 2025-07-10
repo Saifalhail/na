@@ -5,7 +5,7 @@ import {
   AnalysisResult,
   RecalculateRequest,
   RecalculateResult,
-} from '@types/api';
+} from '@/types/api';
 
 export const aiApi = {
   /**
@@ -20,45 +20,35 @@ export const aiApi = {
       },
       metadata: data.metadata,
     });
-    
-    return await api.post<AnalysisResult>(
-      API_ENDPOINTS.ai.analyze,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        // Longer timeout for AI processing
-        timeout: 60000, // 60 seconds
-      }
-    );
+
+    return await api.post<AnalysisResult>(API_ENDPOINTS.ai.analyze, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      // Longer timeout for AI processing
+      timeout: 60000, // 60 seconds
+    });
   },
-  
+
   /**
    * Recalculate nutrition for modified meal
    */
   async recalculateNutrition(data: RecalculateRequest): Promise<RecalculateResult> {
-    return await api.post<RecalculateResult>(
-      API_ENDPOINTS.ai.recalculate,
-      data,
-      {
-        // Longer timeout for AI processing
-        timeout: 45000, // 45 seconds
-      }
-    );
+    return await api.post<RecalculateResult>(API_ENDPOINTS.ai.recalculate, data, {
+      // Longer timeout for AI processing
+      timeout: 45000, // 45 seconds
+    });
   },
-  
+
   /**
    * Get AI analysis suggestions for a meal
    */
   async getSuggestions(mealId: string): Promise<string[]> {
-    const response = await api.get<{ suggestions: string[] }>(
-      `/ai/meals/${mealId}/suggestions/`
-    );
-    
+    const response = await api.get<{ suggestions: string[] }>(`/ai/meals/${mealId}/suggestions/`);
+
     return response.suggestions;
   },
-  
+
   /**
    * Report incorrect AI analysis
    */
