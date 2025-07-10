@@ -3,6 +3,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 import uuid
 
 
@@ -68,6 +69,13 @@ class User(AbstractUser):
         default=uuid.uuid4,
         editable=False,
         help_text=_('Token used for email verification')
+    )
+    
+    # Two-factor authentication
+    two_factor_enabled = models.BooleanField(
+        _('2FA enabled'),
+        default=False,
+        help_text=_('Whether two-factor authentication is enabled for this user')
     )
     
     # Metadata
@@ -272,6 +280,13 @@ class UserProfile(models.Model):
         help_text=_('User profile picture')
     )
     
+    social_avatar_url = models.URLField(
+        _('social avatar URL'),
+        max_length=500,
+        blank=True,
+        help_text=_('Avatar URL from social provider')
+    )
+    
     # Privacy and notifications
     receive_email_notifications = models.BooleanField(
         _('receive email notifications'),
@@ -287,6 +302,41 @@ class UserProfile(models.Model):
         _('show nutritional info publicly'),
         default=False,
         help_text=_('Whether to display nutritional data on public profile')
+    )
+    
+    # Detailed notification preferences
+    notification_preferences = models.JSONField(
+        _('notification preferences'),
+        default=dict,
+        blank=True,
+        help_text=_('Detailed preferences for different notification types')
+    )
+    
+    # Meal reminder times (stored as JSON array of time strings)
+    meal_reminder_times = models.JSONField(
+        _('meal reminder times'),
+        default=list,
+        blank=True,
+        help_text=_('Times for meal reminders (e.g., ["08:00", "12:00", "18:00"])')
+    )
+    
+    # Email notification preferences
+    email_daily_summary = models.BooleanField(
+        _('email daily summary'),
+        default=True,
+        help_text=_('Receive daily nutrition summary via email')
+    )
+    
+    email_weekly_report = models.BooleanField(
+        _('email weekly report'),
+        default=True,
+        help_text=_('Receive weekly progress report via email')
+    )
+    
+    email_tips = models.BooleanField(
+        _('email nutrition tips'),
+        default=True,
+        help_text=_('Receive nutrition tips and recommendations via email')
     )
     
     # Metadata
@@ -335,8 +385,9 @@ class UserProfile(models.Model):
         """Override save to calculate BMI, BMR, and TDEE."""
         # Calculate BMI if height and weight are available
         if self.height and self.weight:
-            height_m = float(self.height) / 100  # Convert cm to m
-            self.bmi = float(self.weight) / (height_m ** 2)
+            from decimal import Decimal
+            height_m = self.height / Decimal('100')  # Convert cm to m
+            self.bmi = self.weight / (height_m ** 2)
             
             # Calculate BMR using Mifflin-St Jeor equation
             if self.user.date_of_birth and self.gender:
@@ -734,6 +785,7 @@ class Meal(models.Model):
         verbose_name_plural = _('meals')
         indexes = [
             models.Index(fields=['user', 'consumed_at']),
+            models.Index(fields=['user', 'meal_type']),  # For filtering by meal type per user
             models.Index(fields=['meal_type']),
             models.Index(fields=['created_at']),
         ]
@@ -824,44 +876,46 @@ class MealItem(models.Model):
     def save(self, *args, **kwargs):
         """Calculate nutritional values based on quantity before saving."""
         if self.food_item and self.quantity:
+            from decimal import Decimal
             # Convert quantity to grams if needed
             quantity_in_grams = self._convert_to_grams()
             
             # Calculate nutritional values based on per 100g values
-            factor = quantity_in_grams / 100
+            factor = quantity_in_grams / Decimal('100')
             
-            self.calories = float(self.food_item.calories) * factor if self.food_item.calories else None
-            self.protein = float(self.food_item.protein) * factor if self.food_item.protein else None
-            self.carbohydrates = float(self.food_item.carbohydrates) * factor if self.food_item.carbohydrates else None
-            self.fat = float(self.food_item.fat) * factor if self.food_item.fat else None
-            self.fiber = float(self.food_item.fiber) * factor if self.food_item.fiber else None
-            self.sugar = float(self.food_item.sugar) * factor if self.food_item.sugar else None
-            self.sodium = float(self.food_item.sodium) * factor if self.food_item.sodium else None
+            self.calories = Decimal(str(self.food_item.calories)) * factor if self.food_item.calories else None
+            self.protein = Decimal(str(self.food_item.protein)) * factor if self.food_item.protein else None
+            self.carbohydrates = Decimal(str(self.food_item.carbohydrates)) * factor if self.food_item.carbohydrates else None
+            self.fat = Decimal(str(self.food_item.fat)) * factor if self.food_item.fat else None
+            self.fiber = Decimal(str(self.food_item.fiber)) * factor if self.food_item.fiber else None
+            self.sugar = Decimal(str(self.food_item.sugar)) * factor if self.food_item.sugar else None
+            self.sodium = Decimal(str(self.food_item.sodium)) * factor if self.food_item.sodium else None
         
         super().save(*args, **kwargs)
     
     def _convert_to_grams(self):
         """Convert quantity to grams based on unit."""
+        from decimal import Decimal
         # Simple conversion - in production, use a proper conversion library
         conversions = {
-            'g': 1,
-            'kg': 1000,
-            'mg': 0.001,
-            'oz': 28.3495,
-            'lb': 453.592,
-            'cup': 240,  # Approximate for water/milk
-            'tbsp': 15,
-            'tsp': 5,
-            'ml': 1,  # Approximate for water
-            'l': 1000,
+            'g': Decimal('1'),
+            'kg': Decimal('1000'),
+            'mg': Decimal('0.001'),
+            'oz': Decimal('28.3495'),
+            'lb': Decimal('453.592'),
+            'cup': Decimal('240'),  # Approximate for water/milk
+            'tbsp': Decimal('15'),
+            'tsp': Decimal('5'),
+            'ml': Decimal('1'),  # Approximate for water
+            'l': Decimal('1000'),
         }
         
         unit_lower = self.unit.lower()
         if unit_lower in conversions:
-            return float(self.quantity) * conversions[unit_lower]
+            return self.quantity * conversions[unit_lower]
         
         # Default to treating unknown units as grams
-        return float(self.quantity)
+        return self.quantity
 
 
 class MealAnalysis(models.Model):
@@ -893,6 +947,7 @@ class MealAnalysis(models.Model):
     ai_response = models.JSONField(
         _('AI response'),
         default=dict,
+        blank=True,
         help_text=_('Raw response from AI service')
     )
     
@@ -1159,3 +1214,266 @@ class RecipeIngredient(models.Model):
         
     def __str__(self):
         return f"{self.quantity} {self.unit} {self.name}"
+
+
+class TOTPDevice(models.Model):
+    """
+    Model to store TOTP (Time-based One-Time Password) device information.
+    Used for two-factor authentication with authenticator apps.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='totp_devices'
+    )
+    name = models.CharField(
+        _('device name'),
+        max_length=64,
+        help_text=_('Human-readable name for this device')
+    )
+    confirmed = models.BooleanField(
+        _('confirmed'),
+        default=False,
+        help_text=_('Whether this device has been confirmed by entering a valid token')
+    )
+    key = models.CharField(
+        _('secret key'),
+        max_length=80,
+        help_text=_('Base32-encoded secret key')
+    )
+    tolerance = models.PositiveSmallIntegerField(
+        _('tolerance'),
+        default=1,
+        help_text=_('Number of periods before/after current time to allow')
+    )
+    t0 = models.BigIntegerField(
+        _('t0'),
+        default=0,
+        help_text=_('Unix timestamp of when to start counting time steps')
+    )
+    step = models.PositiveSmallIntegerField(
+        _('step'),
+        default=30,
+        help_text=_('Time step in seconds')
+    )
+    drift = models.SmallIntegerField(
+        _('drift'),
+        default=0,
+        help_text=_('Current drift between server and device clocks')
+    )
+    last_t = models.BigIntegerField(
+        _('last token timestamp'),
+        default=-1,
+        help_text=_('Timestamp of the last successfully verified token')
+    )
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    class Meta:
+        db_table = 'totp_devices'
+        verbose_name = _('TOTP device')
+        verbose_name_plural = _('TOTP devices')
+        
+    def __str__(self):
+        return f"{self.user.email} - {self.name}"
+
+
+class BackupCode(models.Model):
+    """
+    Model to store backup codes for two-factor authentication.
+    Used when the user doesn't have access to their TOTP device.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='backup_codes'
+    )
+    code = models.CharField(
+        _('backup code'),
+        max_length=16,
+        unique=True,
+        help_text=_('Single-use backup code')
+    )
+    used = models.BooleanField(
+        _('used'),
+        default=False,
+        help_text=_('Whether this code has been used')
+    )
+    used_at = models.DateTimeField(
+        _('used at'),
+        null=True,
+        blank=True,
+        help_text=_('When this code was used')
+    )
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    
+    class Meta:
+        db_table = 'backup_codes'
+        verbose_name = _('backup code')
+        verbose_name_plural = _('backup codes')
+        indexes = [
+            models.Index(fields=['user', 'used']),
+            models.Index(fields=['code']),
+        ]
+        
+    def __str__(self):
+        return f"{self.user.email} - {'Used' if self.used else 'Available'}"
+
+
+class Notification(models.Model):
+    """
+    Model to store user notifications.
+    Supports multiple notification types and delivery channels.
+    """
+    
+    # Notification types
+    TYPE_CHOICES = [
+        ('meal_reminder', _('Meal Reminder')),
+        ('daily_summary', _('Daily Summary')),
+        ('weekly_report', _('Weekly Report')),
+        ('goal_achieved', _('Goal Achieved')),
+        ('streak_milestone', _('Streak Milestone')),
+        ('system', _('System Notification')),
+        ('tips', _('Nutrition Tips')),
+    ]
+    
+    # Notification status
+    STATUS_CHOICES = [
+        ('pending', _('Pending')),
+        ('sent', _('Sent')),
+        ('failed', _('Failed')),
+        ('read', _('Read')),
+        ('archived', _('Archived')),
+    ]
+    
+    # Delivery channels
+    CHANNEL_CHOICES = [
+        ('in_app', _('In-App')),
+        ('email', _('Email')),
+        ('push', _('Push Notification')),
+        ('sms', _('SMS')),
+    ]
+    
+    # Priority levels
+    PRIORITY_CHOICES = [
+        ('low', _('Low')),
+        ('medium', _('Medium')),
+        ('high', _('High')),
+        ('urgent', _('Urgent')),
+    ]
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    type = models.CharField(
+        _('notification type'),
+        max_length=50,
+        choices=TYPE_CHOICES
+    )
+    title = models.CharField(
+        _('title'),
+        max_length=200
+    )
+    message = models.TextField(
+        _('message')
+    )
+    status = models.CharField(
+        _('status'),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    channel = models.CharField(
+        _('delivery channel'),
+        max_length=20,
+        choices=CHANNEL_CHOICES,
+        default='in_app'
+    )
+    priority = models.CharField(
+        _('priority'),
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='medium'
+    )
+    
+    # Metadata
+    data = models.JSONField(
+        _('additional data'),
+        default=dict,
+        blank=True,
+        help_text=_('Additional data for the notification')
+    )
+    
+    # Scheduling
+    scheduled_for = models.DateTimeField(
+        _('scheduled for'),
+        null=True,
+        blank=True,
+        help_text=_('When this notification should be sent')
+    )
+    
+    # Tracking
+    sent_at = models.DateTimeField(
+        _('sent at'),
+        null=True,
+        blank=True
+    )
+    read_at = models.DateTimeField(
+        _('read at'),
+        null=True,
+        blank=True
+    )
+    failed_at = models.DateTimeField(
+        _('failed at'),
+        null=True,
+        blank=True
+    )
+    error_message = models.TextField(
+        _('error message'),
+        blank=True
+    )
+    retry_count = models.PositiveSmallIntegerField(
+        _('retry count'),
+        default=0
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    class Meta:
+        db_table = 'notifications'
+        verbose_name = _('notification')
+        verbose_name_plural = _('notifications')
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['user', 'type']),
+            models.Index(fields=['scheduled_for', 'status']),
+            models.Index(fields=['created_at']),
+        ]
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.user.email} - {self.type} - {self.title}"
+    
+    def mark_as_sent(self):
+        """Mark notification as sent."""
+        self.status = 'sent'
+        self.sent_at = timezone.now()
+        self.save(update_fields=['status', 'sent_at', 'updated_at'])
+    
+    def mark_as_read(self):
+        """Mark notification as read."""
+        self.status = 'read'
+        self.read_at = timezone.now()
+        self.save(update_fields=['status', 'read_at', 'updated_at'])
+    
+    def mark_as_failed(self, error_message=''):
+        """Mark notification as failed."""
+        self.status = 'failed'
+        self.failed_at = timezone.now()
+        self.error_message = error_message
+        self.retry_count += 1
+        self.save(update_fields=['status', 'failed_at', 'error_message', 'retry_count', 'updated_at'])

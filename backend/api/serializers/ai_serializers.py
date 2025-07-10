@@ -45,7 +45,7 @@ class MealAnalysisSerializer(serializers.ModelSerializer):
         model = MealAnalysis
         fields = [
             'id', 'meal', 'ai_service', 'ai_response', 'confidence_score',
-            'processing_time_ms', 'detected_items_count', 'analysis_version',
+            'analysis_time_ms', 'tokens_used', 'is_accurate', 'user_notes',
             'created_at'
         ]
         read_only_fields = ['id', 'created_at']

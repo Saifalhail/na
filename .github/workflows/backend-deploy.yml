@@ -1,0 +1,140 @@
+name: Backend Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'backend/**' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Build Docker image
+      run: |
+        cd backend
+        docker build -t nutrition-ai-backend:staging .
+
+    - name: Run database migrations
+      env:
+        DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        SECRET_KEY: ${{ secrets.STAGING_SECRET_KEY }}
+      run: |
+        cd backend
+        python manage.py migrate --settings=core.settings.production
+
+    - name: Collect static files
+      env:
+        SECRET_KEY: ${{ secrets.STAGING_SECRET_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_STORAGE_BUCKET_NAME: ${{ secrets.STAGING_S3_BUCKET }}
+      run: |
+        cd backend
+        python manage.py collectstatic --noinput --settings=core.settings.production
+
+    - name: Deploy to staging
+      env:
+        DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
+        DEPLOY_USER: ${{ secrets.STAGING_USER }}
+        DEPLOY_KEY: ${{ secrets.STAGING_SSH_KEY }}
+      run: |
+        echo "Deploying to staging environment..."
+        # Add deployment script here based on hosting provider
+        
+    - name: Run health checks
+      run: |
+        # Wait for deployment
+        sleep 30
+        # Check if API is healthy
+        curl -f ${{ secrets.STAGING_URL }}/api/health/ || exit 1
+
+    - name: Notify deployment status
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  deploy-production:
+    if: github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [deploy-staging]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Build Docker image
+      run: |
+        cd backend
+        docker build -t nutrition-ai-backend:production .
+
+    - name: Run database migrations
+      env:
+        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        SECRET_KEY: ${{ secrets.PRODUCTION_SECRET_KEY }}
+      run: |
+        cd backend
+        python manage.py migrate --settings=core.settings.production
+
+    - name: Collect static files
+      env:
+        SECRET_KEY: ${{ secrets.PRODUCTION_SECRET_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_STORAGE_BUCKET_NAME: ${{ secrets.PRODUCTION_S3_BUCKET }}
+      run: |
+        cd backend
+        python manage.py collectstatic --noinput --settings=core.settings.production
+
+    - name: Deploy to production
+      env:
+        DEPLOY_HOST: ${{ secrets.PRODUCTION_HOST }}
+        DEPLOY_USER: ${{ secrets.PRODUCTION_USER }}
+        DEPLOY_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+      run: |
+        echo "Deploying to production environment..."
+        # Add deployment script here based on hosting provider
+
+    - name: Run health checks
+      run: |
+        # Wait for deployment
+        sleep 60
+        # Check if API is healthy
+        curl -f ${{ secrets.PRODUCTION_URL }}/api/health/ || exit 1
+
+    - name: Notify deployment status
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}

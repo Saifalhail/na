@@ -178,6 +178,9 @@ class MealModelTest(TestCase):
             protein=Decimal('0.30'),
             carbohydrates=Decimal('14.00'),
             fat=Decimal('0.20'),
+            fiber=Decimal('2.40'),
+            sugar=Decimal('10.40'),
+            sodium=Decimal('1.00'),
             source='database'
         )
     
@@ -304,18 +307,12 @@ class MealModelTest(TestCase):
             consumed_at=datetime.now()
         )
         
-        # Add meal item
+        # Add meal item (nutritional values will be calculated automatically)
         MealItem.objects.create(
             meal=meal,
             food_item=self.food_item,
             quantity=Decimal('200'),  # 200g
-            unit='g',
-            protein=Decimal('0.60'),  # 0.30 * 2
-            carbohydrates=Decimal('28.00'),  # 14 * 2
-            fat=Decimal('0.40'),  # 0.20 * 2
-            fiber=Decimal('4.80'),  # 2.40 * 2
-            sugar=Decimal('20.80'),  # 10.40 * 2
-            sodium=Decimal('2.00')  # 1.00 * 2
+            unit='g'
         )
         
         macros = meal.total_macros

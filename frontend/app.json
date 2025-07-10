@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "frontend",
+    "slug": "frontend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "apiUrl": "$EXPO_PUBLIC_API_URL",
+      "apiVersion": "$EXPO_PUBLIC_API_VERSION",
+      "googleOAuthClientId": "$EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_ID",
+      "environment": "$EXPO_PUBLIC_ENVIRONMENT",
+      "enableAnalytics": "$EXPO_PUBLIC_ENABLE_ANALYTICS",
+      "enableCrashReporting": "$EXPO_PUBLIC_ENABLE_CRASH_REPORTING",
+      "enableSocialAuth": "$EXPO_PUBLIC_ENABLE_SOCIAL_AUTH",
+      "enableAiAnalysis": "$EXPO_PUBLIC_ENABLE_AI_ANALYSIS",
+      "enableOfflineMode": "$EXPO_PUBLIC_ENABLE_OFFLINE_MODE",
+      "sentryDsn": "$EXPO_PUBLIC_SENTRY_DSN"
+    }
+  }
+}

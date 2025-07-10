@@ -3,6 +3,7 @@ Custom JWT serializers with enhanced security features.
 """
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import update_last_login
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
@@ -59,6 +60,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError(
                 _("Email address is not verified. Please check your email.")
             )
+        
+        # Check if 2FA is enabled for this user
+        if self.user.two_factor_enabled:
+            # Store partial login info in cache for 2FA verification
+            cache_key = f'2fa_pending_{self.user.id}'
+            cache.set(cache_key, {
+                'user_id': self.user.id,
+                'ip_address': ip_address,
+                'timestamp': str(timezone.now())
+            }, 300)  # 5 minutes to complete 2FA
+            
+            # Return a response indicating 2FA is required
+            return {
+                'requires_2fa': True,
+                'message': 'Two-factor authentication required'
+            }
         
         # Get tokens
         refresh = self.get_token(self.user)

@@ -48,6 +48,11 @@ tzdata==2025.2
 uritemplate==4.2.0
 urllib3==2.5.0
 
+# OAuth2 and social authentication
+django-allauth==65.9.0
+dj-rest-auth==7.0.1
+cryptography==45.0.5  # Required for OAuth2
+
 # Testing dependencies
 pytest==8.3.4
 pytest-django==4.10.0
@@ -63,6 +68,11 @@ django-security==0.20.0
 
 # Development dependencies
 ipython==8.31.0
+
+# Two-factor authentication
+django-otp==1.5.4
+qrcode==8.0
+pyotp==2.9.0
 
 # Production dependencies
 sentry-sdk==2.20.0

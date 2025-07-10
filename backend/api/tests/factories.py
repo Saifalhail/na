@@ -26,13 +26,15 @@ class UserFactory(DjangoModelFactory):
         model = User
         django_get_or_create = ('email',)
     
-    email = factory.LazyAttribute(lambda obj: f"{obj.first_name.lower()}.{obj.last_name.lower()}@example.com")
+    username = factory.Sequence(lambda n: f"testuser{n}")
+    email = factory.Sequence(lambda n: f"test{n}@example.com")
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     is_active = True
     is_verified = True
-    account_type = fuzzy.FuzzyChoice(['free', 'premium'])
+    account_type = fuzzy.FuzzyChoice(['free', 'premium', 'professional'])
     date_joined = factory.LazyFunction(django_timezone.now)
+    date_of_birth = factory.Faker('date_of_birth', minimum_age=18, maximum_age=80)
     
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):
@@ -62,19 +64,27 @@ class UserProfileFactory(DjangoModelFactory):
         django_get_or_create = ('user',)
     
     user = factory.SubFactory(UserFactory)
-    date_of_birth = factory.Faker('date_of_birth', minimum_age=18, maximum_age=80)
-    gender = fuzzy.FuzzyChoice(['M', 'F', 'O'])
-    height = fuzzy.FuzzyDecimal(150, 210, precision=1)  # cm
-    weight = fuzzy.FuzzyDecimal(45, 120, precision=1)  # kg
+    gender = fuzzy.FuzzyChoice(['M', 'F', 'O', 'N'])
+    height = fuzzy.FuzzyDecimal(150, 210, precision=2)  # cm
+    weight = fuzzy.FuzzyDecimal(45, 120, precision=2)  # kg
     activity_level = fuzzy.FuzzyChoice(['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extra_active'])
-    dietary_goal = fuzzy.FuzzyChoice(['maintain', 'lose', 'gain'])
-    target_calories = fuzzy.FuzzyInteger(1200, 3500)
-    target_protein = fuzzy.FuzzyInteger(50, 200)
-    target_carbs = fuzzy.FuzzyInteger(100, 400)
-    target_fat = fuzzy.FuzzyInteger(30, 150)
+    
+    # Updated field names to match model
+    daily_calorie_goal = fuzzy.FuzzyInteger(1200, 3500)
+    daily_protein_goal = fuzzy.FuzzyDecimal(50, 200, precision=1)
+    daily_carbs_goal = fuzzy.FuzzyDecimal(100, 400, precision=1)
+    daily_fat_goal = fuzzy.FuzzyDecimal(30, 150, precision=1)
+    
     timezone = 'UTC'
-    preferred_units = 'metric'
-    marketing_consent = factory.Faker('boolean')
+    measurement_system = 'metric'
+    language = 'en'
+    bio = factory.Faker('text', max_nb_chars=200)
+    
+    # Notification preferences
+    receive_email_notifications = True
+    receive_push_notifications = True
+    show_nutritional_info_publicly = False
+    
     created_at = factory.LazyFunction(django_timezone.now)
     updated_at = factory.LazyFunction(django_timezone.now)
 
@@ -110,21 +120,25 @@ class FoodItemFactory(DjangoModelFactory):
     name = factory.Faker('word')
     brand = factory.Faker('company')
     barcode = factory.Faker('ean13')
-    category = fuzzy.FuzzyChoice(['fruit', 'vegetable', 'meat', 'dairy', 'grain', 'beverage', 'snack', 'other'])
     
     # Nutritional info per 100g
-    calories = fuzzy.FuzzyDecimal(50, 500, precision=1)
-    protein = fuzzy.FuzzyDecimal(0, 30, precision=1)
-    carbohydrates = fuzzy.FuzzyDecimal(0, 80, precision=1)
-    fat = fuzzy.FuzzyDecimal(0, 40, precision=1)
-    fiber = fuzzy.FuzzyDecimal(0, 20, precision=1)
-    sugar = fuzzy.FuzzyDecimal(0, 50, precision=1)
-    sodium = fuzzy.FuzzyDecimal(0, 2000, precision=1)
+    calories = fuzzy.FuzzyDecimal(50, 500, precision=2)
+    protein = fuzzy.FuzzyDecimal(0, 30, precision=2)
+    carbohydrates = fuzzy.FuzzyDecimal(0, 80, precision=2)
+    fat = fuzzy.FuzzyDecimal(0, 40, precision=2)
+    fiber = fuzzy.FuzzyDecimal(0, 20, precision=2)
+    sugar = fuzzy.FuzzyDecimal(0, 50, precision=2)
+    sodium = fuzzy.FuzzyDecimal(0, 2000, precision=2)
     
-    serving_size = fuzzy.FuzzyDecimal(10, 200, precision=1)
-    serving_unit = fuzzy.FuzzyChoice(['g', 'ml', 'cup', 'piece', 'slice'])
+    # Optional nutrients
+    saturated_fat = fuzzy.FuzzyDecimal(0, 20, precision=2)
+    cholesterol = fuzzy.FuzzyDecimal(0, 300, precision=2)
+    potassium = fuzzy.FuzzyDecimal(0, 1000, precision=2)
     
+    # Source and metadata
+    source = fuzzy.FuzzyChoice(['ai', 'database', 'manual', 'usda'])
     is_verified = factory.Faker('boolean')
+    is_public = True
     created_at = factory.LazyFunction(django_timezone.now)
     updated_at = factory.LazyFunction(django_timezone.now)
 
@@ -141,11 +155,7 @@ class MealFactory(DjangoModelFactory):
     consumed_at = factory.LazyFunction(lambda: django_timezone.now() - timedelta(hours=random.randint(0, 72)))
     notes = factory.Faker('paragraph', nb_sentences=2)
     
-    # Calculated totals (will be updated when items are added)
-    total_calories = Decimal('0')
-    total_protein = Decimal('0')
-    total_carbs = Decimal('0')
-    total_fat = Decimal('0')
+    # Note: Total values are calculated automatically via properties
     
     created_at = factory.LazyFunction(django_timezone.now)
     updated_at = factory.LazyFunction(django_timezone.now)
@@ -159,14 +169,10 @@ class MealItemFactory(DjangoModelFactory):
     
     meal = factory.SubFactory(MealFactory)
     food_item = factory.SubFactory(FoodItemFactory)
-    quantity = fuzzy.FuzzyDecimal(0.5, 3.0, precision=1)
-    unit = 'serving'
+    quantity = fuzzy.FuzzyDecimal(50, 300, precision=1)
+    unit = 'g'
     
-    # Calculated nutritionals
-    calories = factory.LazyAttribute(lambda obj: obj.food_item.calories * obj.quantity)
-    protein = factory.LazyAttribute(lambda obj: obj.food_item.protein * obj.quantity)
-    carbohydrates = factory.LazyAttribute(lambda obj: obj.food_item.carbohydrates * obj.quantity)
-    fat = factory.LazyAttribute(lambda obj: obj.food_item.fat * obj.quantity)
+    # Note: Nutritional values are calculated automatically by the save method
     
     created_at = factory.LazyFunction(django_timezone.now)
     updated_at = factory.LazyFunction(django_timezone.now)
@@ -179,11 +185,9 @@ class MealAnalysisFactory(DjangoModelFactory):
         model = MealAnalysis
     
     meal = factory.SubFactory(MealFactory)
-    image_path = factory.Faker('file_path', extension='jpg')
-    ai_provider = 'gemini'
-    ai_model = 'gemini-1.5-flash'
+    ai_service = 'gemini'
     
-    analysis_result = factory.LazyFunction(
+    ai_response = factory.LazyFunction(
         lambda: {
             'success': True,
             'foods': [
@@ -203,7 +207,7 @@ class MealAnalysisFactory(DjangoModelFactory):
     )
     
     tokens_used = fuzzy.FuzzyInteger(100, 1000)
-    processing_time_ms = fuzzy.FuzzyInteger(500, 3000)
+    analysis_time_ms = fuzzy.FuzzyInteger(500, 3000)
     confidence_score = fuzzy.FuzzyDecimal(0.7, 1.0, precision=2)
     
     created_at = factory.LazyFunction(django_timezone.now)

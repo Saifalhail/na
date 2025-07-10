@@ -30,14 +30,30 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',  # Required for django-allauth
+    
+    # Third party apps
     'rest_framework',
+    'rest_framework.authtoken',  # Required for dj-rest-auth
+    'rest_framework_simplejwt.token_blacklist',  # For JWT token blacklisting
     'corsheaders',
     'drf_spectacular',
+    
+    # Authentication apps
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+    
+    # Local apps
     'api',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django.middleware.gzip.GZipMiddleware',  # Add compression
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -45,12 +61,20 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # allauth middleware
+    'allauth.account.middleware.AccountMiddleware',
+    
     # Custom security middleware
     'api.security.middleware.SecurityHeadersMiddleware',
     'api.security.middleware.RequestLoggingMiddleware',
     'api.security.middleware.RateLimitMiddleware',
     'api.security.middleware.HTTPSEnforcementMiddleware',
     'api.security.middleware.SecurityAuditMiddleware',
+    
+    # Performance monitoring middleware
+    'api.middleware.performance.PerformanceMonitoringMiddleware',
+    'api.middleware.performance.DatabaseQueryTimingMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -116,6 +140,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom User model
 AUTH_USER_MODEL = 'api.User'
+
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 # REST Framework settings
 REST_FRAMEWORK = {
@@ -227,6 +259,47 @@ SERVER_EMAIL = os.getenv('SERVER_EMAIL', 'server@nutritionai.com')
 # Frontend URL for email links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:8081')
 
+# Django sites framework
+SITE_ID = 1
+
+# Django-allauth settings
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*', 'first_name', 'last_name']
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_ADAPTER = 'api.adapters.AccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'api.adapters.SocialAccountAdapter'
+
+# OAuth2 providers configuration
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.getenv('GOOGLE_OAUTH_CLIENT_ID', ''),
+            'secret': os.getenv('GOOGLE_OAUTH_CLIENT_SECRET', ''),
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+
+# dj-rest-auth settings
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_HTTPONLY': False,
+    'JWT_AUTH_REFRESH_COOKIE': 'refresh-token',
+    'JWT_AUTH_SECURE': os.getenv('DJANGO_SECURE_SSL_REDIRECT', 'False') == 'True',
+    'JWT_AUTH_SAMESITE': 'Lax',
+    'SESSION_LOGIN': False,
+    'USER_DETAILS_SERIALIZER': 'api.serializers.auth_serializers.UserSerializer',
+}
+
 # Logging configuration
 LOGGING = {
     'version': 1,
@@ -330,3 +403,23 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+# Celery Configuration
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Celery task routing
+CELERY_TASK_ROUTES = {
+    'api.tasks.email_tasks.*': {'queue': 'emails'},
+    'api.tasks.notification_tasks.*': {'queue': 'notifications'},
+    'api.tasks.ai_tasks.*': {'queue': 'ai_processing'},
+    'api.tasks.maintenance_tasks.*': {'queue': 'maintenance'},
+}
+
+# Celery beat settings (if using django-celery-beat)
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

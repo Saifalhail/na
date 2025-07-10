@@ -1,13 +1,14 @@
 from django.urls import path, include
-from .views import (
-    # Legacy views (kept for backward compatibility)
-    AnalyzeImageView as LegacyAnalyzeImageView, 
+# Import legacy views from legacy_views.py file
+from .legacy_views import (
+    AnalyzeImageView as LegacyAnalyzeImageView,
     NutritionDataDetailView,
     RecalculateNutritionView as LegacyRecalculateNutritionView,
     IngredientsListView,
     RecalculateView as LegacyRecalculateView,
-    
-    # Health check views
+)
+# Import from views package for new views
+from .views import (
     HealthCheckView,
     ReadinessCheckView,
     LivenessCheckView,
@@ -29,11 +30,17 @@ v1_patterns = [
     # Authentication endpoints
     path('auth/', include('api.auth.urls')),
     
+    # Social authentication endpoints
+    path('auth/social/', include('api.social.urls')),
+    
     # AI Analysis endpoints (new)
     path('ai/', include('api.ai.urls')),
     
     # Meal endpoints
     path('meals/', include('api.meals.urls')),
+    
+    # Notification endpoints
+    path('notifications/', include('api.notifications.urls')),
     
     # User endpoints (to be implemented)
     # path('users/', include('api.users.urls')),
@@ -47,8 +54,9 @@ v1_patterns = [
 ]
 
 urlpatterns = [
-    # Health checks (outside of versioning)
+    # Health checks (at API root level)
     path('', include(health_patterns)),
     
-    # Versioned API endpoints are included from core.urls
-] + v1_patterns
+    # V1 API endpoints (will be mounted at /api/v1/ by core.urls)
+    path('', include(v1_patterns)),
+]

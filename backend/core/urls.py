@@ -22,6 +22,8 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # API v1 endpoints (includes health checks)
     path('api/v1/', include('api.urls')),
     
     # API Documentation

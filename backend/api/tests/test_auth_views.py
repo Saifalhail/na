@@ -15,17 +15,26 @@ from api.tests.factories import UserFactory, UserProfileFactory
 User = get_user_model()
 
 
+class SecureAPIClient(APIClient):
+    """APIClient that defaults to secure=True for all requests."""
+    
+    def generic(self, method, path, data='', content_type='application/octet-stream', **extra):
+        """Override generic to default secure=True."""
+        extra.setdefault('secure', True)
+        return super().generic(method, path, data, content_type, **extra)
+
+
 class AuthenticationViewsTest(TestCase):
     """Test authentication endpoints."""
     
     def setUp(self):
         """Set up test client and data."""
-        self.client = APIClient()
-        self.register_url = reverse('api:register')
-        self.login_url = reverse('api:login')
-        self.logout_url = reverse('api:logout')
-        self.refresh_url = reverse('api:refresh')
-        self.profile_url = reverse('api:profile')
+        self.client = SecureAPIClient()
+        self.register_url = reverse('api:auth:register')
+        self.login_url = reverse('api:auth:login')
+        self.logout_url = reverse('api:auth:logout')
+        self.refresh_url = reverse('api:auth:refresh')
+        self.profile_url = reverse('api:auth:profile')
         
         # Clear cache before each test
         cache.clear()
@@ -42,8 +51,7 @@ class AuthenticationViewsTest(TestCase):
             'password_confirm': 'StrongPass123!',
             'first_name': 'New',
             'last_name': 'User',
-            'terms_accepted': True,
-            'marketing_consent': False
+            'terms_accepted': True
         }
         
         response = self.client.post(self.register_url, data, format='json')
@@ -59,7 +67,7 @@ class AuthenticationViewsTest(TestCase):
         
         # Check profile was created
         self.assertTrue(hasattr(user, 'profile'))
-        self.assertFalse(user.profile.marketing_consent)
+        # Note: marketing_consent field was removed from UserProfile model
     
     def test_user_registration_weak_password(self):
         """Test registration with weak password."""
@@ -306,7 +314,7 @@ class AuthenticationViewsTest(TestCase):
             'new_password_confirm': 'NewPass123!'
         }
         
-        url = reverse('api:password-change')
+        url = reverse('api:auth:password-change')
         response = self.client.post(url, data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -331,7 +339,7 @@ class AuthenticationViewsTest(TestCase):
             'new_password_confirm': 'NewPass123!'
         }
         
-        url = reverse('api:password-change')
+        url = reverse('api:auth:password-change')
         response = self.client.post(url, data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

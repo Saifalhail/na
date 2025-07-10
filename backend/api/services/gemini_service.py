@@ -307,13 +307,13 @@ class GeminiService:
             5. Be specific about portion sizes and units
             
             Return ONLY valid JSON in the following format (no markdown, no explanations):
-            {
+            {{
                 "description": "Brief description of the dish",
                 "servings": number,
                 "serving_size": "specific description (e.g., 1 burger, 2 cups, 250g)",
                 "cooking_method": "grilled/fried/baked/raw/etc",
                 "ingredients": [
-                    {
+                    {{
                         "name": "ingredient name",
                         "quantity": number,
                         "unit": "grams/ml/pieces/etc",
@@ -322,9 +322,9 @@ class GeminiService:
                         "carbohydrates": number (grams),
                         "fat": number (grams),
                         "preparation": "how it's prepared (optional)"
-                    }
+                    }}
                 ],
-                "nutrition": {
+                "nutrition": {{
                     "calories": number (total for the serving),
                     "protein": number (grams),
                     "carbohydrates": number (grams),
@@ -332,13 +332,13 @@ class GeminiService:
                     "fiber": number (grams),
                     "sugar": number (grams),
                     "sodium": number (milligrams)
-                },
-                "confidence": {
+                }},
+                "confidence": {{
                     "overall": number (0-100),
                     "ingredients_identified": number (0-100),
                     "portions_estimated": number (0-100)
-                }
-            }
+                }}
+            }}
             
             Important:
             - For ingredients, prefer weight units (grams) when possible

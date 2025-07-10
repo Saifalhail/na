@@ -129,8 +129,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         """Create user with profile."""
         marketing_consent = validated_data.pop('marketing_consent', False)
         
-        # Create user
+        # Create user (email is used as username)
         user = User.objects.create_user(
+            username=validated_data['email'],  # Use email as username
             email=validated_data['email'],
             password=validated_data['password'],
             first_name=validated_data['first_name'],
@@ -141,8 +142,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         
         # Create user profile
         UserProfile.objects.create(
-            user=user,
-            marketing_consent=marketing_consent
+            user=user
         )
         
         return user
@@ -283,6 +283,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
     first_name = serializers.CharField(source='user.first_name', required=False)
     last_name = serializers.CharField(source='user.last_name', required=False)
+    date_of_birth = serializers.DateField(source='user.date_of_birth', required=False)
     account_type = serializers.CharField(source='user.account_type', read_only=True)
     is_verified = serializers.BooleanField(source='user.is_verified', read_only=True)
     date_joined = serializers.DateTimeField(source='user.date_joined', read_only=True)
@@ -291,15 +292,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = (
-            'id', 'email', 'first_name', 'last_name', 
+            'email', 'first_name', 'last_name', 'date_of_birth',
             'account_type', 'is_verified', 'date_joined',
-            'date_of_birth', 'gender', 'height', 'weight',
-            'activity_level', 'dietary_goal', 'dietary_restrictions',
-            'target_calories', 'target_protein', 'target_carbs', 'target_fat',
-            'timezone', 'preferred_units', 'marketing_consent',
+            'gender', 'height', 'weight',
+            'activity_level', 'dietary_restrictions',
+            'daily_calorie_goal', 'daily_protein_goal', 'daily_carbs_goal', 'daily_fat_goal',
+            'timezone', 'measurement_system',
             'bmi', 'bmr', 'tdee'  # Computed properties
         )
-        read_only_fields = ('id', 'bmi', 'bmr', 'tdee')
+        read_only_fields = ('bmi', 'bmr', 'tdee')
     
     def update(self, instance: UserProfile, validated_data: Dict[str, Any]) -> UserProfile:
         """Update profile and nested user data."""

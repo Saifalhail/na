@@ -67,7 +67,7 @@ class TestMealViewSet:
     
     def test_list_meals(self):
         """Test listing user's meals."""
-        url = reverse('api:meal-list')
+        url = reverse('api:meals:meal-list')
         response = self.client.get(url)
         
         assert response.status_code == status.HTTP_200_OK
@@ -76,7 +76,7 @@ class TestMealViewSet:
     
     def test_list_meals_excludes_other_users(self):
         """Test that list excludes other users' meals."""
-        url = reverse('api:meal-list')
+        url = reverse('api:meals:meal-list')
         response = self.client.get(url)
         
         meal_ids = [meal['id'] for meal in response.data['results']]
@@ -84,7 +84,7 @@ class TestMealViewSet:
     
     def test_retrieve_meal(self):
         """Test retrieving a single meal."""
-        url = reverse('api:meal-detail', kwargs={'pk': self.meal1.id})
+        url = reverse('api:meals:meal-detail', kwargs={'pk': self.meal1.id})
         response = self.client.get(url)
         
         assert response.status_code == status.HTTP_200_OK
@@ -94,7 +94,7 @@ class TestMealViewSet:
     
     def test_create_meal_with_items(self):
         """Test creating a meal with meal items."""
-        url = reverse('api:meal-list')
+        url = reverse('api:meals:meal-list')
         data = {
             'name': 'Test Breakfast',
             'meal_type': 'breakfast',
@@ -124,7 +124,7 @@ class TestMealViewSet:
     
     def test_create_meal_with_new_food_item(self):
         """Test creating a meal with a new food item."""
-        url = reverse('api:meal-list')
+        url = reverse('api:meals:meal-list')
         data = {
             'name': 'Quick Snack',
             'meal_type': 'snack',
@@ -145,7 +145,7 @@ class TestMealViewSet:
     
     def test_update_meal(self):
         """Test updating a meal."""
-        url = reverse('api:meal-detail', kwargs={'pk': self.meal1.id})
+        url = reverse('api:meals:meal-detail', kwargs={'pk': self.meal1.id})
         data = {
             'name': 'Updated Lunch',
             'notes': 'Updated notes'
@@ -160,7 +160,7 @@ class TestMealViewSet:
     
     def test_delete_meal(self):
         """Test deleting a meal."""
-        url = reverse('api:meal-detail', kwargs={'pk': self.meal1.id})
+        url = reverse('api:meals:meal-detail', kwargs={'pk': self.meal1.id})
         response = self.client.delete(url)
         
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -168,7 +168,7 @@ class TestMealViewSet:
     
     def test_favorite_meal(self):
         """Test adding a meal to favorites."""
-        url = reverse('api:meal-favorite', kwargs={'pk': self.meal1.id})
+        url = reverse('api:meals:meal-favorite', kwargs={'pk': self.meal1.id})
         data = {'name': 'My Favorite Lunch'}
         
         response = self.client.post(url, data, format='json')
@@ -188,7 +188,7 @@ class TestMealViewSet:
             name='Favorite Lunch'
         )
         
-        url = reverse('api:meal-unfavorite', kwargs={'pk': self.meal1.id})
+        url = reverse('api:meals:meal-unfavorite', kwargs={'pk': self.meal1.id})
         response = self.client.delete(url)
         
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -199,7 +199,7 @@ class TestMealViewSet:
     
     def test_duplicate_meal(self):
         """Test duplicating a meal."""
-        url = reverse('api:meal-duplicate', kwargs={'pk': self.meal1.id})
+        url = reverse('api:meals:meal-duplicate', kwargs={'pk': self.meal1.id})
         data = {
             'name': 'Duplicate of Lunch',
             'consumed_at': timezone.now().isoformat()
@@ -223,7 +223,7 @@ class TestMealViewSet:
             name='Quick Lunch'
         )
         
-        url = reverse('api:meal-quick-log')
+        url = reverse('api:meals:meal-quick-log')
         data = {'favorite_meal_id': favorite.id}
         
         response = self.client.post(url, data, format='json')
@@ -238,7 +238,7 @@ class TestMealViewSet:
     
     def test_meal_statistics(self):
         """Test getting meal statistics."""
-        url = reverse('api:meal-statistics')
+        url = reverse('api:meals:meal-statistics')
         response = self.client.get(url, {'period': 'week'})
         
         assert response.status_code == status.HTTP_200_OK
@@ -259,7 +259,7 @@ class TestMealViewSet:
             quantity=200
         )
         
-        url = reverse('api:meal-similar', kwargs={'pk': self.meal1.id})
+        url = reverse('api:meals:meal-similar', kwargs={'pk': self.meal1.id})
         response = self.client.get(url)
         
         assert response.status_code == status.HTTP_200_OK
@@ -268,7 +268,7 @@ class TestMealViewSet:
     
     def test_meal_search(self):
         """Test searching meals."""
-        url = reverse('api:meal-list')
+        url = reverse('api:meals:meal-list')
         response = self.client.get(url, {'search': 'Lunch'})
         
         assert response.status_code == status.HTTP_200_OK
@@ -277,7 +277,7 @@ class TestMealViewSet:
     
     def test_meal_filtering_by_type(self):
         """Test filtering meals by type."""
-        url = reverse('api:meal-list')
+        url = reverse('api:meals:meal-list')
         response = self.client.get(url, {'meal_type': 'lunch'})
         
         assert response.status_code == status.HTTP_200_OK
@@ -286,7 +286,7 @@ class TestMealViewSet:
     
     def test_meal_date_filtering(self):
         """Test filtering meals by date range."""
-        url = reverse('api:meal-list')
+        url = reverse('api:meals:meal-list')
         start_date = (timezone.now() - timedelta(hours=3)).isoformat()
         end_date = timezone.now().isoformat()
         
@@ -302,14 +302,14 @@ class TestMealViewSet:
     def test_unauthorized_access(self):
         """Test unauthorized access is blocked."""
         self.client.force_authenticate(user=None)
-        url = reverse('api:meal-list')
+        url = reverse('api:meals:meal-list')
         response = self.client.get(url)
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
     def test_cannot_access_other_users_meal(self):
         """Test user cannot access other user's meal."""
-        url = reverse('api:meal-detail', kwargs={'pk': self.other_meal.id})
+        url = reverse('api:meals:meal-detail', kwargs={'pk': self.other_meal.id})
         response = self.client.get(url)
         
         assert response.status_code == status.HTTP_404_NOT_FOUND

@@ -136,22 +136,20 @@ class AnalyzeImageView(APIView):
                     ai_service='gemini',
                     ai_response=analysis_result,
                     confidence_score=analysis_result['data'].get('confidence', {}).get('overall', 0.8),
-                    processing_time_ms=processing_time_ms,
-                    detected_items_count=len(analysis_result['data'].get('ingredients', [])),
-                    analysis_version='1.0'
+                    analysis_time_ms=processing_time_ms,
+                    tokens_used=analysis_result.get('tokens_used', 0)
                 )
             
             # Prepare response
             response_data = {
-                'meal': MealSerializer(meal).data,
+                'meal': meal,
                 'detected_items': analysis_result['data'].get('ingredients', []),
                 'confidence': analysis_result['data'].get('confidence', {}),
                 'processing_time_ms': processing_time_ms,
                 'suggestions': analysis_result['data'].get('suggestions', [])
             }
             
-            serializer = AnalysisResultSerializer(data=response_data)
-            serializer.is_valid(raise_exception=True)
+            serializer = AnalysisResultSerializer(response_data)
             
             # Log successful API usage
             log_api_usage(

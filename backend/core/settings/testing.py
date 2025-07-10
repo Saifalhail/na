@@ -31,20 +31,21 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
 
-# Disable migrations for faster test runs
-class DisableMigrations:
-    def __contains__(self, item):
-        return True
+# Disable migrations for faster test runs (commented out for initial setup)
+# class DisableMigrations:
+#     def __contains__(self, item):
+#         return True
 
-    def __getitem__(self, item):
-        return None
+#     def __getitem__(self, item):
+#         return None
 
-MIGRATION_MODULES = DisableMigrations()
+# MIGRATION_MODULES = DisableMigrations()
 
-# Cache settings for testing (dummy cache)
+# Cache settings for testing (use locmem for rate limiting tests)
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'test-cache',
     }
 }
 
@@ -94,3 +95,21 @@ REST_FRAMEWORK.update({
 # Celery settings for testing (always eager)
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# Disable HTTPS enforcement for testing
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
+# Disable APPEND_SLASH to avoid 301 redirects in tests
+APPEND_SLASH = False
+
+# Override security middleware for testing (remove HTTPS enforcement)
+# Remove HTTPSEnforcementMiddleware and Django's SecurityMiddleware from MIDDLEWARE list
+MIDDLEWARE = [
+    m for m in MIDDLEWARE 
+    if m not in [
+        'api.security.middleware.HTTPSEnforcementMiddleware',
+        'django.middleware.security.SecurityMiddleware'
+    ]
+]

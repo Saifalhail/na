@@ -1,7 +1,7 @@
 """
 URL patterns for authentication endpoints.
 """
-from django.urls import path
+from django.urls import path, include
 
 from api.views.auth import (
     RegisterView,
@@ -36,4 +36,7 @@ urlpatterns = [
     
     # Profile
     path('profile/', ProfileView.as_view(), name='profile'),
+    
+    # Two-factor authentication
+    path('2fa/', include('api.auth.two_factor_urls')),
 ]

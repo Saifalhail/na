@@ -215,8 +215,8 @@ class MealDuplicateSerializer(serializers.Serializer):
 class MealStatisticsSerializer(serializers.Serializer):
     """Serializer for meal statistics."""
     total_meals = serializers.IntegerField()
-    total_calories = serializers.DecimalField(max_digits=10, decimal_places=2)
-    average_calories_per_meal = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_calories = serializers.FloatField()
+    average_calories_per_meal = serializers.FloatField()
     favorite_meal_type = serializers.CharField()
     meals_by_type = serializers.DictField()
     recent_favorites = FavoriteMealSerializer(many=True)

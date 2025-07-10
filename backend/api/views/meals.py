@@ -26,6 +26,7 @@ from ..exceptions import (
     BusinessLogicException
 )
 from ..permissions import IsOwnerPermission
+from ..utils.cache import CacheManager, invalidate_meal_cache
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +44,18 @@ class MealFilterBackend(DjangoFilterBackend):
         
         if start_date:
             try:
-                start = datetime.fromisoformat(start_date).replace(tzinfo=timezone.utc)
+                start = timezone.datetime.fromisoformat(start_date)
+                if timezone.is_naive(start):
+                    start = timezone.make_aware(start)
                 queryset = queryset.filter(consumed_at__gte=start)
             except ValueError:
                 pass
         
         if end_date:
             try:
-                end = datetime.fromisoformat(end_date).replace(tzinfo=timezone.utc)
+                end = timezone.datetime.fromisoformat(end_date)
+                if timezone.is_naive(end):
+                    end = timezone.make_aware(end)
                 queryset = queryset.filter(consumed_at__lte=end)
             except ValueError:
                 pass
@@ -142,7 +147,19 @@ class MealViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Set user when creating meal."""
-        serializer.save(user=self.request.user)
+        meal = serializer.save(user=self.request.user)
+        # Invalidate meal cache for this user
+        invalidate_meal_cache(self.request.user.id)
+    
+    def perform_update(self, serializer):
+        """Invalidate cache when meal is updated."""
+        super().perform_update(serializer)
+        invalidate_meal_cache(self.request.user.id)
+    
+    def perform_destroy(self, instance):
+        """Invalidate cache when meal is deleted."""
+        super().perform_destroy(instance)
+        invalidate_meal_cache(self.request.user.id)
     
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
@@ -223,23 +240,33 @@ class MealViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def favorites(self, request):
         """Get user's favorite meals."""
-        favorites = FavoriteMeal.objects.filter(
-            user=request.user
-        ).select_related(
-            'meal',
-            'meal__user'
-        ).prefetch_related(
-            'meal__meal_items__food_item'
-        ).annotate(
-            meal_items_count=Count('meal__meal_items', distinct=True)
-        ).order_by('quick_add_order', '-created_at')
+        def get_favorites():
+            favorites = FavoriteMeal.objects.filter(
+                user=request.user
+            ).select_related(
+                'meal',
+                'meal__user'
+            ).prefetch_related(
+                'meal__meal_items__food_item'
+            ).annotate(
+                meal_items_count=Count('meal__meal_items', distinct=True)
+            ).order_by('quick_add_order', '-created_at')
+            
+            serializer = FavoriteMealSerializer(
+                favorites,
+                many=True,
+                context={'request': request}
+            )
+            return serializer.data
         
-        serializer = FavoriteMealSerializer(
-            favorites,
-            many=True,
-            context={'request': request}
+        data = CacheManager.get_or_set(
+            CacheManager.PREFIX_FAVORITE_MEALS,
+            get_favorites,
+            CacheManager.TIMEOUT_MEDIUM,
+            user_id=request.user.id
         )
-        return Response(serializer.data)
+        
+        return Response(data)
     
     @action(detail=False, methods=['get'])
     def statistics(self, request):
@@ -251,6 +278,29 @@ class MealViewSet(viewsets.ModelViewSet):
         """
         period = request.query_params.get('period', 'month')
         
+        # Try to get from cache first
+        def get_statistics():
+            return self._calculate_statistics(period)
+        
+        # Use different cache timeout based on period
+        timeout = CacheManager.TIMEOUT_MEDIUM if period in ['week', 'month'] else CacheManager.TIMEOUT_LONG
+        
+        response_data = CacheManager.get_or_set(
+            CacheManager.PREFIX_MEAL_STATS,
+            get_statistics,
+            timeout,
+            user_id=request.user.id,
+            period=period
+        )
+        
+        serializer = MealStatisticsSerializer(data=response_data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
+    
+    def _calculate_statistics(self, period: str) -> Dict[str, Any]:
+        """
+        Calculate meal statistics for the given period.
+        """
         # Calculate date range
         end_date = timezone.now()
         if period == 'week':
@@ -306,7 +356,7 @@ class MealViewSet(viewsets.ModelViewSet):
         
         # Recent favorites
         recent_favorites = FavoriteMeal.objects.filter(
-            user=request.user
+            user=self.request.user
         ).select_related('meal').order_by('-last_used')[:5]
         
         # Time-based stats
@@ -314,8 +364,14 @@ class MealViewSet(viewsets.ModelViewSet):
         week_ago = now - timedelta(days=7)
         month_ago = now - timedelta(days=30)
         
-        meals_this_week = self.get_queryset().filter(consumed_at__gte=week_ago).count()
-        meals_this_month = self.get_queryset().filter(consumed_at__gte=month_ago).count()
+        meals_this_week = Meal.objects.filter(
+            user=self.request.user, 
+            consumed_at__gte=week_ago
+        ).count()
+        meals_this_month = Meal.objects.filter(
+            user=self.request.user, 
+            consumed_at__gte=month_ago
+        ).count()
         
         # Most active meal time
         meal_hours = meals.annotate(
@@ -331,17 +387,26 @@ class MealViewSet(viewsets.ModelViewSet):
             most_active_meal_time = 'No data'
         
         # Prepare response data
-        response_data = {
+        return {
             'total_meals': stats['total_meals'] or 0,
             'total_calories': float(stats['total_calories'] or 0),
             'average_calories_per_meal': float(stats['avg_calories'] or 0),
             'favorite_meal_type': favorite_meal_type,
             'meals_by_type': type_dict,
-            'recent_favorites': FavoriteMealSerializer(
-                recent_favorites,
-                many=True,
-                context={'request': request}
-            ).data,
+            'recent_favorites': [
+                {
+                    'id': fav.id,
+                    'name': fav.name,
+                    'meal': {
+                        'id': str(fav.meal.id),
+                        'name': fav.meal.name,
+                        'meal_type': fav.meal.meal_type
+                    },
+                    'times_used': fav.times_used,
+                    'last_used': fav.last_used
+                }
+                for fav in recent_favorites
+            ],
             'average_macros': {
                 k: float(v or 0) for k, v in avg_macros.items()
             },
@@ -349,11 +414,6 @@ class MealViewSet(viewsets.ModelViewSet):
             'meals_this_month': meals_this_month,
             'most_active_meal_time': most_active_meal_time
         }
-        
-        serializer = MealStatisticsSerializer(data=response_data)
-        serializer.is_valid(raise_exception=True)
-        
-        return Response(serializer.data)
     
     @action(detail=False, methods=['post'])
     def quick_log(self, request):
