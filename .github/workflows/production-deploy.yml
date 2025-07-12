@@ -61,7 +61,7 @@ jobs:
         isort --check-only --diff .
         
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-reports
@@ -124,7 +124,7 @@ jobs:
         coverage report
         
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: backend/coverage.xml
         fail_ci_if_error: true
@@ -185,7 +185,7 @@ jobs:
         output-file: sbom.spdx.json
         
     - name: Upload SBOM
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sbom
         path: sbom.spdx.json
@@ -228,11 +228,12 @@ jobs:
     - name: Notify Slack
       if: always()
       uses: 8398a7/action-slack@v3
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       with:
         status: ${{ job.status }}
         channel: '#deployments'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        message: |
+        text: |
           Staging deployment ${{ job.status }}
           Image: ${{ needs.build-images.outputs.image-tag }}
           Commit: ${{ github.sha }}
@@ -299,11 +300,12 @@ jobs:
     - name: Notify production deployment
       if: always()
       uses: 8398a7/action-slack@v3
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       with:
         status: ${{ job.status }}
         channel: '#production'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        message: |
+        text: |
           🚀 Production deployment ${{ job.status }}
           Version: ${{ github.ref_name }}
           Image: ${{ needs.build-images.outputs.image-tag }}
@@ -337,11 +339,12 @@ jobs:
         
     - name: Notify rollback
       uses: 8398a7/action-slack@v3
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       with:
         status: 'success'
         channel: '#production'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        message: |
+        text: |
           🔄 Production rollback completed
           Triggered by: ${{ github.actor }}
           Time: $(date -Iseconds)
@@ -362,7 +365,7 @@ jobs:
         cmd_options: '-a'
         
     - name: Upload ZAP report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: zap-report

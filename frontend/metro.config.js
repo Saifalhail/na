@@ -65,22 +65,11 @@ if (isWSL || isOneDrive) {
     ],
   };
 
-  // Optimize watchman for WSL/OneDrive
+  // Optimize file watching for WSL/OneDrive
   config.watchFolders = [
     path.resolve(projectRoot, 'node_modules'),
+    path.resolve(projectRoot, 'src'),
   ];
-  
-  // Disable file watching for certain paths to improve performance
-  config.watchman = {
-    ...config.watchman,
-    ignore_dirs: [
-      '.git',
-      'node_modules/.cache',
-      '.metro-cache',
-      'coverage',
-      '__tests__',
-    ],
-  };
 }
 
 // Enhanced caching for better performance

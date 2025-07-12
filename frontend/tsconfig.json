@@ -1,25 +1,52 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "lib": ["es2020", "dom"],
+    "lib": [
+      "es2020",
+      "dom"
+    ],
     "module": "esnext",
     "moduleResolution": "node",
     "jsx": "react-jsx",
     "strict": true,
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["src/components/*"],
-      "@screens/*": ["src/screens/*"],
-      "@navigation/*": ["src/navigation/*"],
-      "@services/*": ["src/services/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@store/*": ["src/store/*"],
-      "@utils/*": ["src/utils/*"],
-      "@theme/*": ["src/theme/*"],
-      "@types/*": ["src/types/*"],
-      "@constants/*": ["src/constants/*"],
-      "@config/*": ["src/config/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@screens/*": [
+        "src/screens/*"
+      ],
+      "@navigation/*": [
+        "src/navigation/*"
+      ],
+      "@services/*": [
+        "src/services/*"
+      ],
+      "@hooks/*": [
+        "src/hooks/*"
+      ],
+      "@store/*": [
+        "src/store/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@theme/*": [
+        "src/theme/*"
+      ],
+      "@types/*": [
+        "src/types/*"
+      ],
+      "@constants/*": [
+        "src/constants/*"
+      ],
+      "@config/*": [
+        "src/config/*"
+      ]
     },
     "skipLibCheck": true,
     "resolveJsonModule": true,
@@ -34,8 +61,21 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "isolatedModules": true,
-    "types": ["jest", "node"]
+    "types": [
+      "jest",
+      "node"
+    ]
   },
-  "include": ["src", "App.tsx"],
-  "exclude": ["node_modules", "babel.config.js", "metro.config.js", "**/*.test.ts", "**/*.test.tsx"]
+  "include": [
+    "src",
+    "App.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
+  "extends": "expo/tsconfig.base"
 }

@@ -6,10 +6,15 @@ This file contains settings common to all environments.
 
 from pathlib import Path
 import os
+import warnings
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Suppress deprecation warnings from third-party packages during development
+warnings.filterwarnings('ignore', category=UserWarning, module='dj_rest_auth')
+warnings.filterwarnings('ignore', category=UserWarning, module='allauth')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent

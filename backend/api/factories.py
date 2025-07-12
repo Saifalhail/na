@@ -13,7 +13,7 @@ from decimal import Decimal
 from api.models import (
     UserProfile, FoodItem, Meal, MealItem, MealAnalysis,
     NutritionalInfo, FavoriteMeal, DietaryRestriction,
-    APIUsageLog, NutritionData, RecipeIngredient
+    APIUsageLog, NutritionData, RecipeIngredient, Notification
 )
 
 User = get_user_model()
@@ -333,3 +333,37 @@ class RecipeIngredientFactory(DjangoModelFactory):
     carbs = fuzzy.FuzzyDecimal(0, 40, precision=2)
     created_at = factory.LazyFunction(django_timezone.now)
     updated_at = factory.LazyFunction(django_timezone.now)
+
+
+class NotificationFactory(DjangoModelFactory):
+    """Factory for Notification model."""
+    
+    class Meta:
+        model = Notification
+    
+    user = factory.SubFactory(UserFactory)
+    notification_type = fuzzy.FuzzyChoice(['meal_reminder', 'achievement', 'daily_summary', 'weekly_report', 'system'])
+    title = factory.Faker('sentence', nb_words=4)
+    message = factory.Faker('paragraph', nb_sentences=2)
+    priority = fuzzy.FuzzyChoice(['low', 'medium', 'high'])
+    is_read = False
+    read_at = None
+    
+    # Optional metadata
+    metadata = factory.LazyFunction(
+        lambda: {
+            'source': 'test',
+            'timestamp': django_timezone.now().isoformat()
+        }
+    )
+    
+    # Delivery status
+    email_sent = factory.Faker('boolean')
+    push_sent = factory.Faker('boolean')
+    sms_sent = factory.Faker('boolean')
+    
+    # Timestamps
+    created_at = factory.LazyFunction(django_timezone.now)
+    expires_at = factory.LazyFunction(
+        lambda: django_timezone.now() + timedelta(days=30)
+    )
