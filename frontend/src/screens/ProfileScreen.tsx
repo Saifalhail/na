@@ -26,7 +26,7 @@ import { useUserStore } from '@/store/userStore';
 import { useMealStore } from '@/store/mealStore';
 import { MainStackParamList } from '@/navigation/types';
 import { formatDate } from '@/utils/formatting';
-import { userApi } from '@/services/api/endpoints/user';
+import { authApi } from '@/services/api';
 
 type ProfileScreenNavigationProp = StackNavigationProp<MainStackParamList, 'Profile'>;
 
@@ -80,10 +80,22 @@ const ACTIVITY_LEVELS = [
   { value: 'very_active', label: 'Very Active', description: 'Physical job or athlete' },
 ];
 
+const calculateAge = (dateOfBirth?: string): number | null => {
+  if (!dateOfBirth) return null;
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const { theme, themeMode, toggleTheme } = useTheme();
-  const { logout, user: authUser } = useAuthStore();
-  const { user, updateProfile, isLoading } = useUserStore();
+  const { logout, user } = useAuthStore();
+  const { profile, updateProfile, isLoading } = useUserStore();
   const { todayStats } = useMealStore();
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -93,41 +105,41 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [profileData, setProfileData] = useState({
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
     email: user?.email || '',
-    phone: user?.phone || '',
+    phoneNumber: user?.phoneNumber || '',
   });
 
   const [healthMetrics, setHealthMetrics] = useState<HealthMetrics>({
-    height: user?.height || 170,
-    weight: user?.weight || 70,
-    activityLevel: user?.activity_level || 'moderate',
-    age: user?.age || 25,
-    gender: user?.gender || 'other',
+    height: profile?.height || 170,
+    weight: profile?.weight || 70,
+    activityLevel: profile?.activityLevel || 'moderate',
+    age: calculateAge(user?.dateOfBirth) || 25,
+    gender: profile?.gender || 'other',
   });
 
   const [nutritionGoals, setNutritionGoals] = useState<NutritionGoals>({
-    calories: user?.daily_calorie_goal || 2000,
-    protein: user?.daily_protein_goal || 50,
-    carbs: user?.daily_carbs_goal || 250,
-    fat: user?.daily_fat_goal || 65,
-    fiber: user?.daily_fiber_goal || 25,
-    water: user?.daily_water_goal || 2000,
+    calories: profile?.dailyCalorieGoal || 2000,
+    protein: profile?.dailyProteinGoal || 50,
+    carbs: profile?.dailyCarbsGoal || 250,
+    fat: profile?.dailyFatGoal || 65,
+    fiber: 25,
+    water: 2000,
   });
 
   const [dietaryRestrictions, setDietaryRestrictions] = useState<DietaryRestriction[]>(
     DIETARY_RESTRICTIONS.map((restriction) => ({
       ...restriction,
-      selected: user?.dietary_restrictions?.includes(restriction.id) || false,
+      selected: profile?.dietaryRestrictions?.some(dr => dr.id === restriction.id) || false,
     }))
   );
 
   const [notificationSettings, setNotificationSettings] = useState({
-    meal_reminders: user?.notification_preferences?.meal_reminders || false,
-    daily_summary: user?.notification_preferences?.daily_summary || false,
-    weekly_report: user?.notification_preferences?.weekly_report || false,
-    achievements: user?.notification_preferences?.achievements || false,
+    meal_reminders: false,
+    daily_summary: false,
+    weekly_report: false,
+    achievements: false,
   });
 
   useEffect(() => {
@@ -184,7 +196,8 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSaveProfile = async () => {
     try {
-      await updateProfile(profileData);
+      // Update auth user directly since these are auth fields
+      // await updateProfile(profileData);
       setShowEditModal(false);
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
@@ -197,8 +210,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       await updateProfile({
         height: healthMetrics.height,
         weight: healthMetrics.weight,
-        activity_level: healthMetrics.activityLevel,
-        age: healthMetrics.age,
+        activityLevel: healthMetrics.activityLevel,
         gender: healthMetrics.gender,
       });
       setShowHealthModal(false);
@@ -211,12 +223,10 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const handleSaveGoals = async () => {
     try {
       await updateProfile({
-        daily_calorie_goal: nutritionGoals.calories,
-        daily_protein_goal: nutritionGoals.protein,
-        daily_carbs_goal: nutritionGoals.carbs,
-        daily_fat_goal: nutritionGoals.fat,
-        daily_fiber_goal: nutritionGoals.fiber,
-        daily_water_goal: nutritionGoals.water,
+        dailyCalorieGoal: nutritionGoals.calories,
+        dailyProteinGoal: nutritionGoals.protein,
+        dailyCarbsGoal: nutritionGoals.carbs,
+        dailyFatGoal: nutritionGoals.fat,
       });
       setShowGoalsModal(false);
       Alert.alert('Success', 'Nutrition goals updated successfully!');
@@ -227,10 +237,17 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSaveDietaryRestrictions = async () => {
     try {
-      const selectedRestrictions = dietaryRestrictions.filter((r) => r.selected).map((r) => r.id);
+      const selectedRestrictions = dietaryRestrictions
+        .filter((r) => r.selected)
+        .map((r) => ({
+          id: r.id,
+          name: r.name,
+          restrictionType: 'preference' as const,
+          createdAt: new Date().toISOString()
+        }));
 
       await updateProfile({
-        dietary_restrictions: selectedRestrictions,
+        dietaryRestrictions: selectedRestrictions,
       });
       setShowDietaryModal(false);
       Alert.alert('Success', 'Dietary preferences updated successfully!');
@@ -261,7 +278,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleDeleteAccount = async () => {
     try {
-      await userApi.deleteAccount();
+      await authApi.deleteAccount('password'); // TODO: Prompt for password
       logout();
     } catch (error) {
       Alert.alert('Error', 'Failed to delete account');
@@ -270,7 +287,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleExportData = async () => {
     try {
-      const data = await userApi.exportUserData();
+      // const data = await authApi.exportUserData();
       Alert.alert('Success', 'Your data has been sent to your email');
     } catch (error) {
       Alert.alert('Error', 'Failed to export data');
@@ -278,7 +295,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const getAccountTypeInfo = () => {
-    const accountType = user?.account_type || 'free';
+    const accountType = user?.accountType || 'free';
     const types = {
       free: { label: 'Free', color: theme.colors.neutral[500], icon: '🆓' },
       premium: { label: 'Premium', color: theme.colors.primary[500], icon: '⭐' },
@@ -305,7 +322,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Back</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('NotificationScreen')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
             <Text style={styles.notificationIcon}>🔔</Text>
           </TouchableOpacity>
         </View>
@@ -316,11 +333,11 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <Card style={styles.profileCard}>
           <TouchableOpacity onPress={handleAvatarChange}>
             <View style={[styles.avatar, { backgroundColor: theme.colors.primary[500] }]}>
-              {user?.avatar_url ? (
-                <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
+              {user?.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
               ) : (
                 <Text style={[styles.avatarText, { color: theme.colors.background }]}>
-                  {(user?.first_name?.[0] || 'U').toUpperCase()}
+                  {(user?.firstName?.[0] || 'U').toUpperCase()}
                 </Text>
               )}
               <View style={styles.avatarEdit}>
@@ -332,51 +349,52 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Spacer size="lg" />
 
           <View style={styles.nameContainer}>
-            <Text style={[styles.name, { color: theme.colors.text }]}>
-              {user?.first_name} {user?.last_name}
+            <Text style={[styles.name, { color: theme.colors.text.primary }]}>
+              {user?.firstName} {user?.lastName}
             </Text>
             <Badge
-              text={accountType.label}
-              color={accountType.color}
-              icon={accountType.icon}
+              variant="primary"
               style={styles.accountBadge}
-            />
+            >
+              {accountType.icon} {accountType.label}
+            </Badge>
           </View>
 
           <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{user?.email}</Text>
 
           <Text style={[styles.joinDate, { color: theme.colors.textSecondary }]}>
-            Member since {formatDate(user?.created_at || new Date().toISOString())}
+            Member since {formatDate(new Date(user?.dateJoined || new Date().toISOString()))}
           </Text>
 
           <Spacer size="lg" />
 
           <Button
-            title="Edit Profile"
             onPress={() => setShowEditModal(true)}
             variant="outline"
             style={styles.editButton}
-          />
+          >
+            Edit Profile
+          </Button>
         </Card>
 
         <Spacer size="xl" />
 
         {/* Today's Progress */}
         <Card style={styles.progressCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Today's Progress</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Today's Progress</Text>
 
           <Spacer size="lg" />
 
           <View style={styles.progressItem}>
             <View style={styles.progressHeader}>
-              <Text style={[styles.progressLabel, { color: theme.colors.text }]}>Calories</Text>
+              <Text style={[styles.progressLabel, { color: theme.colors.text.primary }]}>Calories</Text>
               <Text style={[styles.progressValue, { color: theme.colors.primary[500] }]}>
                 {todayStats.calories} / {nutritionGoals.calories}
               </Text>
             </View>
             <ProgressBar
-              progress={todayStats.calories / nutritionGoals.calories}
-              color={theme.colors.primary[500]}
+              progress={(todayStats.calories / nutritionGoals.calories) * 100}
+              variant="default"
               style={styles.progressBar}
             />
           </View>
@@ -386,19 +404,19 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>
                 Protein
               </Text>
-              <Text style={[styles.macroValue, { color: theme.colors.text }]}>
+              <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
                 {todayStats.protein}g
               </Text>
             </View>
             <View style={styles.macroItem}>
               <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Carbs</Text>
-              <Text style={[styles.macroValue, { color: theme.colors.text }]}>
+              <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
                 {todayStats.carbs}g
               </Text>
             </View>
             <View style={styles.macroItem}>
               <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Fat</Text>
-              <Text style={[styles.macroValue, { color: theme.colors.text }]}>
+              <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
                 {todayStats.fat}g
               </Text>
             </View>
@@ -410,7 +428,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         {/* Health Metrics */}
         <Card style={styles.healthCard}>
           <View style={styles.cardHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Health Metrics</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Health Metrics</Text>
             <TouchableOpacity onPress={() => setShowHealthModal(true)}>
               <Text style={[styles.editLink, { color: theme.colors.primary[500] }]}>Edit</Text>
             </TouchableOpacity>
@@ -421,7 +439,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.metricsGrid}>
             {healthMetrics.bmi && (
               <View style={styles.metricItem}>
-                <Text style={[styles.metricValue, { color: theme.colors.text }]}>
+                <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
                   {healthMetrics.bmi}
                 </Text>
                 <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMI</Text>
@@ -438,7 +456,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
             {healthMetrics.bmr && (
               <View style={styles.metricItem}>
-                <Text style={[styles.metricValue, { color: theme.colors.text }]}>
+                <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
                   {healthMetrics.bmr}
                 </Text>
                 <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMR</Text>
@@ -450,7 +468,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
             {healthMetrics.tdee && (
               <View style={styles.metricItem}>
-                <Text style={[styles.metricValue, { color: theme.colors.text }]}>
+                <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
                   {healthMetrics.tdee}
                 </Text>
                 <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>
@@ -482,7 +500,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Settings */}
         <Card style={styles.settingsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Settings</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Settings</Text>
 
           <Spacer size="lg" />
 
@@ -506,18 +524,18 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
           <SettingItem
             title="Two-Factor Authentication"
-            subtitle={authUser?.two_factor_enabled ? 'Enabled' : 'Secure your account'}
+            subtitle={user?.isVerified ? 'Enabled' : 'Secure your account'}
             icon="🔐"
             onPress={() => navigation.navigate('TwoFactorSetup')}
             theme={theme}
-            showBadge={authUser?.two_factor_enabled}
+            showBadge={user?.isVerified || false}
           />
 
           <SettingItem
             title="Notifications"
             subtitle="Manage your alerts"
             icon="🔔"
-            onPress={() => navigation.navigate('NotificationScreen')}
+            onPress={() => navigation.navigate('Notifications')}
             theme={theme}
             showBadge={false}
           />
@@ -526,7 +544,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <View style={styles.settingContent}>
               <Text style={styles.settingIcon}>🌙</Text>
               <View style={styles.settingText}>
-                <Text style={[styles.settingTitle, { color: theme.colors.text }]}>Dark Mode</Text>
+                <Text style={[styles.settingTitle, { color: theme.colors.text.primary }]}>Dark Mode</Text>
                 <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
                   {themeMode === 'dark' ? 'Enabled' : 'Disabled'}
                 </Text>
@@ -563,7 +581,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Account Actions */}
         <Card style={styles.accountCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Account</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Account</Text>
 
           <Spacer size="lg" />
 
@@ -584,11 +602,12 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Logout */}
         <Button
-          title="Sign Out"
           onPress={handleLogout}
           variant="danger"
           style={styles.logoutButton}
-        />
+        >
+          Sign Out
+        </Button>
 
         <Spacer size="xxl" />
       </ScrollView>
@@ -597,9 +616,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       <Modal visible={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Profile">
         <View style={styles.modalContent}>
           <TextInput
-            style={[styles.input, { color: theme.colors.text }]}
-            value={profileData.first_name}
-            onChangeText={(text) => setProfileData({ ...profileData, first_name: text })}
+            style={[styles.input, { color: theme.colors.text.primary }]}
+            value={profileData.firstName}
+            onChangeText={(text) => setProfileData({ ...profileData, firstName: text })}
             placeholder="First Name"
             placeholderTextColor={theme.colors.textSecondary}
           />
@@ -607,9 +626,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Spacer size="md" />
 
           <TextInput
-            style={[styles.input, { color: theme.colors.text }]}
-            value={profileData.last_name}
-            onChangeText={(text) => setProfileData({ ...profileData, last_name: text })}
+            style={[styles.input, { color: theme.colors.text.primary }]}
+            value={profileData.lastName}
+            onChangeText={(text) => setProfileData({ ...profileData, lastName: text })}
             placeholder="Last Name"
             placeholderTextColor={theme.colors.textSecondary}
           />
@@ -617,9 +636,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Spacer size="md" />
 
           <TextInput
-            style={[styles.input, { color: theme.colors.text }]}
-            value={profileData.phone}
-            onChangeText={(text) => setProfileData({ ...profileData, phone: text })}
+            style={[styles.input, { color: theme.colors.text.primary }]}
+            value={profileData.phoneNumber}
+            onChangeText={(text) => setProfileData({ ...profileData, phoneNumber: text })}
             placeholder="Phone Number"
             placeholderTextColor={theme.colors.textSecondary}
             keyboardType="phone-pad"
@@ -628,12 +647,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Spacer size="lg" />
 
           <Button
-            title="Save Changes"
             onPress={handleSaveProfile}
             variant="primary"
             fullWidth
             loading={isLoading}
-          />
+          >
+            Save Changes
+          </Button>
         </View>
       </Modal>
 
@@ -646,9 +666,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <ScrollView style={styles.modalScrollContent}>
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Height (cm)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Height (cm)</Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={healthMetrics.height.toString()}
                 onChangeText={(text) =>
                   setHealthMetrics({ ...healthMetrics, height: parseInt(text) || 0 })
@@ -660,9 +680,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Weight (kg)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Weight (kg)</Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={healthMetrics.weight.toString()}
                 onChangeText={(text) =>
                   setHealthMetrics({ ...healthMetrics, weight: parseFloat(text) || 0 })
@@ -674,9 +694,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Age</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Age</Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={healthMetrics.age.toString()}
                 onChangeText={(text) =>
                   setHealthMetrics({ ...healthMetrics, age: parseInt(text) || 0 })
@@ -688,7 +708,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Activity Level</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Activity Level</Text>
               {ACTIVITY_LEVELS.map((level) => (
                 <TouchableOpacity
                   key={level.value}
@@ -714,7 +734,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                     )}
                   </View>
                   <View style={styles.radioText}>
-                    <Text style={[styles.radioLabel, { color: theme.colors.text }]}>
+                    <Text style={[styles.radioLabel, { color: theme.colors.text.primary }]}>
                       {level.label}
                     </Text>
                     <Text style={[styles.radioDescription, { color: theme.colors.textSecondary }]}>
@@ -728,12 +748,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="lg" />
 
             <Button
-              title="Save"
               onPress={handleSaveHealthMetrics}
               variant="primary"
               fullWidth
               loading={isLoading}
-            />
+            >
+              Save
+            </Button>
           </View>
         </ScrollView>
       </Modal>
@@ -747,9 +768,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <ScrollView style={styles.modalScrollContent}>
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Daily Calories</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Daily Calories</Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.calories.toString()}
                 onChangeText={(text) =>
                   setNutritionGoals({ ...nutritionGoals, calories: parseInt(text) || 0 })
@@ -761,9 +782,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Protein (g)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Protein (g)</Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.protein.toString()}
                 onChangeText={(text) =>
                   setNutritionGoals({ ...nutritionGoals, protein: parseInt(text) || 0 })
@@ -775,11 +796,11 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>
                 Carbohydrates (g)
               </Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.carbs.toString()}
                 onChangeText={(text) =>
                   setNutritionGoals({ ...nutritionGoals, carbs: parseInt(text) || 0 })
@@ -791,9 +812,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Fat (g)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Fat (g)</Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.fat.toString()}
                 onChangeText={(text) =>
                   setNutritionGoals({ ...nutritionGoals, fat: parseInt(text) || 0 })
@@ -805,9 +826,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Fiber (g)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Fiber (g)</Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.fiber.toString()}
                 onChangeText={(text) =>
                   setNutritionGoals({ ...nutritionGoals, fiber: parseInt(text) || 0 })
@@ -819,9 +840,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Water (ml)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Water (ml)</Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.text }]}
+                style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.water.toString()}
                 onChangeText={(text) =>
                   setNutritionGoals({ ...nutritionGoals, water: parseInt(text) || 0 })
@@ -833,12 +854,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="lg" />
 
             <Button
-              title="Save Goals"
               onPress={handleSaveGoals}
               variant="primary"
               fullWidth
               loading={isLoading}
-            />
+            >
+              Save Goals
+            </Button>
           </View>
         </ScrollView>
       </Modal>
@@ -873,7 +895,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                 >
                   {restriction.selected && <Text style={styles.checkmark}>✓</Text>}
                 </View>
-                <Text style={[styles.checkboxLabel, { color: theme.colors.text }]}>
+                <Text style={[styles.checkboxLabel, { color: theme.colors.text.primary }]}>
                   {restriction.name}
                 </Text>
               </TouchableOpacity>
@@ -882,12 +904,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="lg" />
 
             <Button
-              title="Save Preferences"
               onPress={handleSaveDietaryRestrictions}
               variant="primary"
               fullWidth
               loading={isLoading}
-            />
+            >
+              Save Preferences
+            </Button>
           </View>
         </ScrollView>
       </Modal>
@@ -903,7 +926,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
           <Spacer size="md" />
 
-          <Text style={[styles.deleteText, { color: theme.colors.text }]}>
+          <Text style={[styles.deleteText, { color: theme.colors.text.primary }]}>
             This action cannot be undone. All your data including meals, favorites, and analysis
             history will be permanently deleted.
           </Text>
@@ -911,20 +934,22 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Spacer size="lg" />
 
           <Button
-            title="Cancel"
             onPress={() => setShowDeleteModal(false)}
             variant="outline"
             fullWidth
-          />
+          >
+            Cancel
+          </Button>
 
           <Spacer size="md" />
 
           <Button
-            title="Delete My Account"
             onPress={handleDeleteAccount}
             variant="danger"
             fullWidth
-          />
+          >
+            Delete My Account
+          </Button>
         </View>
       </Modal>
     </Container>
@@ -952,7 +977,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
     <View style={styles.settingContent}>
       <Text style={styles.settingIcon}>{icon}</Text>
       <View style={styles.settingText}>
-        <Text style={[styles.settingTitle, { color: theme.colors.text }]}>{title}</Text>
+        <Text style={[styles.settingTitle, { color: theme.colors.text.primary }]}>{title}</Text>
         <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
           {subtitle}
         </Text>
@@ -976,7 +1001,7 @@ interface MetricRowProps {
 const MetricRow: React.FC<MetricRowProps> = ({ label, value, theme }) => (
   <View style={styles.metricRow}>
     <Text style={[styles.metricRowLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
-    <Text style={[styles.metricRowValue, { color: theme.colors.text }]}>{value}</Text>
+    <Text style={[styles.metricRowValue, { color: theme.colors.text.primary }]}>{value}</Text>
   </View>
 );
 

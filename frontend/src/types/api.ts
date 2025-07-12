@@ -120,6 +120,16 @@ export interface GoogleLoginRequest {
   access_token?: string;
   id_token?: string;
   code?: string;
+  user_info?: {
+    id: string;
+    email: string;
+    verified_email: boolean;
+    name: string;
+    given_name?: string;
+    family_name?: string;
+    picture?: string;
+    locale?: string;
+  };
 }
 
 export interface SocialAuthResponse {
@@ -188,7 +198,7 @@ export interface AnalysisResult {
 }
 
 export interface RecalculateRequest {
-  mealId: string;
+  mealId?: string; // Optional for pre-save calculations
   items: Array<{
     foodItemId?: string;
     name: string;
@@ -252,6 +262,7 @@ export interface MealFilters {
   endDate?: string;
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other';
   isFavorite?: boolean;
+  favoritesOnly?: boolean;
   search?: string;
   minCalories?: number;
   maxCalories?: number;

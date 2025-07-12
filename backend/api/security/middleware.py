@@ -23,14 +23,17 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
     
     def process_response(self, request, response):
         """Add security headers to response."""
-        # Content Security Policy
+        # Content Security Policy - Secure configuration without unsafe directives
         response['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "script-src 'self' https://cdn.jsdelivr.net; "
+            "style-src 'self' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: https:; "
-            "connect-src 'self' https://api.sentry.io;"
+            "connect-src 'self' https://api.sentry.io https://api.openai.com https://generativelanguage.googleapis.com; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
         )
         
         # Other security headers
@@ -123,16 +126,41 @@ class RequestLoggingMiddleware(MiddlewareMixin):
 
 class RateLimitMiddleware(MiddlewareMixin):
     """
-    Custom rate limiting middleware with different limits per endpoint.
+    Enhanced rate limiting middleware with device-specific and subscription-aware limits.
     """
     
-    # Rate limits per endpoint (requests per minute)
-    RATE_LIMITS = {
+    # Rate limits per endpoint (requests per minute) - Free tier
+    RATE_LIMITS_FREE = {
         '/api/v1/auth/login/': 5,
         '/api/v1/auth/register/': 3,
-        '/api/v1/analysis/image/': 10,
-        '/api/v1/analysis/recalculate/': 20,
+        '/api/v1/ai/analyze/': 8,  # Lower for free users
+        '/api/v1/ai/recalculate/': 15,
+        '/api/v1/mobile/batch/': 5,  # Batch operations limited for free
+        '/api/v1/mobile/optimize-image/': 10,
         'default': 60,
+    }
+    
+    # Rate limits per endpoint (requests per minute) - Premium tier
+    RATE_LIMITS_PREMIUM = {
+        '/api/v1/auth/login/': 10,
+        '/api/v1/auth/register/': 5,
+        '/api/v1/ai/analyze/': 30,  # Higher for premium
+        '/api/v1/ai/recalculate/': 50,
+        '/api/v1/mobile/batch/': 20,  # More batch operations
+        '/api/v1/mobile/optimize-image/': 30,
+        'default': 120,
+    }
+    
+    # Burst limits for image uploads (per 5 minutes)
+    BURST_LIMITS = {
+        'free': {
+            '/api/v1/ai/analyze/': 20,
+            '/api/v1/mobile/optimize-image/': 25,
+        },
+        'premium': {
+            '/api/v1/ai/analyze/': 80,
+            '/api/v1/mobile/optimize-image/': 100,
+        }
     }
     
     def process_request(self, request):
@@ -141,47 +169,138 @@ class RateLimitMiddleware(MiddlewareMixin):
         if request.user.is_authenticated and request.user.is_superuser:
             return None
         
-        # Get rate limit for endpoint
-        rate_limit = self.get_rate_limit(request.path)
+        # Get user subscription tier
+        user_tier = self.get_user_tier(request.user)
         
-        # Check rate limit
-        if self.is_rate_limited(request, rate_limit):
+        # Get rate limit for endpoint based on tier
+        rate_limit = self.get_rate_limit(request.path, user_tier)
+        
+        # Check regular rate limit
+        if self.is_rate_limited(request, rate_limit, 'regular'):
             return JsonResponse(
                 {
                     'error': 'Rate limit exceeded',
                     'message': f'Maximum {rate_limit} requests per minute allowed',
+                    'tier': user_tier,
+                    'upgrade_available': user_tier == 'free'
                 },
                 status=status.HTTP_429_TOO_MANY_REQUESTS
             )
         
+        # Check burst limits for image endpoints
+        if self.is_image_endpoint(request.path):
+            burst_limit = self.get_burst_limit(request.path, user_tier)
+            if burst_limit and self.is_rate_limited(request, burst_limit, 'burst'):
+                return JsonResponse(
+                    {
+                        'error': 'Burst limit exceeded',
+                        'message': f'Maximum {burst_limit} image requests per 5 minutes allowed',
+                        'tier': user_tier,
+                        'retry_after': 300,  # 5 minutes
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                )
+        
         return None
     
-    def get_rate_limit(self, path):
-        """Get rate limit for specific path."""
-        for endpoint, limit in self.RATE_LIMITS.items():
+    def get_user_tier(self, user):
+        """Get user subscription tier."""
+        if not user.is_authenticated:
+            return 'free'
+        
+        try:
+            # Check if user has active subscription
+            active_subscription = user.subscriptions.filter(
+                status__in=['active', 'trialing']
+            ).first()
+            
+            if active_subscription and active_subscription.plan.plan_type in ['premium', 'professional']:
+                return 'premium'
+        except AttributeError:
+            # Handle case where subscription models might not be available
+            pass
+        
+        # Check legacy premium flag
+        if hasattr(user, 'profile') and getattr(user.profile, 'is_premium', False):
+            return 'premium'
+        
+        return 'free'
+    
+    def get_rate_limit(self, path, tier='free'):
+        """Get rate limit for specific path and tier."""
+        rate_limits = self.RATE_LIMITS_PREMIUM if tier == 'premium' else self.RATE_LIMITS_FREE
+        
+        for endpoint, limit in rate_limits.items():
             if endpoint != 'default' and path.startswith(endpoint):
                 return limit
-        return self.RATE_LIMITS['default']
+        return rate_limits['default']
     
-    def is_rate_limited(self, request, limit):
+    def get_burst_limit(self, path, tier='free'):
+        """Get burst limit for specific path and tier."""
+        burst_limits = self.BURST_LIMITS.get(tier, {})
+        
+        for endpoint, limit in burst_limits.items():
+            if path.startswith(endpoint):
+                return limit
+        return None
+    
+    def is_image_endpoint(self, path):
+        """Check if endpoint handles image processing."""
+        image_endpoints = ['/api/v1/ai/analyze/', '/api/v1/mobile/optimize-image/']
+        return any(path.startswith(endpoint) for endpoint in image_endpoints)
+    
+    def is_rate_limited(self, request, limit, limit_type='regular'):
         """Check if request should be rate limited."""
-        # Get identifier (user ID or IP)
+        # Get device ID from headers (for mobile apps)
+        device_id = request.META.get('HTTP_X_DEVICE_ID')
+        
+        # Build identifier hierarchy: device -> user -> IP
+        identifiers = []
+        
+        if device_id and request.user.is_authenticated:
+            # Most specific: authenticated user on specific device
+            identifiers.append(f'device_{device_id}_user_{request.user.id}')
+        
         if request.user.is_authenticated:
-            identifier = f'user_{request.user.id}'
-        else:
-            identifier = f'ip_{self.get_client_ip(request)}'
+            # User-level rate limiting
+            identifiers.append(f'user_{request.user.id}')
         
-        # Create cache key
-        cache_key = f'rate_limit_{identifier}_{request.path}'
+        if device_id:
+            # Device-level rate limiting (even for unauthenticated)
+            identifiers.append(f'device_{device_id}')
         
-        # Get current count
-        current_count = cache.get(cache_key, 0)
+        # Fallback to IP-based limiting
+        identifiers.append(f'ip_{self.get_client_ip(request)}')
         
-        if current_count >= limit:
-            return True
+        # Set cache timeout based on limit type
+        cache_timeout = 300 if limit_type == 'burst' else 60  # 5 min vs 1 min
         
-        # Increment count
-        cache.set(cache_key, current_count + 1, 60)  # 60 seconds
+        # Check each identifier level
+        for identifier in identifiers:
+            cache_key = f'rate_limit_{limit_type}_{identifier}_{request.path}'
+            
+            # Get current count
+            current_count = cache.get(cache_key, 0)
+            
+            if current_count >= limit:
+                # Log rate limit hit for monitoring
+                logger.warning(
+                    f"Rate limit exceeded: {identifier} on {request.path}",
+                    extra={
+                        'identifier': identifier,
+                        'path': request.path,
+                        'limit': limit,
+                        'current_count': current_count,
+                        'limit_type': limit_type,
+                        'device_id': device_id,
+                        'user_id': request.user.id if request.user.is_authenticated else None,
+                        'ip': self.get_client_ip(request),
+                    }
+                )
+                return True
+            
+            # Increment count for this identifier
+            cache.set(cache_key, current_count + 1, cache_timeout)
         
         return False
     

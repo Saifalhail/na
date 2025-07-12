@@ -218,16 +218,15 @@ class NotificationPreferencesView(generics.RetrieveUpdateAPIView):
     
     def get_object(self):
         """
-        Return the authenticated user.
+        Return the authenticated user's profile.
         """
-        return self.request.user
+        return self.request.user.profile
     
     def get(self, request, *args, **kwargs):
         """
         Get current notification preferences.
         """
-        user = self.get_object()
-        profile = user.profile
+        profile = self.get_object()
         
         data = {
             'receive_email_notifications': profile.receive_email_notifications,
@@ -240,7 +239,8 @@ class NotificationPreferencesView(generics.RetrieveUpdateAPIView):
             'notification_preferences': profile.notification_preferences,
         }
         
-        serializer = self.get_serializer(data)
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
     
     def put(self, request, *args, **kwargs):
@@ -260,10 +260,15 @@ class NotificationPreferencesView(generics.RetrieveUpdateAPIView):
         Update notification preferences.
         """
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        profile = self.get_object()
+        serializer = self.get_serializer(data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        
+        # Update profile with validated data
+        for attr, value in serializer.validated_data.items():
+            if hasattr(profile, attr):
+                setattr(profile, attr, value)
+        profile.save()
         
         return Response({
             'message': 'Notification preferences updated successfully',

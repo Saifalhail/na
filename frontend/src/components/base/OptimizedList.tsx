@@ -169,6 +169,7 @@ export function VirtualizedOptimizedList<T>({
   renderItem,
   getItem,
   getItemCount,
+  maintainVisibleContentPosition,
   ...props
 }: Omit<OptimizedListProps<T>, 'data'> & {
   data: any;
@@ -177,6 +178,17 @@ export function VirtualizedOptimizedList<T>({
 }) {
   const memoizedGetItem = useCallback(getItem, []);
   const memoizedGetItemCount = useCallback(getItemCount, []);
+
+  // Convert boolean to proper maintainVisibleContentPosition config
+  const maintainVisibleContentPositionConfig = useMemo(() => {
+    if (maintainVisibleContentPosition) {
+      return {
+        minIndexForVisible: 0,
+        autoscrollToTopThreshold: 10,
+      };
+    }
+    return undefined;
+  }, [maintainVisibleContentPosition]);
 
   return (
     <VirtualizedList
@@ -191,6 +203,7 @@ export function VirtualizedOptimizedList<T>({
       updateCellsBatchingPeriod={props.updateCellsBatchingPeriod || 50}
       initialNumToRender={props.initialNumToRender || 10}
       removeClippedSubviews={props.removeClippedSubviews ?? true}
+      maintainVisibleContentPosition={maintainVisibleContentPositionConfig}
     />
   );
 }

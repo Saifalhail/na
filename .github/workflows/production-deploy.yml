@@ -1,0 +1,369 @@
+name: Production Deployment
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Security and Quality Checks
+  security-checks:
+    name: Security & Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt -r requirements_security.txt
+        
+    - name: Security scan with Bandit
+      run: |
+        cd backend
+        bandit -r . -x ./venv/,./node_modules/,./migrations/ -f json -o bandit-report.json
+        
+    - name: Dependency check with Safety
+      run: |
+        cd backend
+        safety check --json --output safety-report.json
+        
+    - name: Code quality with Black
+      run: |
+        cd backend
+        black --check --diff .
+        
+    - name: Import sorting with isort
+      run: |
+        cd backend
+        isort --check-only --diff .
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          backend/bandit-report.json
+          backend/safety-report.json
+
+  # Backend Tests
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+        pip install pytest pytest-django coverage pytest-xvfb
+        
+    - name: Run tests with coverage
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost/test_db
+        REDIS_URL: redis://localhost:6379/0
+        SECRET_KEY: test-secret-key-for-ci
+        GEMINI_API_KEY: test-key
+        DJANGO_SETTINGS_MODULE: core.settings.testing
+      run: |
+        cd backend
+        coverage run -m pytest -v
+        coverage xml
+        coverage report
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: backend/coverage.xml
+        fail_ci_if_error: true
+
+  # Build and Push Docker Images
+  build-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [security-checks, backend-tests]
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+          
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: backend
+        target: production
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+        
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ steps.meta.outputs.tags }}
+        format: spdx-json
+        output-file: sbom.spdx.json
+        
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom
+        path: sbom.spdx.json
+
+  # Staging Deployment
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-images
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging-api.yourdomain.com
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
+        
+    - name: Deploy to staging
+      run: |
+        ssh -o StrictHostKeyChecking=no deploy@${{ secrets.STAGING_HOST }} '
+          cd /opt/nutrition-ai/backend &&
+          git pull origin main &&
+          echo "${{ secrets.STAGING_ENV }}" > .env.prod &&
+          docker-compose -f docker-compose.prod.yml pull &&
+          ./scripts/deploy.sh deploy
+        '
+        
+    - name: Run smoke tests
+      run: |
+        sleep 30  # Wait for deployment
+        curl -f https://staging-api.yourdomain.com/api/health/
+        curl -f https://staging-api.yourdomain.com/api/readiness/
+        
+    - name: Notify Slack
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        message: |
+          Staging deployment ${{ job.status }}
+          Image: ${{ needs.build-images.outputs.image-tag }}
+          Commit: ${{ github.sha }}
+
+  # Production Deployment (Manual Approval Required)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-images, deploy-staging]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://api.yourdomain.com
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        
+    - name: Create deployment backup
+      run: |
+        ssh -o StrictHostKeyChecking=no deploy@${{ secrets.PRODUCTION_HOST }} '
+          cd /opt/nutrition-ai/backend &&
+          ./scripts/deploy.sh backup
+        '
+        
+    - name: Deploy to production
+      run: |
+        ssh -o StrictHostKeyChecking=no deploy@${{ secrets.PRODUCTION_HOST }} '
+          cd /opt/nutrition-ai/backend &&
+          git fetch --tags &&
+          git checkout ${{ github.ref_name }} &&
+          echo "${{ secrets.PRODUCTION_ENV }}" > .env.prod &&
+          docker-compose -f docker-compose.prod.yml pull &&
+          ./scripts/deploy.sh deploy
+        '
+        
+    - name: Run production health checks
+      run: |
+        sleep 60  # Wait for production deployment
+        curl -f https://api.yourdomain.com/api/health/
+        curl -f https://api.yourdomain.com/api/readiness/
+        
+        # Test critical API endpoints
+        curl -f -H "Content-Type: application/json" \
+          https://api.yourdomain.com/api/v1/auth/health/
+          
+    - name: Update Sentry release
+      if: success()
+      run: |
+        curl -X POST https://sentry.io/api/0/organizations/${{ secrets.SENTRY_ORG }}/releases/ \
+          -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "version": "${{ github.ref_name }}",
+            "projects": ["${{ secrets.SENTRY_PROJECT }}"],
+            "dateCreated": "'$(date -Iseconds)'"
+          }'
+          
+    - name: Notify production deployment
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#production'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        message: |
+          🚀 Production deployment ${{ job.status }}
+          Version: ${{ github.ref_name }}
+          Image: ${{ needs.build-images.outputs.image-tag }}
+          Commit: ${{ github.sha }}
+
+  # Rollback (Manual Trigger)
+  rollback-production:
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'rollback'
+    environment:
+      name: production-rollback
+      
+    steps:
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        
+    - name: Rollback production
+      run: |
+        ssh -o StrictHostKeyChecking=no deploy@${{ secrets.PRODUCTION_HOST }} '
+          cd /opt/nutrition-ai/backend &&
+          ./scripts/deploy.sh rollback
+        '
+        
+    - name: Verify rollback
+      run: |
+        sleep 30
+        curl -f https://api.yourdomain.com/api/health/
+        
+    - name: Notify rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: 'success'
+        channel: '#production'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        message: |
+          🔄 Production rollback completed
+          Triggered by: ${{ github.actor }}
+          Time: $(date -Iseconds)
+
+  # Security Scanning Post-Deployment
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: success()
+    
+    steps:
+    - name: Run OWASP ZAP Scan
+      uses: zaproxy/action-full-scan@v0.7.0
+      with:
+        target: 'https://api.yourdomain.com'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+        
+    - name: Upload ZAP report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: zap-report
+        path: report_html.html

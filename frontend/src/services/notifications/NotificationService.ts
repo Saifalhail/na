@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 import { PlatformUtils } from '@/utils/platform';
 import { TokenStorage } from '@/services/storage/tokenStorage';
 import { notificationApi } from '@/api/notifications';
-import { navigationRef } from '@/navigation/navigationRef';
+import { deepLinking } from '@/services/linking/DeepLinkingService';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -13,6 +13,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowList: true,
+    shouldShowBanner: true,
   }),
 });
 
@@ -205,7 +207,7 @@ class NotificationService {
     // Handle action buttons
     if (actionIdentifier === 'log_meal') {
       // Navigate to camera screen
-      // This would need navigation service
+      deepLinking.handleUrl('nutritionai://camera');
     } else if (actionIdentifier === 'snooze') {
       // Schedule a reminder in 30 minutes
       this.scheduleLocalNotification(
@@ -250,12 +252,16 @@ class NotificationService {
     let notificationTrigger: Notifications.NotificationTrigger;
 
     if (trigger.date) {
-      notificationTrigger = trigger.date;
+      notificationTrigger = {
+        type: 'date',
+        date: trigger.date,
+      } as any;
     } else if (trigger.seconds) {
       notificationTrigger = {
+        type: 'timeInterval',
         seconds: trigger.seconds,
         repeats: trigger.repeats || false,
-      };
+      } as any;
     } else {
       notificationTrigger = null; // Immediate
     }
@@ -269,7 +275,7 @@ class NotificationService {
         sound: content.sound !== false,
         categoryIdentifier: content.categoryId,
       },
-      trigger: notificationTrigger,
+      trigger: notificationTrigger as any,
     });
 
     return id;
@@ -300,9 +306,9 @@ class NotificationService {
         title: n.content.title || '',
         body: n.content.body || '',
         data: n.content.data,
-        badge: n.content.badge,
+        badge: n.content.badge ?? undefined,
         sound: n.content.sound !== null,
-        categoryId: n.content.categoryIdentifier,
+        categoryId: n.content.categoryIdentifier || undefined,
       },
       trigger: n.trigger,
     }));

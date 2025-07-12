@@ -151,6 +151,7 @@ export async function apiRequest<T>(config: AxiosRequestConfig): Promise<T> {
     return response.data;
   } catch (error) {
     handleApiError(error);
+    throw error; // Re-throw to maintain error handling flow
   }
 }
 

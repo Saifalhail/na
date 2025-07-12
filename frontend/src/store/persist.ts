@@ -1,32 +1,18 @@
 import { StateStorage } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
+import { 
+  asyncStorageAdapter, 
+  clearAllAsyncStorage, 
+  getAllAsyncStorageKeys 
+} from './asyncStorageAdapter';
 
-// Initialize MMKV instance
-const storage = new MMKV({
-  id: 'nutrition-ai-storage',
-  encryptionKey: 'nutrition-ai-encryption-key', // In production, use a secure key
-});
+// Use AsyncStorage for all environments (works perfectly in Expo Go)
+const storageAdapter: StateStorage = asyncStorageAdapter;
+const clearAllPersistedData = clearAllAsyncStorage;
+const getAllStorageKeys = getAllAsyncStorageKeys;
 
-// Create Zustand storage adapter for MMKV
-export const mmkvStorage: StateStorage = {
-  getItem: (name: string) => {
-    const value = storage.getString(name);
-    return value ?? null;
-  },
-  setItem: (name: string, value: string) => {
-    storage.set(name, value);
-  },
-  removeItem: (name: string) => {
-    storage.delete(name);
-  },
-};
-
-// Helper to clear all persisted data
-export const clearAllPersistedData = () => {
-  storage.clearAll();
-};
-
-// Helper to get all keys
-export const getAllStorageKeys = () => {
-  return storage.getAllKeys();
+// Export the storage adapter and helper functions
+export { 
+  storageAdapter as mmkvStorage, // Keep the same export name for compatibility
+  clearAllPersistedData, 
+  getAllStorageKeys 
 };

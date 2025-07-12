@@ -19,6 +19,35 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'your-gemini-api-key')
 GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-pro')
 AI_USE_CACHE = os.getenv('AI_USE_CACHE', 'True') == 'True'
 AI_CACHE_TIMEOUT = int(os.getenv('AI_CACHE_TIMEOUT', '3600'))  # 1 hour default
+AI_USE_ADVANCED_PROMPTS = os.getenv('AI_USE_ADVANCED_PROMPTS', 'True') == 'True'
+
+# Visual Similarity Cache Configuration
+AI_USE_VISUAL_CACHE = os.getenv('AI_USE_VISUAL_CACHE', 'True') == 'True'
+VISUAL_CACHE_MAX_ENTRIES = int(os.getenv('VISUAL_CACHE_MAX_ENTRIES', '1000'))
+VISUAL_CACHE_TTL = int(os.getenv('VISUAL_CACHE_TTL', str(86400 * 7)))  # 7 days default
+VISUAL_SIMILARITY_THRESHOLD = float(os.getenv('VISUAL_SIMILARITY_THRESHOLD', '0.75'))
+MIN_CONFIDENCE_TO_CACHE = int(os.getenv('MIN_CONFIDENCE_TO_CACHE', '70'))
+
+# Ingredient Cache Configuration
+AI_USE_INGREDIENT_CACHE = os.getenv('AI_USE_INGREDIENT_CACHE', 'True') == 'True'
+INGREDIENT_CACHE_MAX_ENTRIES = int(os.getenv('INGREDIENT_CACHE_MAX_ENTRIES', '2000'))
+INGREDIENT_COMBINATION_MAX_ENTRIES = int(os.getenv('INGREDIENT_COMBINATION_MAX_ENTRIES', '500'))
+INGREDIENT_CACHE_TTL = int(os.getenv('INGREDIENT_CACHE_TTL', str(86400 * 30)))  # 30 days default
+INGREDIENT_SIMILARITY_THRESHOLD = float(os.getenv('INGREDIENT_SIMILARITY_THRESHOLD', '0.8'))
+MIN_INGREDIENT_CONFIDENCE_TO_CACHE = int(os.getenv('MIN_INGREDIENT_CONFIDENCE_TO_CACHE', '70'))
+
+# Progressive Analysis Configuration
+PROGRESSIVE_ANALYSIS_TIMEOUT = int(os.getenv('PROGRESSIVE_ANALYSIS_TIMEOUT', '300'))  # 5 minutes default
+PROGRESSIVE_ANALYSIS_MAX_THREADS = int(os.getenv('PROGRESSIVE_ANALYSIS_MAX_THREADS', '4'))
+PROGRESSIVE_ANALYSIS_WEBSOCKET_ENABLED = os.getenv('PROGRESSIVE_ANALYSIS_WEBSOCKET_ENABLED', 'True') == 'True'
+
+# Confidence Routing Configuration
+AI_USE_CONFIDENCE_ROUTING = os.getenv('AI_USE_CONFIDENCE_ROUTING', 'False') == 'True'
+DEFAULT_CONFIDENCE_THRESHOLD = float(os.getenv('DEFAULT_CONFIDENCE_THRESHOLD', '75.0'))
+ENABLE_COST_OPTIMIZATION = os.getenv('ENABLE_COST_OPTIMIZATION', 'True') == 'True'
+MAX_COST_PER_REQUEST = float(os.getenv('MAX_COST_PER_REQUEST', '0.10'))
+ENABLE_FALLBACK_ROUTING = os.getenv('ENABLE_FALLBACK_ROUTING', 'True') == 'True'
+CONFIDENCE_ROUTING_CACHE_TTL = int(os.getenv('CONFIDENCE_ROUTING_CACHE_TTL', '3600'))  # 1 hour default
 
 
 # Application definition
@@ -38,6 +67,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',  # For JWT token blacklisting
     'corsheaders',
     'drf_spectacular',
+    'channels',  # WebSocket support
     
     # Authentication apps
     'allauth',
@@ -95,6 +125,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
+ASGI_APPLICATION = 'core.asgi.application'
+
+# Channel layers configuration for WebSocket support
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [os.getenv('REDIS_URL', 'redis://localhost:6379/1')],
+        },
+    },
+}
 
 
 # Password validation
@@ -298,6 +339,13 @@ REST_AUTH = {
     'JWT_AUTH_SAMESITE': 'Lax',
     'SESSION_LOGIN': False,
     'USER_DETAILS_SERIALIZER': 'api.serializers.auth_serializers.UserSerializer',
+    # New SIGNUP_FIELDS configuration to suppress deprecation warnings
+    'SIGNUP_FIELDS': {
+        'username': {'required': False},
+        'email': {'required': True},
+        'first_name': {'required': False},
+        'last_name': {'required': False},
+    },
 }
 
 # Logging configuration
@@ -416,10 +464,35 @@ CELERY_ENABLE_UTC = True
 # Celery task routing
 CELERY_TASK_ROUTES = {
     'api.tasks.email_tasks.*': {'queue': 'emails'},
+    'api.tasks.sms_tasks.*': {'queue': 'sms'},
     'api.tasks.notification_tasks.*': {'queue': 'notifications'},
+    'api.tasks.malware_tasks.*': {'queue': 'security'},
     'api.tasks.ai_tasks.*': {'queue': 'ai_processing'},
     'api.tasks.maintenance_tasks.*': {'queue': 'maintenance'},
 }
 
 # Celery beat settings (if using django-celery-beat)
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Stripe Configuration
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+
+# Payment Configuration
+PAYMENT_CURRENCY = 'USD'
+PAYMENT_SUCCESS_URL = os.getenv('PAYMENT_SUCCESS_URL', 'https://yourapp.com/success')
+PAYMENT_CANCEL_URL = os.getenv('PAYMENT_CANCEL_URL', 'https://yourapp.com/cancel')
+
+# Twilio SMS Configuration
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', '')
+TWILIO_FROM_NUMBER = os.getenv('TWILIO_FROM_NUMBER', '')
+TWILIO_STATUS_CALLBACK_URL = os.getenv('TWILIO_STATUS_CALLBACK_URL', '')
+
+# Malware Scanning Configuration
+CLAMAV_SOCKET_PATH = os.getenv('CLAMAV_SOCKET_PATH', '/tmp/clamd.socket')
+CLAMAV_CLAMSCAN_PATH = os.getenv('CLAMAV_CLAMSCAN_PATH', 'clamscan')
+VIRUSTOTAL_API_KEY = os.getenv('VIRUSTOTAL_API_KEY', '')
+MALWARE_SCAN_CACHE_TIMEOUT = int(os.getenv('MALWARE_SCAN_CACHE_TIMEOUT', 86400))  # 24 hours
+MALWARE_SCAN_TEMP_DIR = os.getenv('MALWARE_SCAN_TEMP_DIR', '')

@@ -12,6 +12,9 @@ from datetime import datetime
 import hashlib
 from django.core.cache import cache
 from ..exceptions import AIServiceError, RateLimitError
+from .advanced_prompt_engine import AdvancedPromptEngine
+from .visual_similarity_cache import visual_cache
+from .ingredient_cache import ingredient_cache
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +82,19 @@ class GeminiService:
         # Cache configuration
         self.cache_timeout = getattr(settings, 'AI_CACHE_TIMEOUT', 3600)  # 1 hour default
         self.use_cache = getattr(settings, 'AI_USE_CACHE', True)
+        
+        # Advanced prompt engineering
+        self.prompt_engine = AdvancedPromptEngine()
+        self.use_advanced_prompts = getattr(settings, 'AI_USE_ADVANCED_PROMPTS', True)
+        
+        # Visual similarity caching
+        self.use_visual_cache = getattr(settings, 'AI_USE_VISUAL_CACHE', True)
+        
+        # Ingredient-based caching
+        self.use_ingredient_cache = getattr(settings, 'AI_USE_INGREDIENT_CACHE', True)
+        
+        # Confidence routing (optional integration)
+        self.use_confidence_routing = getattr(settings, 'AI_USE_CONFIDENCE_ROUTING', False)
     
     def _validate_nutrition_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -155,6 +171,15 @@ class GeminiService:
         # Add optional fields with defaults
         if 'cooking_method' not in data:
             data['cooking_method'] = 'unknown'
+        
+        # Validate reasoning field from advanced prompts (optional)
+        if 'reasoning' in data and isinstance(data['reasoning'], dict):
+            # Keep reasoning field if present and valid
+            pass
+        elif 'reasoning' in data:
+            # Remove invalid reasoning field
+            logger.warning("Invalid reasoning field detected, removing")
+            del data['reasoning']
             
         if 'confidence' not in data:
             data['confidence'] = {
@@ -162,6 +187,20 @@ class GeminiService:
                 'ingredients_identified': 75,
                 'portions_estimated': 75
             }
+        else:
+            # Validate confidence scores
+            confidence = data['confidence']
+            if isinstance(confidence, dict):
+                # Ensure all confidence scores are valid numbers between 0-100
+                for key in ['overall', 'ingredients_identified', 'portions_estimated']:
+                    if key in confidence:
+                        confidence[key] = self._validate_numeric(confidence[key], 0, 100) or 75
+                    else:
+                        confidence[key] = 75
+                        
+                # Add cooking_method confidence if present in advanced prompts
+                if 'cooking_method' in confidence:
+                    confidence['cooking_method'] = self._validate_numeric(confidence['cooking_method'], 0, 100) or 75
         
         return data
     
@@ -203,6 +242,62 @@ class GeminiService:
             return "Context:\n" + "\n".join(f"- {part}" for part in context_parts) + "\n"
         
         return ""
+    
+    def _build_legacy_prompt(self, context_info: str) -> str:
+        """Build the legacy prompt format for backward compatibility."""
+        return f"""
+        Analyze this food image and provide detailed nutritional information.
+        
+        {context_info}
+        
+        Instructions:
+        1. Identify all visible ingredients and their estimated quantities
+        2. Calculate nutrition for EACH individual ingredient
+        3. Provide total nutrition information per serving
+        4. Consider cooking methods (fried, grilled, etc.) when estimating
+        5. Be specific about portion sizes and units
+        
+        Return ONLY valid JSON in the following format (no markdown, no explanations):
+        {{
+            "description": "Brief description of the dish",
+            "servings": number,
+            "serving_size": "specific description (e.g., 1 burger, 2 cups, 250g)",
+            "cooking_method": "grilled/fried/baked/raw/etc",
+            "ingredients": [
+                {{
+                    "name": "ingredient name",
+                    "quantity": number,
+                    "unit": "grams/ml/pieces/etc",
+                    "calories": number,
+                    "protein": number (grams),
+                    "carbohydrates": number (grams),
+                    "fat": number (grams),
+                    "preparation": "how it's prepared (optional)"
+                }}
+            ],
+            "nutrition": {{
+                "calories": number (total for the serving),
+                "protein": number (grams),
+                "carbohydrates": number (grams),
+                "fat": number (grams),
+                "fiber": number (grams),
+                "sugar": number (grams),
+                "sodium": number (milligrams)
+            }},
+            "confidence": {{
+                "overall": number (0-100),
+                "ingredients_identified": number (0-100),
+                "portions_estimated": number (0-100)
+            }}
+        }}
+        
+        Important:
+        - For ingredients, prefer weight units (grams) when possible
+        - Include cooking oil/butter if food appears cooked
+        - Account for typical condiments/sauces visible
+        - If unsure about exact values, use typical nutritional database values
+        - Ensure individual ingredient nutrition adds up reasonably to the total
+        """
     
     @retry_on_failure(max_retries=3, delay=2.0)
     def _call_gemini_api(self, prompt: str, image_data: bytes) -> str:
@@ -277,76 +372,43 @@ class GeminiService:
                     'success': False,
                     'error': 'Invalid image format'
                 }
-            # Generate cache key if caching is enabled
+            # Check visual similarity cache first (if enabled)
+            if self.use_visual_cache:
+                similar_result = visual_cache.find_similar_analysis(image_data, context)
+                if similar_result:
+                    logger.info("Returning visually similar cached analysis")
+                    return similar_result
+            
+            # Generate cache key for regular caching if enabled
             cache_key = None
             if self.use_cache:
                 image_hash = hashlib.sha256(image_data).hexdigest()[:16]
                 context_hash = hashlib.sha256(json.dumps(context or {}, sort_keys=True).encode()).hexdigest()[:8]
                 cache_key = f"gemini_analysis_{image_hash}_{context_hash}"
                 
-                # Check cache first
+                # Check regular cache
                 cached_result = cache.get(cache_key)
                 if cached_result:
                     logger.info(f"Returning cached analysis for key: {cache_key}")
                     return cached_result
             
-            # Build enhanced prompt with context
-            context_info = self._build_context_prompt(context) if context else ""
-            
-            # Create the prompt for nutrition analysis
-            prompt = f"""
-            Analyze this food image and provide detailed nutritional information.
-            
-            {context_info}
-            
-            Instructions:
-            1. Identify all visible ingredients and their estimated quantities
-            2. Calculate nutrition for EACH individual ingredient
-            3. Provide total nutrition information per serving
-            4. Consider cooking methods (fried, grilled, etc.) when estimating
-            5. Be specific about portion sizes and units
-            
-            Return ONLY valid JSON in the following format (no markdown, no explanations):
-            {{
-                "description": "Brief description of the dish",
-                "servings": number,
-                "serving_size": "specific description (e.g., 1 burger, 2 cups, 250g)",
-                "cooking_method": "grilled/fried/baked/raw/etc",
-                "ingredients": [
-                    {{
-                        "name": "ingredient name",
-                        "quantity": number,
-                        "unit": "grams/ml/pieces/etc",
-                        "calories": number,
-                        "protein": number (grams),
-                        "carbohydrates": number (grams),
-                        "fat": number (grams),
-                        "preparation": "how it's prepared (optional)"
-                    }}
-                ],
-                "nutrition": {{
-                    "calories": number (total for the serving),
-                    "protein": number (grams),
-                    "carbohydrates": number (grams),
-                    "fat": number (grams),
-                    "fiber": number (grams),
-                    "sugar": number (grams),
-                    "sodium": number (milligrams)
-                }},
-                "confidence": {{
-                    "overall": number (0-100),
-                    "ingredients_identified": number (0-100),
-                    "portions_estimated": number (0-100)
-                }}
-            }}
-            
-            Important:
-            - For ingredients, prefer weight units (grams) when possible
-            - Include cooking oil/butter if food appears cooked
-            - Account for typical condiments/sauces visible
-            - If unsure about exact values, use typical nutritional database values
-            - Ensure individual ingredient nutrition adds up reasonably to the total
-            """
+            # Use advanced prompt engineering if enabled
+            if self.use_advanced_prompts:
+                # Estimate complexity for better prompt selection
+                complexity_hint = self.prompt_engine.estimate_complexity(context)
+                
+                # Build enhanced prompt with multi-shot examples and advanced reasoning
+                prompt = self.prompt_engine.build_enhanced_prompt(
+                    context=context,
+                    complexity_hint=complexity_hint,
+                    use_examples=True
+                )
+                
+                logger.info(f"Using advanced prompt engineering (complexity: {complexity_hint})")
+            else:
+                # Fallback to legacy prompt for compatibility
+                context_info = self._build_context_prompt(context) if context else ""
+                prompt = self._build_legacy_prompt(context_info)
             
             # Call Gemini API with retry logic
             try:
@@ -387,10 +449,18 @@ class GeminiService:
                 'raw_response': response_text
             }
             
-            # Cache successful result
+            # Cache successful result in regular cache
             if self.use_cache and cache_key:
                 cache.set(cache_key, result, self.cache_timeout)
                 logger.info(f"Cached analysis result for key: {cache_key}")
+            
+            # Store in visual similarity cache for future similar image matching
+            if self.use_visual_cache:
+                try:
+                    visual_cache.store_analysis(image_data, result, context)
+                    logger.debug("Stored result in visual similarity cache")
+                except Exception as e:
+                    logger.warning(f"Failed to store in visual cache: {e}")
             
             return result
             
@@ -468,6 +538,16 @@ class GeminiService:
             Dict containing calculated nutrition information
         """
         try:
+            # Parse ingredients into structured format
+            parsed_ingredients = self._parse_ingredients_list(ingredients)
+            
+            # Check ingredient cache for combination first
+            if self.use_ingredient_cache:
+                cached_result = ingredient_cache.find_combination(parsed_ingredients, serving_size)
+                if cached_result:
+                    logger.info("Returning cached ingredient combination analysis")
+                    return cached_result
+            
             ingredients_text = "\n".join(f"- {ingredient}" for ingredient in ingredients)
             
             prompt = f"""
@@ -538,11 +618,21 @@ class GeminiService:
             
             nutrition_data = json.loads(response_text)
             
-            return {
+            result = {
                 'success': True,
                 'data': nutrition_data,
-                'raw_response': response.text
+                'raw_response': response_text
             }
+            
+            # Store in ingredient cache for future combination matching
+            if self.use_ingredient_cache:
+                try:
+                    ingredient_cache.store_combination(parsed_ingredients, result, serving_size)
+                    logger.debug("Stored result in ingredient cache")
+                except Exception as e:
+                    logger.warning(f"Failed to store in ingredient cache: {e}")
+            
+            return result
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse Gemini response as JSON: {e}")
@@ -557,3 +647,141 @@ class GeminiService:
                 'success': False,
                 'error': str(e)
             }
+    
+    def _parse_ingredients_list(self, ingredients: List[str]) -> List[Dict[str, Any]]:
+        """
+        Parse ingredient strings into structured format for caching.
+        
+        Args:
+            ingredients: List of ingredient strings (e.g., "chicken breast: 200g")
+            
+        Returns:
+            List of ingredient dictionaries
+        """
+        parsed = []
+        
+        for ingredient_str in ingredients:
+            try:
+                # Split by colon or other separators
+                if ':' in ingredient_str:
+                    name_part, quantity_part = ingredient_str.split(':', 1)
+                else:
+                    # Try to extract quantity from the end
+                    parts = ingredient_str.strip().split()
+                    if len(parts) >= 2:
+                        # Assume last part is quantity + unit
+                        quantity_part = parts[-1]
+                        name_part = ' '.join(parts[:-1])
+                    else:
+                        name_part = ingredient_str
+                        quantity_part = "100g"  # Default
+                
+                name = name_part.strip()
+                quantity_part = quantity_part.strip()
+                
+                # Extract quantity and unit
+                import re
+                quantity_match = re.match(r'(\d+(?:\.\d+)?)\s*([a-zA-Z]*)', quantity_part)
+                
+                if quantity_match:
+                    quantity = float(quantity_match.group(1))
+                    unit = quantity_match.group(2) or 'g'
+                else:
+                    quantity = 100.0  # Default
+                    unit = 'g'
+                
+                parsed.append({
+                    'name': name,
+                    'quantity': quantity,
+                    'unit': unit
+                })
+                
+            except Exception as e:
+                logger.warning(f"Failed to parse ingredient '{ingredient_str}': {e}")
+                # Add a basic entry
+                parsed.append({
+                    'name': ingredient_str,
+                    'quantity': 100.0,
+                    'unit': 'g'
+                })
+        
+        return parsed
+    
+    def health_check(self) -> bool:
+        """
+        Perform a health check to verify AI service functionality.
+        
+        Returns:
+            True if the service is healthy, False otherwise
+        """
+        try:
+            # Test basic API connectivity with a simple prompt
+            test_prompt = "Respond with exactly this JSON: {\"status\": \"healthy\"}"
+            
+            response = self.model.generate_content(test_prompt)
+            
+            if not response.text:
+                logger.error("Health check failed: Empty response from Gemini API")
+                return False
+            
+            # Check if advanced prompt engine is working
+            if self.use_advanced_prompts:
+                try:
+                    # Test advanced prompt engine initialization
+                    complexity = self.prompt_engine.estimate_complexity()
+                    if complexity not in ['low', 'medium', 'high']:
+                        logger.error(f"Health check failed: Invalid complexity estimate: {complexity}")
+                        return False
+                    
+                    # Test prompt generation
+                    test_context = {'meal_type': 'lunch', 'cuisine_type': 'italian'}
+                    prompt = self.prompt_engine.build_enhanced_prompt(
+                        context=test_context,
+                        complexity_hint='medium',
+                        use_examples=False  # Don't use examples for health check
+                    )
+                    
+                    if not prompt or len(prompt) < 100:
+                        logger.error("Health check failed: Advanced prompt generation failed")
+                        return False
+                        
+                    logger.info("Advanced prompt engine health check passed")
+                    
+                except Exception as e:
+                    logger.error(f"Health check failed: Advanced prompt engine error: {e}")
+                    return False
+            
+            # Check visual similarity cache if enabled
+            if self.use_visual_cache:
+                try:
+                    cache_stats = visual_cache.get_cache_stats()
+                    if cache_stats['max_entries'] <= 0:
+                        logger.error("Health check failed: Invalid visual cache configuration")
+                        return False
+                    
+                    logger.info(f"Visual similarity cache health check passed (entries: {cache_stats['cached_entries']})")
+                    
+                except Exception as e:
+                    logger.error(f"Health check failed: Visual cache error: {e}")
+                    return False
+            
+            # Check ingredient cache if enabled
+            if self.use_ingredient_cache:
+                try:
+                    ingredient_stats = ingredient_cache.get_cache_stats()
+                    if ingredient_stats['max_ingredients'] <= 0:
+                        logger.error("Health check failed: Invalid ingredient cache configuration")
+                        return False
+                    
+                    logger.info(f"Ingredient cache health check passed (ingredients: {ingredient_stats['cached_ingredients']}, combinations: {ingredient_stats['cached_combinations']})")
+                    
+                except Exception as e:
+                    logger.error(f"Health check failed: Ingredient cache error: {e}")
+                    return False
+            
+            logger.info("Gemini service health check passed")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            return False

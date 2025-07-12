@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Container } from '@/components/layout/Container';
-import { Button } from '@/components/Button';
-import { Spacer } from '@/components/layout/Spacer';
+import { Container, Spacer } from '@/components/layout';
+import { Button } from '@/components/base/Button';
+
 import { useTheme } from '@/hooks/useTheme';
 import { AuthStackParamList } from '@/navigation/types';
 import { APP_CONFIG } from '@/constants';
@@ -29,13 +29,13 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
         {/* Logo/Icon placeholder */}
-        <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
+        <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary[500] }]}>
           <Text style={[styles.logoText, { color: theme.colors.background }]}>🍽️</Text>
         </View>
 
         <Spacer size="xl" />
 
-        <Text style={[styles.title, { color: theme.colors.text }]}>{APP_CONFIG.NAME}</Text>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>{APP_CONFIG.NAME}</Text>
 
         <Spacer size="md" />
 
@@ -77,15 +77,18 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 
       <View style={styles.buttons}>
         <Button
-          title="Get Started"
           onPress={handleRegister}
           variant="primary"
           style={styles.primaryButton}
-        />
+        >
+          Get Started
+        </Button>
 
         <Spacer size="md" />
 
-        <Button title="Already have an account? Sign In" onPress={handleLogin} variant="text" />
+        <Button onPress={handleLogin} variant="text">
+          Already have an account? Sign In
+        </Button>
       </View>
     </Container>
   );

@@ -1,455 +1,286 @@
-# Troubleshooting Guide - Nutrition AI
+# 🔧 Troubleshooting Guide - Nutrition AI
 
-Common issues and solutions for the Nutrition AI application.
+> **Last Updated**: January 11, 2025  
+> **Recent Fixes**: MMKV and Google Sign-In native module errors resolved
 
-## Table of Contents
+**Solutions for common development issues and error messages.**
 
-- [Backend Issues](#backend-issues)
-- [Frontend Issues](#frontend-issues)
-- [Database Issues](#database-issues)
-- [Docker Issues](#docker-issues)
-- [API Issues](#api-issues)
-- [Testing Issues](#testing-issues)
-- [Performance Issues](#performance-issues)
+## 🚨 Most Common Issues (Fixed January 11, 2025)
 
-## Backend Issues
+### ❌ "Failed to create a new MMKV instance"
 
-### Django Server Won't Start
-
-**Symptom**: `python manage.py runserver` fails
+**Symptoms:**
 ```
-Django version 4.2, using settings 'core.settings.development'
-Starting development server at http://127.0.0.1:8000/
-Quit the server with CONTROL-C.
-Error: [Errno 48] Address already in use
+Error: Failed to create a new MMKV instance: The native MMKV Module could not be found.
 ```
 
-**Solutions**:
-1. **Kill existing process**:
+**Root Cause:** MMKV is a native module that doesn't work in Expo Go
+
+**Solution:** Already fixed! The project now uses AsyncStorage instead.
+
+If you still see this error:
+1. Clear Expo Go app data on your phone
+2. Use the correct directory:
    ```bash
-   lsof -ti:8000 | xargs kill -9
+   cd /mnt/c/Users/Saif-/OneDrive/Desktop/development/na
+   ./scripts/quick-start.sh
    ```
 
-2. **Use different port**:
+### ❌ "RNGoogleSignin could not be found"
+
+**Symptoms:**
+```
+Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNGoogleSignin' could not be found
+```
+
+**Root Cause:** Native Google Sign-In module doesn't work in Expo Go
+
+**Solution:** Already fixed! Now using `expo-auth-session` for web-based OAuth.
+
+If you still see this error:
+1. Clear Expo Go app data on your phone
+2. Make sure you're using the updated code
+3. Run: `npm install` to get the new dependencies
+
+## 📁 Directory Issues
+
+### ❌ Dual Directory Confusion
+
+**Symptoms:**
+- Changes not reflecting
+- Old errors persisting
+- Different behavior in different terminals
+
+**Root Cause:** Project exists in two locations:
+- `/mnt/c/Users/Saif-/OneDrive/Desktop/development/na` (Windows mount)
+- `/home/saifalhail/development/na` (WSL home)
+
+**Solution:**
+```bash
+# Always use Windows mount
+cd /mnt/c/Users/Saif-/OneDrive/Desktop/development/na
+
+# Remove WSL home copy
+rm -rf ~/development/na
+
+# Or create symlink
+ln -s /mnt/c/Users/Saif-/OneDrive/Desktop/development/na ~/development/na
+```
+
+## 🔧 Development Environment Issues
+
+### ❌ "venv/bin/activate: No such file or directory"
+
+**Symptoms:**
+```bash
+./setup-backend.sh: line 56: venv/bin/activate: No such file or directory
+```
+
+**Root Cause:** Windows virtual environment copied to WSL (has `Scripts/` instead of `bin/`)
+
+**Solution:**
+```bash
+cd backend
+rm -rf venv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### ❌ Permission Errors in WSL
+
+**Symptoms:**
+- `Permission denied` errors
+- Can't create or modify files
+- Scripts won't execute
+
+**Solution:**
+```bash
+# Fix ownership
+sudo chown -R $(whoami):$(whoami) .
+
+# Fix file permissions
+find . -type f -exec chmod 644 {} \;
+find . -type d -exec chmod 755 {} \;
+
+# Make scripts executable
+chmod +x scripts/*.sh
+```
+
+## 📱 Expo/Metro Issues
+
+### ❌ Metro Bundler Cache Issues
+
+**Symptoms:**
+- Old code running
+- Changes not reflecting
+- Random module errors
+
+**Solution:**
+```bash
+# Use the cache clearing script
+./scripts/clear-metro-cache.sh
+
+# Or manually:
+rm -rf .metro-cache
+rm -rf .expo/*
+rm -rf node_modules/.cache
+rm -rf /tmp/metro-*
+rm -rf ~/.expo/native-modules-cache/*
+```
+
+### ❌ "Module not found" Errors
+
+**Common missing modules and fixes:**
+
+```bash
+# General fix
+rm -rf node_modules package-lock.json
+npm install
+
+# If specific module missing
+npm install [module-name]
+```
+
+### ❌ Expo Go Connection Issues
+
+**Symptoms:**
+- Can't scan QR code
+- "Network response timed out"
+- Connection refused
+
+**Solution:**
+```bash
+# Always use tunnel mode
+npx expo start --clear --tunnel
+
+# Or use the script
+./scripts/quick-start.sh
+```
+
+## 🐍 Python/Django Issues
+
+### ❌ ImportError in Django
+
+**Symptoms:**
+- `ModuleNotFoundError`
+- Import errors when running Django
+
+**Solution:**
+```bash
+cd backend
+source venv/bin/activate  # Make sure venv is activated
+pip install -r requirements.txt
+python manage.py migrate
+```
+
+### ❌ Database Errors
+
+**Solution:**
+```bash
+cd backend
+rm db.sqlite3
+python manage.py migrate
+python manage.py createsuperuser  # If needed
+```
+
+## 🌐 Network Issues
+
+### ❌ API Connection Failed
+
+**Symptoms:**
+- Frontend can't reach backend
+- "Network request failed"
+
+**Solution:**
+1. Check backend is running:
    ```bash
-   python manage.py runserver 8001
+   cd backend
+   python manage.py runserver 0.0.0.0:8000
    ```
 
-3. **Check for background processes**:
+2. Update frontend `.env`:
    ```bash
-   ps aux | grep python
+   EXPO_PUBLIC_API_URL=http://[YOUR-WSL-IP]:8000
    ```
 
-### Environment Variables Not Loading
-
-**Symptom**: `KeyError` for environment variables
-
-**Solutions**:
-1. **Check .env file exists**:
+3. Get WSL IP:
    ```bash
-   ls -la backend/.env
+   ip addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
    ```
 
-2. **Verify .env format**:
-   ```env
-   # No spaces around =
-   SECRET_KEY=your-secret-key
-   # Not: SECRET_KEY = your-secret-key
+## 🔍 Validation & Debugging
+
+### Run Complete Validation
+```bash
+./scripts/validate-project.sh
+```
+
+### Check for Native Modules
+```bash
+# In frontend directory
+grep -r "react-native-mmkv\|@react-native-google-signin" src/
+```
+
+### View Running Processes
+```bash
+# Check Expo/Metro
+ps aux | grep -E "expo|metro" | grep -v grep
+
+# Kill all Expo processes
+pkill -f expo
+```
+
+## 💡 Quick Fixes Checklist
+
+When something goes wrong, try these in order:
+
+1. ✅ **Correct Directory?**
+   ```bash
+   pwd  # Should be /mnt/c/Users/Saif-/OneDrive/Desktop/development/na
    ```
 
-3. **Check python-decouple installation**:
+2. ✅ **Clear Caches**
    ```bash
-   pip list | grep decouple
+   ./scripts/clear-metro-cache.sh
    ```
 
-### Import Errors
+3. ✅ **Clear Phone App**
+   - Settings → Apps → Expo Go → Clear Data
 
-**Symptom**: `ModuleNotFoundError: No module named 'api'`
-
-**Solutions**:
-1. **Activate virtual environment**:
+4. ✅ **Reinstall Dependencies**
    ```bash
-   source venv/bin/activate  # macOS/Linux
-   venv\Scripts\activate     # Windows
-   ```
-
-2. **Check PYTHONPATH**:
-   ```bash
-   export PYTHONPATH="${PYTHONPATH}:/path/to/backend"
-   ```
-
-3. **Reinstall dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Frontend Issues
-
-### Expo CLI Issues
-
-**Symptom**: Legacy expo-cli warnings or Node.js compatibility errors
-
-**Solutions**:
-1. **Remove global expo-cli**:
-   ```bash
-   npm uninstall -g expo-cli
-   ```
-
-2. **Use local CLI**:
-   ```bash
-   npx expo start
-   ```
-
-3. **Clear Expo cache**:
-   ```bash
-   npx expo start --clear
-   ```
-
-### React Version Conflicts
-
-**Symptom**: Peer dependency warnings during npm install
-
-**Solutions**:
-1. **Use legacy peer deps**:
-   ```bash
-   npm install --legacy-peer-deps
-   ```
-
-2. **Clean install**:
-   ```bash
+   cd frontend
    rm -rf node_modules package-lock.json
    npm install
    ```
 
-3. **Check version compatibility**:
+5. ✅ **Validate Setup**
    ```bash
-   npx expo doctor
+   ./scripts/validate-project.sh
    ```
 
-### TypeScript Errors
-
-**Symptom**: TS errors in components or types
-
-**Solutions**:
-1. **Check tsconfig.json**:
-   ```json
-   {
-     "extends": "expo/tsconfig.base",
-     "compilerOptions": {
-       "strict": true
-     }
-   }
-   ```
-
-2. **Regenerate types**:
+6. ✅ **Fresh Start**
    ```bash
-   npm run type-check
+   ./scripts/quick-start.sh
    ```
 
-3. **Clear TypeScript cache**:
-   ```bash
-   rm -rf node_modules/.cache
-   ```
+## 📞 Getting Help
 
-## Database Issues
+If issues persist:
 
-### Connection Refused
+1. Check the [Session Summary](../SESSION_SUMMARY_2025_01_11.md) for recent fixes
+2. Review [WSL Development Guide](./WSL_DEVELOPMENT_GUIDE.md)
+3. Look at [EXPO_GO_CHANGES.md](../../EXPO_GO_CHANGES.md) for native module solutions
 
-**Symptom**: `django.db.utils.OperationalError: could not connect to server`
+## 🎯 Prevention Tips
 
-**Solutions**:
-1. **Check PostgreSQL status**:
-   ```bash
-   # macOS
-   brew services list | grep postgresql
-   
-   # Ubuntu
-   sudo systemctl status postgresql
-   
-   # Windows
-   net start postgresql-x64-13
-   ```
+1. **Always work from Windows mount path**
+2. **Clear Expo Go app regularly**
+3. **Run validation before starting**
+4. **Keep dependencies updated**
+5. **Commit working states frequently**
 
-2. **Verify database exists**:
-   ```sql
-   \l                    -- List databases
-   \c nutritiondb        -- Connect to database
-   ```
+---
 
-3. **Check credentials**:
-   ```bash
-   psql -U nutrition_user -d nutritiondb -h localhost
-   ```
-
-### Migration Errors
-
-**Symptom**: `django.db.migrations.exceptions.InconsistentMigrationHistory`
-
-**Solutions**:
-1. **Reset migrations**:
-   ```bash
-   python manage.py migrate --fake api zero
-   python manage.py migrate
-   ```
-
-2. **Clear migration files**:
-   ```bash
-   find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
-   find . -path "*/migrations/*.pyc" -delete
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-3. **Check for conflicts**:
-   ```bash
-   python manage.py showmigrations
-   ```
-
-## Docker Issues
-
-### Container Build Failures
-
-**Symptom**: Docker build fails with dependency errors
-
-**Solutions**:
-1. **Clear Docker cache**:
-   ```bash
-   docker system prune -a
-   ```
-
-2. **Rebuild without cache**:
-   ```bash
-   docker-compose build --no-cache
-   ```
-
-3. **Check Dockerfile syntax**:
-   ```dockerfile
-   # Ensure proper layer ordering
-   COPY requirements.txt .
-   RUN pip install -r requirements.txt
-   COPY . .
-   ```
-
-### Volume Mount Issues
-
-**Symptom**: Code changes not reflected in container
-
-**Solutions**:
-1. **Check docker-compose.yml**:
-   ```yaml
-   volumes:
-     - ./backend:/app
-     - /app/venv  # Exclude venv
-   ```
-
-2. **Restart containers**:
-   ```bash
-   docker-compose restart
-   ```
-
-## API Issues
-
-### CORS Errors
-
-**Symptom**: Browser blocks API requests
-
-**Solutions**:
-1. **Check CORS settings**:
-   ```python
-   # settings.py
-   CORS_ALLOWED_ORIGINS = [
-       "http://localhost:3000",
-       "http://127.0.0.1:3000",
-   ]
-   ```
-
-2. **Verify middleware order**:
-   ```python
-   MIDDLEWARE = [
-       'corsheaders.middleware.CorsMiddleware',
-       'django.middleware.common.CommonMiddleware',
-       # ...
-   ]
-   ```
-
-### Authentication Errors
-
-**Symptom**: 401 Unauthorized on API calls
-
-**Solutions**:
-1. **Check token format**:
-   ```javascript
-   headers: {
-     'Authorization': 'Bearer ' + token
-   }
-   ```
-
-2. **Verify token expiry**:
-   ```bash
-   # Decode JWT token
-   echo "your-jwt-token" | base64 -d
-   ```
-
-3. **Check authentication classes**:
-   ```python
-   REST_FRAMEWORK = {
-       'DEFAULT_AUTHENTICATION_CLASSES': [
-           'rest_framework_simplejwt.authentication.JWTAuthentication',
-       ],
-   }
-   ```
-
-## Testing Issues
-
-### Test Database Errors
-
-**Symptom**: Tests fail with database creation errors
-
-**Solutions**:
-1. **Grant test database permissions**:
-   ```sql
-   ALTER USER nutrition_user CREATEDB;
-   ```
-
-2. **Use in-memory database**:
-   ```python
-   # settings/testing.py
-   DATABASES = {
-       'default': {
-           'ENGINE': 'django.db.backends.sqlite3',
-           'NAME': ':memory:',
-       }
-   }
-   ```
-
-### Factory Boy Errors
-
-**Symptom**: `AttributeError` in factory classes
-
-**Solutions**:
-1. **Check factory definitions**:
-   ```python
-   class UserFactory(factory.django.DjangoModelFactory):
-       class Meta:
-           model = User
-       
-       email = factory.Faker('email')
-   ```
-
-2. **Verify model imports**:
-   ```python
-   from api.models import User, Meal
-   ```
-
-## Performance Issues
-
-### Slow API Responses
-
-**Symptom**: API endpoints taking > 1 second
-
-**Solutions**:
-1. **Check database queries**:
-   ```python
-   # Add logging
-   LOGGING = {
-       'loggers': {
-           'django.db.backends': {
-               'level': 'DEBUG',
-           }
-       }
-   }
-   ```
-
-2. **Optimize queries**:
-   ```python
-   # Use select_related and prefetch_related
-   Meal.objects.select_related('user').prefetch_related('meal_items')
-   ```
-
-3. **Add caching**:
-   ```python
-   from django.core.cache import cache
-   
-   def get_meals(user_id):
-       cache_key = f'user_meals_{user_id}'
-       meals = cache.get(cache_key)
-       if not meals:
-           meals = Meal.objects.filter(user_id=user_id)
-           cache.set(cache_key, meals, 300)  # 5 minutes
-       return meals
-   ```
-
-### Memory Issues
-
-**Symptom**: High memory usage or out of memory errors
-
-**Solutions**:
-1. **Check for memory leaks**:
-   ```python
-   import tracemalloc
-   tracemalloc.start()
-   # ... your code ...
-   current, peak = tracemalloc.get_traced_memory()
-   print(f"Current memory usage: {current / 1024 / 1024:.1f} MB")
-   ```
-
-2. **Optimize queryset evaluation**:
-   ```python
-   # Use iterator for large datasets
-   for obj in Model.objects.iterator():
-       process(obj)
-   ```
-
-## Getting Help
-
-### Log Analysis
-
-1. **Check Django logs**:
-   ```bash
-   tail -f backend/logs/django.log
-   ```
-
-2. **Check system logs**:
-   ```bash
-   # macOS
-   tail -f /var/log/system.log
-   
-   # Ubuntu
-   journalctl -f
-   ```
-
-### Debug Mode
-
-Enable debug mode temporarily:
-```python
-# settings.py
-DEBUG = True
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-    },
-}
-```
-
-### Support Channels
-
-1. **Check documentation**: Review relevant guide first
-2. **Search issues**: Look through existing GitHub issues
-3. **Create issue**: Provide detailed reproduction steps
-4. **Community**: Join project Discord/Slack if available
-
-For complex issues, include:
-- Error logs
-- Environment details (OS, Python/Node versions)
-- Steps to reproduce
-- Expected vs actual behavior
+**Remember**: Most issues are now fixed. If you see old errors, you're likely in the wrong directory or have cached data!

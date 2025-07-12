@@ -22,6 +22,7 @@ interface AuthState {
   updateUser: (user: Partial<User>) => void;
   clearError: () => void;
   checkAuthStatus: () => Promise<void>;
+  reset: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -189,6 +190,17 @@ export const useAuthStore = create<AuthState>()(
             error: 'Failed to restore session',
           });
         }
+      },
+
+      // Reset store to initial state
+      reset: () => {
+        set({
+          user: null,
+          tokens: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        });
       },
     }),
     {

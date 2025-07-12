@@ -8,13 +8,14 @@ import {
   ViewStyle,
   TextStyle,
   View,
+  Platform,
 } from 'react-native';
-import { useTheme } from '@theme/ThemeContext';
-import { Theme } from '@theme/index';
+import { useTheme } from '@/hooks/useTheme';
+import { Theme } from '@/theme';
 import { getButtonAccessibilityProps } from '@/utils/accessibility';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text' | 'danger';
-export type ButtonSize = 'small' | 'medium' | 'large' | 'sm' | 'md' | 'lg';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text' | 'danger' | 'ghost';
+export type ButtonSize = 'small' | 'medium' | 'large';
 
 interface ButtonProps extends TouchableOpacityProps {
   variant?: ButtonVariant;
@@ -27,20 +28,11 @@ interface ButtonProps extends TouchableOpacityProps {
   children: React.ReactNode;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  // New props for enhanced functionality
+  rounded?: boolean;
+  elevation?: boolean;
+  testID?: string;
 }
-
-// Map size aliases to standard sizes
-const normalizeSize = (size: ButtonSize): 'small' | 'medium' | 'large' => {
-  const sizeMap: Record<ButtonSize, 'small' | 'medium' | 'large'> = {
-    small: 'small',
-    sm: 'small',
-    medium: 'medium',
-    md: 'medium',
-    large: 'large',
-    lg: 'large',
-  };
-  return sizeMap[size];
-};
 
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
@@ -54,34 +46,38 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   accessibilityLabel,
   accessibilityHint,
+  rounded = false,
+  elevation = true,
+  testID,
   ...props
 }) => {
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
-  const normalizedSize = normalizeSize(size);
   const isDisabled = disabled || loading;
 
   // Get button text for accessibility
   const buttonText = typeof children === 'string' ? children : accessibilityLabel || 'Button';
   const accessibilityProps = getButtonAccessibilityProps(buttonText, disabled, loading);
 
-  const buttonStyle: ViewStyle[] = [
+  const buttonStyle = [
     styles.base,
     styles[variant],
-    styles[`${normalizedSize}Size`],
-    ...(fullWidth ? [styles.fullWidth] : []),
-    ...(isDisabled ? [styles.disabled] : []),
-    ...(isDisabled ? [styles[`${variant}Disabled`]] : []),
-    ...(style ? [style as ViewStyle] : []),
-  ];
+    styles[`${size}Size`],
+    rounded && styles.rounded,
+    fullWidth && styles.fullWidth,
+    isDisabled && styles.disabled,
+    isDisabled && styles[`${variant}Disabled`],
+    elevation && !isDisabled && styles.elevation,
+    style as ViewStyle,
+  ].filter(Boolean) as ViewStyle[];
 
-  const textStyle: TextStyle[] = [
+  const textStyle = [
     styles.textBase,
     styles[`${variant}Text`],
-    styles[`${normalizedSize}Text`],
-    ...(isDisabled ? [styles.disabledText] : []),
-  ];
+    styles[`${size}Text`],
+    isDisabled && styles.disabledText,
+  ].filter(Boolean) as TextStyle[];
 
   return (
     <TouchableOpacity
@@ -90,20 +86,25 @@ export const Button: React.FC<ButtonProps> = ({
       activeOpacity={0.7}
       {...accessibilityProps}
       accessibilityHint={accessibilityHint}
+      testID={testID || `button-${variant}`}
       {...props}
     >
       {loading ? (
         <ActivityIndicator
-          testID="activity-indicator"
+          testID="button-activity-indicator"
           size={size === 'small' ? 'small' : 'small'}
           color={
-            variant === 'primary' || variant === 'danger' ? '#FFFFFF' : theme.colors.primary[500]
+            variant === 'primary' || variant === 'danger' || variant === 'secondary'
+              ? theme.colors.white
+              : theme.colors.primary[500]
           }
         />
       ) : (
         <View style={styles.content}>
           {icon && iconPosition === 'left' && <View style={styles.iconLeft}>{icon}</View>}
-          <Text style={textStyle}>{children}</Text>
+          <Text style={textStyle} numberOfLines={1}>
+            {children}
+          </Text>
           {icon && iconPosition === 'right' && <View style={styles.iconRight}>{icon}</View>}
         </View>
       )}
@@ -119,6 +120,7 @@ const createStyles = (theme: Theme) =>
       justifyContent: 'center',
       borderRadius: theme.borderRadius.md,
       paddingHorizontal: theme.spacing.m,
+      minHeight: 44, // Accessibility minimum touch target
     },
 
     // Variants
@@ -135,34 +137,45 @@ const createStyles = (theme: Theme) =>
     },
     text: {
       backgroundColor: 'transparent',
+      paddingHorizontal: theme.spacing.xs,
     },
     danger: {
       backgroundColor: theme.colors.error[500],
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: 'transparent',
     },
 
     // Sizes
     smallSize: {
       paddingVertical: theme.spacing.xs,
       paddingHorizontal: theme.spacing.s,
+      minHeight: 32,
     },
     mediumSize: {
       paddingVertical: theme.spacing.s,
       paddingHorizontal: theme.spacing.m,
+      minHeight: 44,
     },
     largeSize: {
       paddingVertical: theme.spacing.m,
       paddingHorizontal: theme.spacing.l,
+      minHeight: 56,
     },
 
     // Text
     textBase: {
+      fontFamily: theme.typography.fontFamily.medium,
       fontWeight: '600',
+      textAlign: 'center',
     },
     primaryText: {
-      color: '#FFFFFF',
+      color: theme.colors.white,
     },
     secondaryText: {
-      color: '#FFFFFF',
+      color: theme.colors.white,
     },
     outlineText: {
       color: theme.colors.primary[500],
@@ -171,23 +184,32 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.primary[500],
     },
     dangerText: {
-      color: '#FFFFFF',
+      color: theme.colors.white,
+    },
+    ghostText: {
+      color: theme.colors.neutral[700],
     },
 
     // Text sizes
     smallText: {
-      fontSize: theme.typography.fontSize.xs,
+      fontSize: theme.typography.fontSize.sm,
+      lineHeight: theme.typography.fontSize.sm * 1.2,
     },
     mediumText: {
       fontSize: theme.typography.fontSize.base,
+      lineHeight: theme.typography.fontSize.base * 1.2,
     },
     largeText: {
       fontSize: theme.typography.fontSize.lg,
+      lineHeight: theme.typography.fontSize.lg * 1.2,
     },
 
     // States
     fullWidth: {
       width: '100%',
+    },
+    rounded: {
+      borderRadius: 999,
     },
     disabled: {
       opacity: 0.5,
@@ -205,14 +227,32 @@ const createStyles = (theme: Theme) =>
     dangerDisabled: {
       backgroundColor: theme.colors.neutral[400],
     },
-    disabledText: {
-      color: theme.colors.neutral[600],
+    ghostDisabled: {
+      backgroundColor: 'transparent',
     },
+    disabledText: {
+      color: theme.colors.neutral[500],
+    },
+
+    // Elevation
+    elevation: Platform.select({
+      ios: {
+        shadowColor: theme.colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+      default: {},
+    }),
 
     // Layout
     content: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
     },
     iconLeft: {
       marginRight: theme.spacing.xs,

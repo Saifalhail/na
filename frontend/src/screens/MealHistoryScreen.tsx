@@ -43,7 +43,7 @@ const MealCard: React.FC<MealCardProps> = React.memo(
     return (
       <Card style={styles.mealCard} onPress={() => onPress(meal)}>
         <View style={styles.mealHeader}>
-          <Text style={[styles.mealName, { color: theme.colors.text }]} numberOfLines={1}>
+          <Text style={[styles.mealName, { color: theme.colors.text.primary }]} numberOfLines={1}>
             {meal.name}
           </Text>
           <TouchableOpacity onPress={() => onToggleFavorite(meal)} style={styles.favoriteButton}>
@@ -68,7 +68,7 @@ const MealCard: React.FC<MealCardProps> = React.memo(
         </View>
 
         <View style={styles.mealNutrition}>
-          <Text style={[styles.calories, { color: theme.colors.text }]}>
+          <Text style={[styles.calories, { color: theme.colors.text.primary }]}>
             {formatCalories(meal.totalCalories)}
           </Text>
           <Text style={[styles.macros, { color: theme.colors.textSecondary }]}>
@@ -223,7 +223,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No meals found</Text>
+      <Text style={[styles.emptyTitle, { color: theme.colors.text.primary }]}>No meals found</Text>
       <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
         {filters.search
           ? 'Try adjusting your search or filters'
@@ -254,7 +254,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Meal History</Text>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>Meal History</Text>
 
         <Spacer size="md" />
 

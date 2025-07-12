@@ -27,7 +27,6 @@ module.exports = function (api) {
       // Performance optimizations
       '@babel/plugin-transform-runtime',
       ['transform-remove-console', { exclude: ['error', 'warn'] }],
-      'lodash',
     ],
     env: {
       production: {

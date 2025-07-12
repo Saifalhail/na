@@ -1,29 +1,17 @@
-import axios from 'axios';
 import { authApi } from '../api/endpoints/auth';
 import { TokenStorage } from '../storage/tokenStorage';
+import { api } from '../api/client';
 
-// Mock axios
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-const mockAxiosInstance = {
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  delete: jest.fn(),
-  patch: jest.fn(),
-  interceptors: {
-    request: { use: jest.fn() },
-    response: { use: jest.fn() },
+// Mock the API client
+jest.mock('../api/client', () => ({
+  api: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    patch: jest.fn(),
   },
-  defaults: {
-    headers: {
-      common: {},
-    },
-  },
-};
-
-// Mock axios.create to return our mock instance
-mockedAxios.create = jest.fn(() => mockAxiosInstance);
+}));
 
 // Mock TokenStorage
 jest.mock('../storage/tokenStorage', () => ({
@@ -38,6 +26,8 @@ jest.mock('../storage/tokenStorage', () => ({
   },
 }));
 
+const mockApi = api as jest.Mocked<typeof api>;
+
 describe('API Client', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -50,12 +40,7 @@ describe('API Client', () => {
         tokens: { access: 'access-token', refresh: 'refresh-token' },
       };
 
-      mockAxiosInstance.post.mockResolvedValue({
-        data: mockResponse,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-      });
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const credentials = {
         email: 'test@example.com',
@@ -64,7 +49,7 @@ describe('API Client', () => {
 
       const result = await authApi.login(credentials);
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/login/', credentials);
+      expect(mockApi.post).toHaveBeenCalledWith('/api/v1/auth/login/', credentials);
       expect(result).toEqual(mockResponse);
       expect(TokenStorage.saveTokens).toHaveBeenCalledWith(mockResponse.tokens);
     });
@@ -75,23 +60,20 @@ describe('API Client', () => {
         tokens: { access: 'access-token', refresh: 'refresh-token' },
       };
 
-      mockAxiosInstance.post.mockResolvedValue({
-        data: mockResponse,
-        status: 201,
-        statusText: 'Created',
-        headers: {},
-      });
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const registerData = {
         email: 'test@example.com',
         password: 'password123',
         firstName: 'Test',
         lastName: 'User',
+        passwordConfirm: 'password123',
+        termsAccepted: true,
       };
 
       const result = await authApi.register(registerData);
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/register/', registerData);
+      expect(mockApi.post).toHaveBeenCalledWith('/api/v1/auth/register/', registerData);
       expect(result).toEqual(mockResponse);
       expect(TokenStorage.saveTokens).toHaveBeenCalledWith(mockResponse.tokens);
     });
@@ -100,16 +82,11 @@ describe('API Client', () => {
       const mockRefreshToken = 'refresh-token';
       (TokenStorage.getRefreshToken as jest.Mock).mockResolvedValue(mockRefreshToken);
 
-      mockAxiosInstance.post.mockResolvedValue({
-        data: {},
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-      });
+      mockApi.post.mockResolvedValue(undefined);
 
       await authApi.logout();
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/logout/', {
+      expect(mockApi.post).toHaveBeenCalledWith('/api/v1/auth/logout/', {
         refresh: mockRefreshToken,
       });
       expect(TokenStorage.clearTokens).toHaveBeenCalled();
@@ -122,16 +99,11 @@ describe('API Client', () => {
         refresh: 'new-refresh-token',
       };
 
-      mockAxiosInstance.post.mockResolvedValue({
-        data: mockNewTokens,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-      });
+      mockApi.post.mockResolvedValue(mockNewTokens);
 
       const result = await authApi.refreshToken(mockRefreshToken);
 
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/auth/refresh/', {
+      expect(mockApi.post).toHaveBeenCalledWith('/api/v1/auth/refresh/', {
         refresh: mockRefreshToken,
       });
       expect(result).toEqual(mockNewTokens);
@@ -144,36 +116,25 @@ describe('API Client', () => {
         bio: 'Test bio',
       };
 
-      mockAxiosInstance.get.mockResolvedValue({
-        data: mockProfile,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-      });
+      mockApi.get.mockResolvedValue(mockProfile);
 
       const result = await authApi.getProfile();
 
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/auth/profile/');
+      expect(mockApi.get).toHaveBeenCalledWith('/api/v1/auth/profile/');
       expect(result).toEqual(mockProfile);
     });
 
     it('handles API errors correctly', async () => {
-      const errorResponse = {
-        response: {
-          status: 400,
-          statusText: 'Bad Request',
-          data: { error: 'Bad Request' },
-        },
-      };
+      const errorResponse = new Error('Bad Request');
 
-      mockAxiosInstance.post.mockRejectedValue(errorResponse);
+      mockApi.post.mockRejectedValue(errorResponse);
 
       await expect(
         authApi.login({
           email: 'test@example.com',
           password: 'wrong-password',
         })
-      ).rejects.toEqual(errorResponse);
+      ).rejects.toThrow('Bad Request');
     });
   });
 });

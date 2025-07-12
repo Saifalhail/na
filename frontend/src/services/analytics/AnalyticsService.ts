@@ -1,6 +1,6 @@
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import { MMKV } from 'react-native-mmkv';
+import { createStorage, Storage } from '@/utils/storage';
 import { API_CONFIG } from '@/config/env';
 
 interface AnalyticsEvent {
@@ -21,7 +21,7 @@ interface UserProperties {
 
 class AnalyticsService {
   private static instance: AnalyticsService;
-  private storage: MMKV;
+  private storage: Storage;
   private sessionId: string;
   private userId?: string;
   private eventQueue: AnalyticsEvent[] = [];
@@ -32,7 +32,7 @@ class AnalyticsService {
   private flushTimer?: NodeJS.Timeout;
 
   private constructor() {
-    this.storage = new MMKV({ id: 'analytics' });
+    this.storage = createStorage('analytics');
     this.sessionId = this.generateSessionId();
   }
 
@@ -70,7 +70,7 @@ class AnalyticsService {
     });
   }
 
-  identify(userId: string, properties?: UserProperties): void {
+  async identify(userId: string, properties?: UserProperties): Promise<void> {
     this.userId = userId;
 
     const userProps = {
@@ -82,7 +82,7 @@ class AnalyticsService {
     };
 
     // Store user properties
-    this.storage.set(`user_${userId}`, JSON.stringify(userProps));
+    await this.storage.set(`user_${userId}`, JSON.stringify(userProps));
 
     this.logDebug('User identified', userProps);
 
@@ -90,7 +90,7 @@ class AnalyticsService {
     this.track('user_identified', userProps);
   }
 
-  track(eventName: string, properties?: Record<string, any>): void {
+  async track(eventName: string, properties?: Record<string, any>): Promise<void> {
     if (!this.isInitialized) {
       this.logDebug('Analytics not initialized, skipping event:', eventName);
       return;
@@ -111,9 +111,9 @@ class AnalyticsService {
     // Add to queue
     this.eventQueue.push(event);
 
-    // Store in MMKV for persistence
+    // Store for persistence
     const queueKey = `event_queue_${Date.now()}`;
-    this.storage.set(queueKey, JSON.stringify(event));
+    await this.storage.set(queueKey, JSON.stringify(event));
 
     this.logDebug('Event tracked:', event);
 
@@ -217,8 +217,8 @@ class AnalyticsService {
   }
 
   // A/B Testing support
-  getExperiment(experimentName: string): string | null {
-    const experiments = this.storage.getString('experiments');
+  async getExperiment(experimentName: string): Promise<string | null> {
+    const experiments = await this.storage.getString('experiments');
     if (experiments) {
       const parsed = JSON.parse(experiments);
       return parsed[experimentName] || null;
@@ -226,11 +226,11 @@ class AnalyticsService {
     return null;
   }
 
-  setExperiment(experimentName: string, variant: string): void {
-    const experiments = this.storage.getString('experiments') || '{}';
+  async setExperiment(experimentName: string, variant: string): Promise<void> {
+    const experiments = await this.storage.getString('experiments') || '{}';
     const parsed = JSON.parse(experiments);
     parsed[experimentName] = variant;
-    this.storage.set('experiments', JSON.stringify(parsed));
+    await this.storage.set('experiments', JSON.stringify(parsed));
 
     this.track('experiment_assigned', {
       experiment_name: experimentName,
@@ -264,12 +264,12 @@ class AnalyticsService {
       }
 
       // Clear persisted events
-      const keys = this.storage.getAllKeys();
-      keys.forEach((key) => {
-        if (key.startsWith('event_queue_')) {
-          this.storage.delete(key);
-        }
-      });
+      const keys = await this.storage.getAllKeys();
+      await Promise.all(
+        keys
+          .filter((key) => key.startsWith('event_queue_'))
+          .map((key) => this.storage.delete(key))
+      );
 
       this.logDebug('Events flushed:', events.length);
     } catch (error) {

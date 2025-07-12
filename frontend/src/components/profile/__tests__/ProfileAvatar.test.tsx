@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { PermissionStatus } from 'expo-modules-core';
 import { ProfileAvatar } from '../ProfileAvatar';
 import { ThemeProvider } from '@/theme/ThemeContext';
 
@@ -25,8 +26,8 @@ const mockUser = {
   email: 'john.doe@example.com',
   firstName: 'John',
   lastName: 'Doe',
-  avatar: null,
-  socialAvatarUrl: null,
+  avatar: null as string | null,
+  socialAvatarUrl: null as string | null,
 };
 
 jest.mock('@/store/authStore', () => ({
@@ -207,7 +208,7 @@ describe('ProfileAvatar', () => {
     it('handles camera selection', async () => {
       const onImageSelect = jest.fn();
       mockedImagePicker.requestCameraPermissionsAsync.mockResolvedValue({
-        status: 'granted',
+        status: PermissionStatus.GRANTED,
         granted: true,
         canAskAgain: true,
         expires: 'never',
@@ -256,7 +257,7 @@ describe('ProfileAvatar', () => {
     it('handles photo library selection', async () => {
       const onImageSelect = jest.fn();
       mockedImagePicker.requestMediaLibraryPermissionsAsync.mockResolvedValue({
-        status: 'granted',
+        status: PermissionStatus.GRANTED,
         granted: true,
         canAskAgain: true,
         expires: 'never',
@@ -304,7 +305,7 @@ describe('ProfileAvatar', () => {
 
     it('handles permission denial', async () => {
       mockedImagePicker.requestCameraPermissionsAsync.mockResolvedValue({
-        status: 'denied',
+        status: PermissionStatus.DENIED,
         granted: false,
         canAskAgain: true,
         expires: 'never',
@@ -361,7 +362,7 @@ describe('ProfileAvatar', () => {
 
     it('handles image picker errors', async () => {
       mockedImagePicker.requestCameraPermissionsAsync.mockResolvedValue({
-        status: 'granted',
+        status: PermissionStatus.GRANTED,
         granted: true,
         canAskAgain: true,
         expires: 'never',
@@ -389,14 +390,14 @@ describe('ProfileAvatar', () => {
     it('ignores canceled image selection', async () => {
       const onImageSelect = jest.fn();
       mockedImagePicker.requestCameraPermissionsAsync.mockResolvedValue({
-        status: 'granted',
+        status: PermissionStatus.GRANTED,
         granted: true,
         canAskAgain: true,
         expires: 'never',
       });
       mockedImagePicker.launchCameraAsync.mockResolvedValue({
         canceled: true,
-        assets: [],
+        assets: null,
       });
 
       renderWithTheme(<ProfileAvatar editable onImageSelect={onImageSelect} />);

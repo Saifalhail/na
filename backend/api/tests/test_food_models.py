@@ -360,7 +360,8 @@ class MealModelTest(TestCase):
             meals.append(meal)
         
         self.assertEqual(self.user.meals.count(), 3)
-        self.assertEqual(list(self.user.meals.all()), meals)
+        # Meals are ordered by -consumed_at (most recent first)
+        self.assertEqual(list(self.user.meals.all()), list(reversed(meals)))
 
 
 class MealItemModelTest(TestCase):

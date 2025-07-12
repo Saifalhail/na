@@ -6,7 +6,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
-from allauth.exceptions import ImmediateHttpResponse
+from allauth.core.exceptions import ImmediateHttpResponse
 from rest_framework import status
 from rest_framework.response import Response
 from .models import UserProfile
@@ -90,16 +90,18 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
             user.first_name = data['given_name']
         if 'family_name' in data:
             user.last_name = data['family_name']
-        if 'picture' in data and hasattr(user, 'profile'):
-            # Store the picture URL in profile (we'll handle download later)
-            user.profile.social_avatar_url = data['picture']
-            user.profile.save()
         
         user.save()
         
         # Create user profile if it doesn't exist
         if not hasattr(user, 'profile'):
             UserProfile.objects.create(user=user)
+        
+        # Set social avatar URL after ensuring profile exists
+        if 'picture' in data:
+            # Store the picture URL in profile (we'll handle download later)
+            user.profile.social_avatar_url = data['picture']
+            user.profile.save()
         
         return user
     

@@ -120,4 +120,5 @@ export const LOADING_MESSAGES = {
   UPDATING_PROFILE: 'Updating profile...',
   LOGGING_IN: 'Logging in...',
   REGISTERING: 'Creating account...',
+  PREPARING_CAMERA: 'Preparing camera...',
 } as const;

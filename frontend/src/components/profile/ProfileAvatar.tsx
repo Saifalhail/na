@@ -184,7 +184,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
             { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
           ]}
         >
-          <Text style={[styles.initials, { fontSize: avatarSize * 0.4, color: theme.colors.text }]}>
+          <Text style={[styles.initials, { fontSize: avatarSize * 0.4, color: theme.colors.text.primary }]}>
             {getInitials()}
           </Text>
         </View>

@@ -53,15 +53,25 @@ class IsOwnerOrReadOnly(BasePermission):
 
 class IsPremiumUser(BasePermission):
     """
-    Permission for premium features.
+    Permission for premium features based on active subscription.
     """
+    
+    message = "This feature requires a premium subscription."
     
     def has_permission(self, request, view):
         """Check if user has premium account."""
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Check if user has premium profile attribute
+        # Check active subscription
+        active_subscription = request.user.subscriptions.filter(
+            status__in=['active', 'trialing']
+        ).first()
+        
+        if active_subscription:
+            return active_subscription.plan.plan_type in ['premium', 'professional']
+        
+        # Fallback to profile attribute for backward compatibility
         if hasattr(request.user, 'profile'):
             return getattr(request.user.profile, 'is_premium', False)
         
@@ -70,36 +80,59 @@ class IsPremiumUser(BasePermission):
 
 class CanAccessAIFeatures(BasePermission):
     """
-    Permission to check if user can access AI features.
-    Could be based on subscription, usage limits, etc.
+    Permission to check if user can access AI features based on subscription limits.
     """
     
-    message = "AI features require a premium subscription or you've exceeded your daily limit."
+    message = "AI features require a premium subscription or you've exceeded your usage limit."
     
     def has_permission(self, request, view):
         """Check if user can access AI features."""
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # For now, allow all authenticated users
-        # In production, check subscription status, usage limits, etc.
-        return True
+        # Check active subscription
+        active_subscription = request.user.subscriptions.filter(
+            status__in=['active', 'trialing']
+        ).first()
         
-        # Example implementation with usage limits:
-        # from django.core.cache import cache
-        # from datetime import date
-        # 
-        # # Check daily usage limit
-        # today = date.today().isoformat()
-        # cache_key = f"ai_usage_{request.user.id}_{today}"
-        # usage_count = cache.get(cache_key, 0)
-        # 
-        # # Free tier: 10 AI analyses per day
-        # # Premium: unlimited
-        # if hasattr(request.user, 'profile') and request.user.profile.is_premium:
-        #     return True
-        # 
-        # return usage_count < 10
+        if active_subscription:
+            return active_subscription.can_use_ai_analysis()
+        
+        # Free tier users - check against free plan limits
+        from api.models import SubscriptionPlan
+        free_plan = SubscriptionPlan.objects.filter(plan_type='free', is_active=True).first()
+        
+        if free_plan:
+            # For free users, implement daily usage tracking with cache
+            from django.core.cache import cache
+            from datetime import date
+            
+            today = date.today().isoformat()
+            cache_key = f"ai_usage_{request.user.id}_{today}"
+            usage_count = cache.get(cache_key, 0)
+            
+            return usage_count < free_plan.ai_analysis_limit
+        
+        # Default to deny if no plan found
+        return False
+    
+    def increment_usage(self, user):
+        """Increment AI usage for free tier users."""
+        active_subscription = user.subscriptions.filter(
+            status__in=['active', 'trialing']
+        ).first()
+        
+        if active_subscription:
+            active_subscription.increment_ai_usage()
+        else:
+            # Free tier - use cache for daily tracking
+            from django.core.cache import cache
+            from datetime import date
+            
+            today = date.today().isoformat()
+            cache_key = f"ai_usage_{user.id}_{today}"
+            usage_count = cache.get(cache_key, 0)
+            cache.set(cache_key, usage_count + 1, 86400)  # 24 hours
 
 
 class CanModifyMeal(BasePermission):

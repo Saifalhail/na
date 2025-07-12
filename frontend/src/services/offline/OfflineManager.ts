@@ -1,6 +1,6 @@
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
-import { MMKV } from 'react-native-mmkv';
-import { api } from '@/services/api';
+import { createStorage, Storage } from '@/utils/storage';
+import { apiClient } from '@/services/api';
 
 interface QueuedRequest {
   id: string;
@@ -22,7 +22,7 @@ interface OfflineCache {
 
 export class OfflineManager {
   private static instance: OfflineManager;
-  private storage: MMKV;
+  private storage: Storage;
   private isOnline: boolean = true;
   private requestQueue: QueuedRequest[] = [];
   private cacheStore: Map<string, OfflineCache> = new Map();
@@ -35,7 +35,7 @@ export class OfflineManager {
   private readonly DEFAULT_TTL = 1000 * 60 * 60 * 24; // 24 hours
 
   private constructor() {
-    this.storage = new MMKV({ id: 'offline-storage' });
+    this.storage = createStorage('offline-storage');
     this.initialize();
   }
 
@@ -48,10 +48,10 @@ export class OfflineManager {
 
   private async initialize() {
     // Load queued requests from storage
-    this.loadQueueFromStorage();
+    await this.loadQueueFromStorage();
 
     // Load cached data
-    this.loadCacheFromStorage();
+    await this.loadCacheFromStorage();
 
     // Set up network monitoring
     const netInfoState = await NetInfo.fetch();
@@ -76,9 +76,9 @@ export class OfflineManager {
     this.listeners.forEach((listener) => listener(this.isOnline));
   }
 
-  private loadQueueFromStorage() {
+  private async loadQueueFromStorage() {
     try {
-      const queueData = this.storage.getString(this.QUEUE_KEY);
+      const queueData = await this.storage.getString(this.QUEUE_KEY);
       if (queueData) {
         this.requestQueue = JSON.parse(queueData);
       }
@@ -87,20 +87,20 @@ export class OfflineManager {
     }
   }
 
-  private saveQueueToStorage() {
+  private async saveQueueToStorage() {
     try {
-      this.storage.set(this.QUEUE_KEY, JSON.stringify(this.requestQueue));
+      await this.storage.set(this.QUEUE_KEY, JSON.stringify(this.requestQueue));
     } catch (error) {
       console.error('Failed to save offline queue:', error);
     }
   }
 
-  private loadCacheFromStorage() {
+  private async loadCacheFromStorage() {
     try {
-      const keys = this.storage.getAllKeys();
-      keys.forEach((key) => {
+      const keys = await this.storage.getAllKeys();
+      for (const key of keys) {
         if (key.startsWith(this.CACHE_PREFIX)) {
-          const cacheData = this.storage.getString(key);
+          const cacheData = await this.storage.getString(key);
           if (cacheData) {
             const cache: OfflineCache = JSON.parse(cacheData);
             // Check if cache is still valid
@@ -108,11 +108,11 @@ export class OfflineManager {
               this.cacheStore.set(cache.key, cache);
             } else {
               // Remove expired cache
-              this.storage.delete(key);
+              await this.storage.delete(key);
             }
           }
         }
-      });
+      }
     } catch (error) {
       console.error('Failed to load cache from storage:', error);
     }
@@ -205,14 +205,14 @@ export class OfflineManager {
           if (request.retryCount >= request.maxRetries) {
             // Remove failed request after max retries
             this.requestQueue.shift();
-            this.saveQueueToStorage();
+            await this.saveQueueToStorage();
 
             // Notify about failed request
             this.notifyRequestFailed(request);
           } else {
             // Move to end of queue
             this.requestQueue.push(this.requestQueue.shift()!);
-            this.saveQueueToStorage();
+            await this.saveQueueToStorage();
           }
         }
       }
@@ -229,7 +229,7 @@ export class OfflineManager {
       headers: request.headers,
     };
 
-    return await api.request(config);
+    return await apiClient(config);
   }
 
   private notifyRequestFailed(request: QueuedRequest) {
@@ -240,7 +240,7 @@ export class OfflineManager {
   /**
    * Cache data for offline access
    */
-  cacheData(key: string, data: any, ttl: number = this.DEFAULT_TTL): void {
+  async cacheData(key: string, data: any, ttl: number = this.DEFAULT_TTL): Promise<void> {
     const cache: OfflineCache = {
       key,
       data,
@@ -249,13 +249,13 @@ export class OfflineManager {
     };
 
     this.cacheStore.set(key, cache);
-    this.storage.set(this.CACHE_PREFIX + key, JSON.stringify(cache));
+    await this.storage.set(this.CACHE_PREFIX + key, JSON.stringify(cache));
   }
 
   /**
    * Get cached data
    */
-  getCachedData<T = any>(key: string): T | null {
+  async getCachedData<T = any>(key: string): Promise<T | null> {
     const cache = this.cacheStore.get(key);
 
     if (!cache) {
@@ -266,7 +266,7 @@ export class OfflineManager {
     if (Date.now() - cache.timestamp > cache.ttl) {
       // Remove expired cache
       this.cacheStore.delete(key);
-      this.storage.delete(this.CACHE_PREFIX + key);
+      await this.storage.delete(this.CACHE_PREFIX + key);
       return null;
     }
 
@@ -276,16 +276,16 @@ export class OfflineManager {
   /**
    * Clear all cached data
    */
-  clearCache(): void {
+  async clearCache(): Promise<void> {
     this.cacheStore.clear();
 
     // Clear from storage
-    const keys = this.storage.getAllKeys();
-    keys.forEach((key) => {
-      if (key.startsWith(this.CACHE_PREFIX)) {
-        this.storage.delete(key);
-      }
-    });
+    const keys = await this.storage.getAllKeys();
+    await Promise.all(
+      keys
+        .filter((key) => key.startsWith(this.CACHE_PREFIX))
+        .map((key) => this.storage.delete(key))
+    );
   }
 
   /**
@@ -298,9 +298,9 @@ export class OfflineManager {
   /**
    * Clear offline queue
    */
-  clearQueue(): void {
+  async clearQueue(): Promise<void> {
     this.requestQueue = [];
-    this.saveQueueToStorage();
+    await this.saveQueueToStorage();
   }
 
   /**

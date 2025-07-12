@@ -16,7 +16,7 @@ export const useAppOptimization = ({
   cleanupInterval = 300000, // 5 minutes
 }: UseAppOptimizationOptions = {}) => {
   const appState = useRef(AppState.currentState);
-  const cleanupTimer = useRef<NodeJS.Timeout>();
+  const cleanupTimer = useRef<NodeJS.Timeout | null>(null);
   const offlineManager = OfflineManager.getInstance();
 
   useEffect(() => {

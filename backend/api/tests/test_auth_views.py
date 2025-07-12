@@ -194,8 +194,7 @@ class AuthenticationViewsTest(TestCase):
             response = self.client.post(self.login_url, data, format='json')
         
         # The 6th attempt should be rate limited
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('too many', response.data['message'].lower())
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
     
     def test_token_refresh_success(self):
         """Test successful token refresh."""

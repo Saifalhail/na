@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Container } from '@/components/layout/Container';
-import { Button } from '@/components/Button';
-import { TextInput } from '@/components/TextInput';
-import { Spacer } from '@/components/layout/Spacer';
+import { Container, Spacer } from '@/components/layout';
+import { Button } from '@/components/base/Button';
+import { TextInput } from '@/components/base/TextInput';
+
 import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
@@ -33,6 +33,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     email: '',
     password: '',
     confirmPassword: '',
+    termsAccepted: true,
   });
 
   const [errors, setErrors] = useState({
@@ -41,6 +42,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     email: '',
     password: '',
     confirmPassword: '',
+    termsAccepted: '',
   });
 
   const validateForm = (): boolean => {
@@ -50,6 +52,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       email: '',
       password: '',
       confirmPassword: '',
+      termsAccepted: '',
     };
 
     const firstNameValidation = validateName(formData.firstName);
@@ -89,10 +92,12 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     try {
       await register({
-        first_name: formData.firstName,
-        last_name: formData.lastName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
+        passwordConfirm: formData.confirmPassword,
+        termsAccepted: formData.termsAccepted,
       });
     } catch (error: any) {
       setErrors((prev) => ({
@@ -124,7 +129,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>Create Account</Text>
+            <Text style={[styles.title, { color: theme.colors.text.primary }]}>Create Account</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
               Join us and start your nutrition journey
             </Text>
@@ -142,8 +147,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                   error={errors.firstName}
                   placeholder="First name"
                   autoCapitalize="words"
-                  autoComplete="given-name"
-                  textContentType="givenName"
+                  autoComplete="name"
+                  textContentType="name"
                 />
               </View>
 
@@ -157,8 +162,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                   error={errors.lastName}
                   placeholder="Last name"
                   autoCapitalize="words"
-                  autoComplete="family-name"
-                  textContentType="familyName"
+                  autoComplete="name"
+                  textContentType="name"
                 />
               </View>
             </View>
@@ -206,12 +211,13 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="xl" />
 
             <Button
-              title={isLoading ? LOADING_MESSAGES.REGISTERING : 'Create Account'}
               onPress={handleRegister}
               variant="primary"
               disabled={isLoading}
               style={styles.registerButton}
-            />
+            >
+              {isLoading ? LOADING_MESSAGES.REGISTERING : 'Create Account'}
+            </Button>
 
             <Spacer size="lg" />
 
@@ -224,21 +230,22 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="lg" />
 
             <Button
-              title="Already have an account? Sign In"
               onPress={handleLogin}
               variant="text"
               style={styles.loginButton}
-            />
+            >
+              Already have an account? Sign In
+            </Button>
           </View>
 
           <View style={styles.terms}>
             <Text style={[styles.termsText, { color: theme.colors.textSecondary }]}>
               By creating an account, you agree to our{' '}
-              <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+              <Text style={[styles.termsLink, { color: theme.colors.primary[500] }]}>
                 Terms of Service
               </Text>{' '}
               and{' '}
-              <Text style={[styles.termsLink, { color: theme.colors.primary }]}>
+              <Text style={[styles.termsLink, { color: theme.colors.primary[500] }]}>
                 Privacy Policy
               </Text>
             </Text>

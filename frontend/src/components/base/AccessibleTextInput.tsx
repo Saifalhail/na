@@ -140,7 +140,7 @@ export const AccessibleTextInput: React.FC<AccessibleTextInputProps> = ({
               styles.input,
               icon && styles.inputWithIcon,
               inputStyle,
-              { color: theme.colors.text },
+              { color: theme.colors.text.primary },
             ]}
             placeholderTextColor={theme.colors.textSecondary}
             selectionColor={theme.colors.primary[500]}

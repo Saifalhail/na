@@ -4,7 +4,8 @@ Celery tasks for notifications and reminders.
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.db.models import Q, Avg, Sum, Count
+from django.db.models import Q, Avg, Sum, Count, Value, DecimalField
+from django.db.models.functions import Coalesce
 from datetime import datetime, timedelta
 import logging
 
@@ -44,10 +45,10 @@ def send_daily_nutrition_summary():
                 user=user,
                 consumed_at__range=(today_start, today_end)
             ).aggregate(
-                total_calories=Sum('total_calories'),
-                total_protein=Sum('total_protein'),
-                total_carbs=Sum('total_carbs'),
-                total_fat=Sum('total_fat'),
+                total_calories=Coalesce(Sum('meal_items__calories'), Value(0), output_field=DecimalField()),
+                total_protein=Coalesce(Sum('meal_items__protein'), Value(0), output_field=DecimalField()),
+                total_carbs=Coalesce(Sum('meal_items__carbohydrates'), Value(0), output_field=DecimalField()),
+                total_fat=Coalesce(Sum('meal_items__fat'), Value(0), output_field=DecimalField()),
                 meal_count=Count('id')
             )
             
@@ -107,11 +108,11 @@ def send_weekly_progress_report():
                 user=user,
                 consumed_at__range=(week_start, now)
             ).aggregate(
-                avg_calories=Avg('total_calories'),
-                total_calories=Sum('total_calories'),
-                total_protein=Sum('total_protein'),
-                total_carbs=Sum('total_carbs'),
-                total_fat=Sum('total_fat'),
+                avg_calories=Coalesce(Avg('meal_items__calories'), Value(0), output_field=DecimalField()),
+                total_calories=Coalesce(Sum('meal_items__calories'), Value(0), output_field=DecimalField()),
+                total_protein=Coalesce(Sum('meal_items__protein'), Value(0), output_field=DecimalField()),
+                total_carbs=Coalesce(Sum('meal_items__carbohydrates'), Value(0), output_field=DecimalField()),
+                total_fat=Coalesce(Sum('meal_items__fat'), Value(0), output_field=DecimalField()),
                 meal_count=Count('id'),
                 days_logged=Count('consumed_at__date', distinct=True)
             )
@@ -236,8 +237,8 @@ def check_and_notify_achievements(user_id):
             user=user,
             consumed_at__gte=today_start
         ).aggregate(
-            total_calories=Sum('total_calories'),
-            total_protein=Sum('total_protein')
+            total_calories=Coalesce(Sum('meal_items__calories'), Value(0), output_field=DecimalField()),
+            total_protein=Coalesce(Sum('meal_items__protein'), Value(0), output_field=DecimalField())
         )
         
         profile = user.profile
@@ -267,7 +268,7 @@ def check_and_notify_achievements(user_id):
                             'goal_type': 'daily_calories',
                             'goal_value': float(profile.daily_calorie_goal),
                             'achieved_value': float(today_meals['total_calories']),
-                            'percentage': round(goal_percentage, 1),
+                            'percentage': float(round(goal_percentage, 1)),
                         }
                     )
         

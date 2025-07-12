@@ -154,7 +154,7 @@ export const Select: React.FC<SelectProps> = ({
       {label && <Text style={styles.label}>{label}</Text>}
 
       <TouchableOpacity
-        style={[styles.selectButton, disabled && styles.disabled, error && styles.errorBorder]}
+        style={[styles.selectButton, disabled && styles.disabled, error ? styles.errorBorder : undefined]}
         onPress={() => setModalVisible(true)}
         disabled={disabled}
       >
@@ -211,7 +211,6 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       {...props}
       value={value[0]} // For display purposes
       onValueChange={handleValueChange}
-      multiple={true}
     />
   );
 };

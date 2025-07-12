@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -11,7 +12,14 @@ import { useAppOptimization } from '@/hooks/useAppOptimization';
 import LoadingComponents from '@/components/base/Loading';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 
-function AppContent() {
+// Simple loading component that doesn't require theme context
+const InitialLoadingScreen = () => (
+  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffff' }}>
+    <ActivityIndicator size="large" color="#007AFF" />
+  </View>
+);
+
+function ThemedAppContent() {
   const { checkAuthStatus, isLoading } = useAuthStore();
 
   // Enable app-wide performance optimizations
@@ -30,12 +38,20 @@ function AppContent() {
   }
 
   return (
+    <>
+      <AppNavigator />
+      <NetworkStatusIndicator />
+      <StatusBar style="auto" />
+    </>
+  );
+}
+
+function AppContent() {
+  return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AppNavigator />
-          <NetworkStatusIndicator />
-          <StatusBar style="auto" />
+          <ThemedAppContent />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

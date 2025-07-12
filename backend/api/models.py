@@ -287,6 +287,13 @@ class UserProfile(models.Model):
         help_text=_('Avatar URL from social provider')
     )
     
+    # Subscription status
+    is_premium = models.BooleanField(
+        _('is premium user'),
+        default=False,
+        help_text=_('Whether the user has a premium subscription')
+    )
+    
     # Privacy and notifications
     receive_email_notifications = models.BooleanField(
         _('receive email notifications'),
@@ -296,6 +303,12 @@ class UserProfile(models.Model):
     receive_push_notifications = models.BooleanField(
         _('receive push notifications'),
         default=True
+    )
+    
+    receive_sms_notifications = models.BooleanField(
+        _('receive SMS notifications'),
+        default=False,
+        help_text=_('Whether to receive SMS notifications')
     )
     
     show_nutritional_info_publicly = models.BooleanField(
@@ -584,6 +597,7 @@ class APIUsageLog(models.Model):
     
     error_message = models.TextField(
         _('error message'),
+        null=True,
         blank=True,
         help_text=_('Error message if the request failed')
     )
@@ -1477,3 +1491,715 @@ class Notification(models.Model):
         self.error_message = error_message
         self.retry_count += 1
         self.save(update_fields=['status', 'failed_at', 'error_message', 'retry_count', 'updated_at'])
+
+
+# Payment and Subscription Models
+
+class SubscriptionPlan(models.Model):
+    """
+    Subscription plans available for users.
+    """
+    PLAN_TYPE_CHOICES = [
+        ('free', _('Free')),
+        ('premium', _('Premium')),
+        ('professional', _('Professional')),
+    ]
+    
+    BILLING_PERIOD_CHOICES = [
+        ('monthly', _('Monthly')),
+        ('yearly', _('Yearly')),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(_('plan name'), max_length=100)
+    plan_type = models.CharField(
+        _('plan type'),
+        max_length=20,
+        choices=PLAN_TYPE_CHOICES,
+        unique=True
+    )
+    
+    # Pricing
+    price = models.DecimalField(
+        _('price'),
+        max_digits=10,
+        decimal_places=2,
+        default=0.00
+    )
+    billing_period = models.CharField(
+        _('billing period'),
+        max_length=20,
+        choices=BILLING_PERIOD_CHOICES,
+        default='monthly'
+    )
+    
+    # Features
+    ai_analysis_limit = models.IntegerField(
+        _('AI analysis limit'),
+        default=10,
+        help_text=_('Number of AI analyses per month (-1 for unlimited)')
+    )
+    meal_storage_limit = models.IntegerField(
+        _('meal storage limit'),
+        default=100,
+        help_text=_('Number of meals that can be stored (-1 for unlimited)')
+    )
+    
+    # Stripe integration
+    stripe_price_id = models.CharField(
+        _('Stripe price ID'),
+        max_length=255,
+        blank=True,
+        help_text=_('Stripe price ID for this plan')
+    )
+    
+    # Status
+    is_active = models.BooleanField(_('is active'), default=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    class Meta:
+        db_table = 'subscription_plans'
+        verbose_name = _('subscription plan')
+        verbose_name_plural = _('subscription plans')
+        indexes = [
+            models.Index(fields=['plan_type']),
+            models.Index(fields=['is_active']),
+        ]
+        ordering = ['price']
+    
+    def __str__(self):
+        return f"{self.name} - ${self.price}/{self.billing_period}"
+
+
+class Subscription(models.Model):
+    """
+    User subscriptions to plans.
+    """
+    STATUS_CHOICES = [
+        ('active', _('Active')),
+        ('inactive', _('Inactive')),
+        ('canceled', _('Canceled')),
+        ('past_due', _('Past Due')),
+        ('trialing', _('Trialing')),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subscriptions'
+    )
+    plan = models.ForeignKey(
+        SubscriptionPlan,
+        on_delete=models.CASCADE,
+        related_name='subscriptions'
+    )
+    
+    # Stripe integration
+    stripe_subscription_id = models.CharField(
+        _('Stripe subscription ID'),
+        max_length=255,
+        unique=True,
+        blank=True
+    )
+    stripe_customer_id = models.CharField(
+        _('Stripe customer ID'),
+        max_length=255,
+        blank=True
+    )
+    
+    # Status and timing
+    status = models.CharField(
+        _('status'),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='inactive'
+    )
+    
+    trial_start = models.DateTimeField(_('trial start'), null=True, blank=True)
+    trial_end = models.DateTimeField(_('trial end'), null=True, blank=True)
+    current_period_start = models.DateTimeField(_('current period start'), null=True, blank=True)
+    current_period_end = models.DateTimeField(_('current period end'), null=True, blank=True)
+    
+    # Cancellation
+    canceled_at = models.DateTimeField(_('canceled at'), null=True, blank=True)
+    cancel_at_period_end = models.BooleanField(_('cancel at period end'), default=False)
+    
+    # Usage tracking
+    ai_analyses_used = models.IntegerField(_('AI analyses used'), default=0)
+    ai_analyses_reset_date = models.DateTimeField(_('AI analyses reset date'), null=True, blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    class Meta:
+        db_table = 'subscriptions'
+        verbose_name = _('subscription')
+        verbose_name_plural = _('subscriptions')
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['stripe_subscription_id']),
+            models.Index(fields=['current_period_end']),
+        ]
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.plan.name} ({self.status})"
+    
+    def is_active(self):
+        """Check if subscription is currently active."""
+        return self.status in ['active', 'trialing']
+    
+    def can_use_ai_analysis(self):
+        """Check if user can use AI analysis based on their plan limits."""
+        if self.plan.ai_analysis_limit == -1:  # Unlimited
+            return True
+        
+        # Reset monthly counter if needed
+        if self.ai_analyses_reset_date and timezone.now() > self.ai_analyses_reset_date:
+            self.ai_analyses_used = 0
+            self.ai_analyses_reset_date = timezone.now().replace(day=1) + timezone.timedelta(days=32)
+            self.ai_analyses_reset_date = self.ai_analyses_reset_date.replace(day=1)
+            self.save(update_fields=['ai_analyses_used', 'ai_analyses_reset_date'])
+        
+        return self.ai_analyses_used < self.plan.ai_analysis_limit
+    
+    def increment_ai_usage(self):
+        """Increment AI analysis usage counter."""
+        self.ai_analyses_used += 1
+        self.save(update_fields=['ai_analyses_used'])
+
+
+class PaymentMethod(models.Model):
+    """
+    User payment methods stored in Stripe.
+    """
+    PAYMENT_TYPE_CHOICES = [
+        ('card', _('Credit/Debit Card')),
+        ('paypal', _('PayPal')),
+        ('bank_account', _('Bank Account')),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='payment_methods'
+    )
+    
+    # Stripe integration
+    stripe_payment_method_id = models.CharField(
+        _('Stripe payment method ID'),
+        max_length=255,
+        unique=True
+    )
+    
+    # Payment method details
+    payment_type = models.CharField(
+        _('payment type'),
+        max_length=20,
+        choices=PAYMENT_TYPE_CHOICES
+    )
+    
+    # Card details (if applicable)
+    card_brand = models.CharField(_('card brand'), max_length=50, blank=True)
+    card_last4 = models.CharField(_('card last 4 digits'), max_length=4, blank=True)
+    card_exp_month = models.IntegerField(_('card expiry month'), null=True, blank=True)
+    card_exp_year = models.IntegerField(_('card expiry year'), null=True, blank=True)
+    
+    # Status
+    is_default = models.BooleanField(_('is default'), default=False)
+    is_active = models.BooleanField(_('is active'), default=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    class Meta:
+        db_table = 'payment_methods'
+        verbose_name = _('payment method')
+        verbose_name_plural = _('payment methods')
+        indexes = [
+            models.Index(fields=['user', 'is_default']),
+            models.Index(fields=['stripe_payment_method_id']),
+        ]
+        ordering = ['-is_default', '-created_at']
+    
+    def __str__(self):
+        if self.payment_type == 'card':
+            return f"{self.card_brand} ending in {self.card_last4}"
+        return f"{self.get_payment_type_display()}"
+
+
+class Payment(models.Model):
+    """
+    Payment transactions and history.
+    """
+    STATUS_CHOICES = [
+        ('pending', _('Pending')),
+        ('succeeded', _('Succeeded')),
+        ('failed', _('Failed')),
+        ('canceled', _('Canceled')),
+        ('refunded', _('Refunded')),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='payments'
+    )
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.CASCADE,
+        related_name='payments',
+        null=True,
+        blank=True
+    )
+    
+    # Stripe integration
+    stripe_payment_intent_id = models.CharField(
+        _('Stripe payment intent ID'),
+        max_length=255,
+        unique=True,
+        blank=True
+    )
+    stripe_invoice_id = models.CharField(
+        _('Stripe invoice ID'),
+        max_length=255,
+        blank=True
+    )
+    
+    # Payment details
+    amount = models.DecimalField(
+        _('amount'),
+        max_digits=10,
+        decimal_places=2
+    )
+    currency = models.CharField(_('currency'), max_length=3, default='USD')
+    
+    status = models.CharField(
+        _('status'),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    
+    # Additional details
+    description = models.TextField(_('description'), blank=True)
+    failure_reason = models.TextField(_('failure reason'), blank=True)
+    
+    # Refund information
+    refund_amount = models.DecimalField(
+        _('refund amount'),
+        max_digits=10,
+        decimal_places=2,
+        default=0.00
+    )
+    refunded_at = models.DateTimeField(_('refunded at'), null=True, blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    class Meta:
+        db_table = 'payments'
+        verbose_name = _('payment')
+        verbose_name_plural = _('payments')
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['stripe_payment_intent_id']),
+            models.Index(fields=['created_at']),
+        ]
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Payment ${self.amount} - {self.user.email} ({self.status})"
+
+
+class Invoice(models.Model):
+    """
+    Billing invoices for subscriptions.
+    """
+    STATUS_CHOICES = [
+        ('draft', _('Draft')),
+        ('open', _('Open')),
+        ('paid', _('Paid')),
+        ('void', _('Void')),
+        ('uncollectible', _('Uncollectible')),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='invoices'
+    )
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.CASCADE,
+        related_name='invoices',
+        null=True,
+        blank=True
+    )
+    
+    # Stripe integration
+    stripe_invoice_id = models.CharField(
+        _('Stripe invoice ID'),
+        max_length=255,
+        unique=True,
+        blank=True
+    )
+    
+    # Invoice details
+    invoice_number = models.CharField(_('invoice number'), max_length=100, unique=True)
+    status = models.CharField(
+        _('status'),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft'
+    )
+    
+    # Financial details
+    subtotal = models.DecimalField(
+        _('subtotal'),
+        max_digits=10,
+        decimal_places=2
+    )
+    tax_amount = models.DecimalField(
+        _('tax amount'),
+        max_digits=10,
+        decimal_places=2,
+        default=0.00
+    )
+    total_amount = models.DecimalField(
+        _('total amount'),
+        max_digits=10,
+        decimal_places=2
+    )
+    amount_paid = models.DecimalField(
+        _('amount paid'),
+        max_digits=10,
+        decimal_places=2,
+        default=0.00
+    )
+    currency = models.CharField(_('currency'), max_length=3, default='USD')
+    
+    # Dates
+    due_date = models.DateTimeField(_('due date'), null=True, blank=True)
+    paid_at = models.DateTimeField(_('paid at'), null=True, blank=True)
+    period_start = models.DateTimeField(_('period start'), null=True, blank=True)
+    period_end = models.DateTimeField(_('period end'), null=True, blank=True)
+    
+    # Additional details
+    description = models.TextField(_('description'), blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    class Meta:
+        db_table = 'invoices'
+        verbose_name = _('invoice')
+        verbose_name_plural = _('invoices')
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['stripe_invoice_id']),
+            models.Index(fields=['due_date']),
+            models.Index(fields=['created_at']),
+        ]
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Invoice {self.invoice_number} - {self.user.email} (${self.total_amount})"
+
+
+# Mobile and Push Notification Models
+
+class DeviceToken(models.Model):
+    """
+    Store device tokens for push notifications.
+    """
+    PLATFORM_CHOICES = [
+        ('ios', _('iOS')),
+        ('android', _('Android')),
+        ('web', _('Web')),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='device_tokens'
+    )
+    
+    # Device information
+    token = models.TextField(_('device token'))
+    platform = models.CharField(
+        _('platform'),
+        max_length=20,
+        choices=PLATFORM_CHOICES
+    )
+    device_id = models.CharField(
+        _('device ID'),
+        max_length=255,
+        help_text=_('Unique device identifier')
+    )
+    device_name = models.CharField(
+        _('device name'),
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_('Human-readable device name')
+    )
+    
+    # App information
+    app_version = models.CharField(
+        _('app version'),
+        max_length=50,
+        null=True,
+        blank=True
+    )
+    os_version = models.CharField(
+        _('OS version'),
+        max_length=50,
+        null=True,
+        blank=True
+    )
+    
+    # Status
+    is_active = models.BooleanField(_('is active'), default=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    last_used_at = models.DateTimeField(_('last used at'), null=True, blank=True)
+    
+    class Meta:
+        db_table = 'device_tokens'
+        verbose_name = _('device token')
+        verbose_name_plural = _('device tokens')
+        indexes = [
+            models.Index(fields=['user', 'platform']),
+            models.Index(fields=['token']),
+            models.Index(fields=['device_id']),
+            models.Index(fields=['is_active']),
+        ]
+        unique_together = ['user', 'device_id']
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.platform} ({self.device_name})"
+
+
+class PushNotification(models.Model):
+    """
+    Track push notifications sent to devices.
+    """
+    STATUS_CHOICES = [
+        ('pending', _('Pending')),
+        ('sent', _('Sent')),
+        ('delivered', _('Delivered')),
+        ('failed', _('Failed')),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='push_notifications'
+    )
+    device_token = models.ForeignKey(
+        DeviceToken,
+        on_delete=models.CASCADE,
+        related_name='push_notifications',
+        null=True,
+        blank=True
+    )
+    
+    # Notification content
+    title = models.CharField(_('title'), max_length=255)
+    body = models.TextField(_('body'))
+    
+    # Additional data
+    data = models.JSONField(
+        _('additional data'),
+        default=dict,
+        blank=True,
+        help_text=_('Additional data to send with the notification')
+    )
+    
+    # Expo-specific fields
+    expo_receipt_id = models.CharField(
+        _('Expo receipt ID'),
+        max_length=255,
+        blank=True
+    )
+    expo_ticket_id = models.CharField(
+        _('Expo ticket ID'),
+        max_length=255,
+        blank=True
+    )
+    
+    # Status tracking
+    status = models.CharField(
+        _('status'),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    
+    # Timing
+    sent_at = models.DateTimeField(_('sent at'), null=True, blank=True)
+    delivered_at = models.DateTimeField(_('delivered at'), null=True, blank=True)
+    failed_at = models.DateTimeField(_('failed at'), null=True, blank=True)
+    
+    # Error information
+    error_message = models.TextField(_('error message'), null=True, blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    class Meta:
+        db_table = 'push_notifications'
+        verbose_name = _('push notification')
+        verbose_name_plural = _('push notifications')
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['device_token', 'status']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['expo_receipt_id']),
+        ]
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.title} ({self.status})"
+
+
+class SyncLog(models.Model):
+    """
+    Track mobile app synchronization events.
+    """
+    SYNC_TYPE_CHOICES = [
+        ('full', _('Full Sync')),
+        ('incremental', _('Incremental Sync')),
+        ('upload', _('Upload Only')),
+        ('download', _('Download Only')),
+    ]
+    
+    STATUS_CHOICES = [
+        ('started', _('Started')),
+        ('completed', _('Completed')),
+        ('failed', _('Failed')),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sync_logs'
+    )
+    device_token = models.ForeignKey(
+        DeviceToken,
+        on_delete=models.CASCADE,
+        related_name='sync_logs',
+        null=True,
+        blank=True
+    )
+    
+    # Sync details
+    sync_type = models.CharField(
+        _('sync type'),
+        max_length=20,
+        choices=SYNC_TYPE_CHOICES,
+        default='incremental'
+    )
+    status = models.CharField(
+        _('status'),
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='started'
+    )
+    
+    # Data counts
+    meals_uploaded = models.IntegerField(_('meals uploaded'), default=0)
+    meals_downloaded = models.IntegerField(_('meals downloaded'), default=0)
+    notifications_downloaded = models.IntegerField(_('notifications downloaded'), default=0)
+    
+    # Timing
+    started_at = models.DateTimeField(_('started at'), auto_now_add=True)
+    completed_at = models.DateTimeField(_('completed at'), null=True, blank=True)
+    
+    # Performance metrics
+    duration_seconds = models.FloatField(_('duration (seconds)'), null=True, blank=True)
+    data_size_bytes = models.BigIntegerField(_('data size (bytes)'), default=0)
+    
+    # Error information
+    error_message = models.TextField(_('error message'), null=True, blank=True)
+    
+    # Client information
+    app_version = models.CharField(_('app version'), max_length=50, null=True, blank=True)
+    os_version = models.CharField(_('OS version'), max_length=50, null=True, blank=True)
+    
+    class Meta:
+        db_table = 'sync_logs'
+        verbose_name = _('sync log')
+        verbose_name_plural = _('sync logs')
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['started_at']),
+            models.Index(fields=['sync_type']),
+        ]
+        ordering = ['-started_at']
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.sync_type} ({self.status})"
+
+
+class MalwareScanLog(models.Model):
+    """
+    Log of malware scans performed on uploaded files.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='malware_scans',
+        verbose_name=_('user')
+    )
+    
+    # File information
+    file_hash = models.CharField(_('file hash'), max_length=64)
+    file_name = models.CharField(_('file name'), max_length=255)
+    file_size = models.BigIntegerField(_('file size (bytes)'))
+    mime_type = models.CharField(_('MIME type'), max_length=100)
+    
+    # Scan results
+    is_clean = models.BooleanField(_('is clean'))
+    scan_results = models.JSONField(_('scan results'), default=dict)
+    threats_detected = models.JSONField(_('threats detected'), default=list)
+    scanners_used = models.JSONField(_('scanners used'), default=list)
+    total_scan_time = models.FloatField(_('total scan time (seconds)'), default=0.0)
+    
+    # Metadata
+    scan_date = models.DateTimeField(_('scan date'), auto_now_add=True)
+    
+    class Meta:
+        db_table = 'malware_scan_logs'
+        verbose_name = _('malware scan log')
+        verbose_name_plural = _('malware scan logs')
+        ordering = ['-scan_date']
+        indexes = [
+            models.Index(fields=['file_hash']),
+            models.Index(fields=['is_clean']),
+            models.Index(fields=['scan_date']),
+            models.Index(fields=['user', 'scan_date']),
+        ]
+    
+    def __str__(self):
+        status = "Clean" if self.is_clean else "Infected"
+        return f"{self.file_name} - {status} ({self.scan_date.strftime('%Y-%m-%d %H:%M')})"

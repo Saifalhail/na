@@ -25,9 +25,15 @@ export interface Colors {
   success: ColorScale;
   warning: ColorScale;
   error: ColorScale;
+  info: ColorScale;
   background: string;
   surface: string;
   text: TextColors;
+  white: string;
+  black: string;
+  // Convenience properties
+  textSecondary: string;
+  shadow: string;
 }
 
 export const lightColors: Colors = {
@@ -103,6 +109,18 @@ export const lightColors: Colors = {
     800: '#C62828',
     900: '#B71C1C',
   },
+  info: {
+    50: '#E3F2FD',
+    100: '#BBDEFB',
+    200: '#90CAF9',
+    300: '#64B5F6',
+    400: '#42A5F5',
+    500: '#2196F3',
+    600: '#1E88E5',
+    700: '#1976D2',
+    800: '#1565C0',
+    900: '#0D47A1',
+  },
   background: '#FFFFFF',
   surface: '#FFFFFF',
   text: {
@@ -111,6 +129,11 @@ export const lightColors: Colors = {
     disabled: '#BDBDBD',
     inverse: '#FFFFFF',
   },
+  white: '#FFFFFF',
+  black: '#000000',
+  // Convenience properties
+  textSecondary: '#757575',
+  shadow: '#000000',
 };
 
 export const darkColors: Colors = {
@@ -186,6 +209,18 @@ export const darkColors: Colors = {
     800: '#FFCDD2',
     900: '#FFEBEE',
   },
+  info: {
+    50: '#0D47A1',
+    100: '#1565C0',
+    200: '#1976D2',
+    300: '#1E88E5',
+    400: '#2196F3',
+    500: '#42A5F5',
+    600: '#64B5F6',
+    700: '#90CAF9',
+    800: '#BBDEFB',
+    900: '#E3F2FD',
+  },
   background: '#121212',
   surface: '#1E1E1E',
   text: {
@@ -194,4 +229,9 @@ export const darkColors: Colors = {
     disabled: '#666666',
     inverse: '#212121',
   },
+  white: '#FFFFFF',
+  black: '#000000',
+  // Convenience properties
+  textSecondary: '#B3B3B3',
+  shadow: '#000000',
 };

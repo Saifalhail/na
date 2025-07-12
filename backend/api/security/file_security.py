@@ -148,6 +148,43 @@ class SecureFileHandler:
         # Additional validation for images
         if file_category == 'image':
             cls._validate_image(uploaded_file)
+        
+        # Malware scanning for all files
+        is_clean, scan_results = cls.scan_for_malware(uploaded_file)
+        
+        # Log scan results for audit (import here to avoid circular imports)
+        try:
+            from api.models import MalwareScanLog
+            
+            # Generate file hash for logging
+            file_hash = cls._generate_file_hash(uploaded_file)
+            
+            MalwareScanLog.objects.create(
+                user=getattr(uploaded_file, 'user', None),  # User might be set by view
+                file_hash=file_hash,
+                file_name=uploaded_file.name or 'unknown',
+                file_size=uploaded_file.size,
+                mime_type=mime_type,
+                is_clean=is_clean,
+                scan_results=scan_results.get('scan_results', {}),
+                threats_detected=scan_results.get('threats', []),
+                scanners_used=list(scan_results.get('scan_results', {}).keys()),
+                total_scan_time=sum(
+                    result.get('scan_time', 0) 
+                    for result in scan_results.get('scan_results', {}).values()
+                )
+            )
+        except Exception as e:
+            logger.error(f"Failed to log malware scan results: {e}")
+        
+        if not is_clean:
+            threats_summary = ", ".join([
+                threat.get('threat', 'Unknown threat') 
+                for threat in scan_results.get('threats', [])
+            ])
+            raise ValidationError(
+                f'File failed malware scan. Threats detected: {threats_summary}'
+            )
     
     @classmethod
     def _validate_image(cls, uploaded_file):
@@ -316,41 +353,55 @@ class SecureFileHandler:
     @classmethod
     def scan_for_malware(cls, uploaded_file):
         """
-        Scan file for malware (placeholder for actual implementation).
+        Scan file for malware using integrated scanning services.
         
-        In production, integrate with antivirus service like:
-        - ClamAV
-        - VirusTotal API
-        - Cloud-based scanning services
+        Uses ClamAV and VirusTotal for comprehensive malware detection.
         
         Args:
             uploaded_file: Django UploadedFile instance
             
         Returns:
-            bool: True if file is clean
+            tuple: (is_clean: bool, scan_results: dict)
         """
-        # Placeholder implementation
-        # In production, integrate with actual malware scanning service
+        from api.services.malware_scanning_service import malware_scanning_service
         
-        # Basic checks
-        suspicious_patterns = [
-            b'<script',
-            b'eval(',
-            b'exec(',
-            b'system(',
-            b'<%',
-            b'<?php',
-        ]
-        
-        uploaded_file.seek(0)
-        content = uploaded_file.read(1024)  # Check first 1KB
-        uploaded_file.seek(0)
-        
-        for pattern in suspicious_patterns:
-            if pattern in content:
-                logger.warning(
-                    f"Suspicious pattern found in uploaded file: {pattern}"
+        try:
+            # Perform malware scan
+            scan_results = malware_scanning_service.scan_file(uploaded_file)
+            
+            # Determine if file is clean
+            is_clean, threats = malware_scanning_service.is_file_clean(scan_results)
+            
+            # Log scan results
+            if is_clean:
+                logger.info(
+                    f"File passed malware scan",
+                    extra={
+                        'scanners': list(scan_results.keys()),
+                        'total_scan_time': sum(r.scan_time for r in scan_results.values())
+                    }
                 )
-                return False
-        
-        return True
+            else:
+                logger.warning(
+                    f"File failed malware scan - threats detected",
+                    extra={
+                        'threats': threats,
+                        'scanners': list(scan_results.keys())
+                    }
+                )
+            
+            return is_clean, {
+                'scan_results': {k: v.to_dict() for k, v in scan_results.items()},
+                'threats': threats,
+                'is_clean': is_clean
+            }
+            
+        except Exception as e:
+            logger.error(f"Error during malware scanning: {e}")
+            # Fail safely - if scanning fails, allow file but log the error
+            return True, {
+                'scan_results': {},
+                'threats': [],
+                'error': str(e),
+                'is_clean': True  # Fail open for availability
+            }

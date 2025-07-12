@@ -278,3 +278,17 @@ class StorageException(SystemException):
     """Raised when file storage operation fails."""
     default_detail = 'File storage operation failed.'
     default_code = 'storage_error'
+
+
+# Payment Exceptions
+class PaymentException(NutritionAIException):
+    """Base class for payment exceptions."""
+    status_code = status.HTTP_402_PAYMENT_REQUIRED
+    default_detail = 'Payment processing error.'
+    default_code = 'payment_error'
+
+
+class PaymentError(PaymentException):
+    """General payment error."""
+    default_detail = 'Payment processing failed.'
+    default_code = 'payment_failed'

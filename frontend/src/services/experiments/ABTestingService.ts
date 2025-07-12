@@ -1,4 +1,4 @@
-import { MMKV } from 'react-native-mmkv';
+import { createStorage, Storage } from '@/utils/storage';
 import { analytics } from '@/services/analytics/AnalyticsService';
 
 interface Experiment {
@@ -35,15 +35,19 @@ interface UserExperimentAssignment {
 
 class ABTestingService {
   private static instance: ABTestingService;
-  private storage: MMKV;
+  private storage: Storage;
   private experiments: Map<string, Experiment> = new Map();
   private userAssignments: Map<string, UserExperimentAssignment> = new Map();
   private userId?: string;
 
   private constructor() {
-    this.storage = new MMKV({ id: 'ab-testing' });
-    this.loadExperiments();
-    this.loadUserAssignments();
+    this.storage = createStorage('ab-testing');
+    this.initializeData();
+  }
+
+  private async initializeData(): Promise<void> {
+    await this.loadExperiments();
+    await this.loadUserAssignments();
   }
 
   static getInstance(): ABTestingService {
@@ -55,7 +59,9 @@ class ABTestingService {
 
   initialize(userId: string): void {
     this.userId = userId;
-    this.loadUserAssignments();
+    this.loadUserAssignments().catch(error => {
+      console.error('[ABTesting] Failed to load user assignments:', error);
+    });
   }
 
   // Get variant for an experiment
@@ -151,13 +157,17 @@ class ABTestingService {
     experiments.forEach((exp) => {
       this.experiments.set(exp.id, exp);
     });
-    this.persistExperiments();
+    this.persistExperiments().catch(error => {
+      console.error('[ABTesting] Failed to persist experiments:', error);
+    });
   }
 
   // Add a single experiment
   addExperiment(experiment: Experiment): void {
     this.experiments.set(experiment.id, experiment);
-    this.persistExperiments();
+    this.persistExperiments().catch(error => {
+      console.error('[ABTesting] Failed to persist experiments:', error);
+    });
   }
 
   // Update experiment status
@@ -165,7 +175,9 @@ class ABTestingService {
     const experiment = this.experiments.get(experimentId);
     if (experiment) {
       experiment.status = status;
-      this.persistExperiments();
+      this.persistExperiments().catch(error => {
+        console.error('[ABTesting] Failed to persist experiments:', error);
+      });
     }
   }
 
@@ -225,7 +237,9 @@ class ABTestingService {
           assignedAt: Date.now(),
         };
         this.userAssignments.set(experiment.id, assignment);
-        this.persistUserAssignments();
+        this.persistUserAssignments().catch(error => {
+          console.error('[ABTesting] Failed to persist user assignments:', error);
+        });
         return variant;
       }
     }
@@ -243,8 +257,8 @@ class ABTestingService {
     return Math.abs(hash);
   }
 
-  private loadExperiments(): void {
-    const stored = this.storage.getString('experiments');
+  private async loadExperiments(): Promise<void> {
+    const stored = await this.storage.getString('experiments');
     if (stored) {
       try {
         const experiments: Experiment[] = JSON.parse(stored);
@@ -257,15 +271,15 @@ class ABTestingService {
     }
   }
 
-  private persistExperiments(): void {
+  private async persistExperiments(): Promise<void> {
     const experiments = Array.from(this.experiments.values());
-    this.storage.set('experiments', JSON.stringify(experiments));
+    await this.storage.set('experiments', JSON.stringify(experiments));
   }
 
-  private loadUserAssignments(): void {
+  private async loadUserAssignments(): Promise<void> {
     if (!this.userId) return;
 
-    const stored = this.storage.getString(`assignments_${this.userId}`);
+    const stored = await this.storage.getString(`assignments_${this.userId}`);
     if (stored) {
       try {
         const assignments: UserExperimentAssignment[] = JSON.parse(stored);
@@ -278,11 +292,11 @@ class ABTestingService {
     }
   }
 
-  private persistUserAssignments(): void {
+  private async persistUserAssignments(): Promise<void> {
     if (!this.userId) return;
 
     const assignments = Array.from(this.userAssignments.values());
-    this.storage.set(`assignments_${this.userId}`, JSON.stringify(assignments));
+    await this.storage.set(`assignments_${this.userId}`, JSON.stringify(assignments));
   }
 
   // Get all active experiments (for debugging)
@@ -296,10 +310,10 @@ class ABTestingService {
   }
 
   // Clear all data (for testing)
-  clearAll(): void {
+  async clearAll(): Promise<void> {
     this.experiments.clear();
     this.userAssignments.clear();
-    this.storage.clearAll();
+    await this.storage.clearAll();
   }
 }
 

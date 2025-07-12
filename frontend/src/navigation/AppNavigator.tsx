@@ -22,12 +22,30 @@ export const AppNavigator: React.FC = () => {
       theme={{
         dark: theme.isDark,
         colors: {
-          primary: theme.colors.primary,
+          primary: theme.colors.primary[500],
           background: theme.colors.background,
           card: theme.colors.surface,
-          text: theme.colors.text,
+          text: theme.colors.text.primary,
           border: theme.colors.border,
-          notification: theme.colors.error,
+          notification: theme.colors.error[500],
+        },
+        fonts: {
+          regular: {
+            fontFamily: theme.typography.fontFamily.regular,
+            fontWeight: 'normal',
+          },
+          medium: {
+            fontFamily: theme.typography.fontFamily.medium,
+            fontWeight: '500',
+          },
+          bold: {
+            fontFamily: theme.typography.fontFamily.bold,
+            fontWeight: 'bold',
+          },
+          heavy: {
+            fontFamily: theme.typography.fontFamily.bold,
+            fontWeight: '900',
+          },
         },
       }}
     >

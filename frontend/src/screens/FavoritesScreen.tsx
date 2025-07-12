@@ -45,7 +45,7 @@ const FavoriteMealCard: React.FC<FavoriteMealCardProps> = ({
     <Card style={styles.favoriteCard}>
       <TouchableOpacity onPress={() => onViewDetails(meal)} style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <Text style={[styles.mealName, { color: theme.colors.text }]} numberOfLines={1}>
+          <Text style={[styles.mealName, { color: theme.colors.text.primary }]} numberOfLines={1}>
             {meal.name}
           </Text>
           <TouchableOpacity onPress={() => onRemoveFavorite(meal)} style={styles.removeButton}>
@@ -57,7 +57,7 @@ const FavoriteMealCard: React.FC<FavoriteMealCardProps> = ({
           <Text style={[styles.mealType, { color: theme.colors.primary[500] }]}>
             {meal.mealType?.charAt(0).toUpperCase() + meal.mealType?.slice(1)}
           </Text>
-          <Text style={[styles.calories, { color: theme.colors.text }]}>
+          <Text style={[styles.calories, { color: theme.colors.text.primary }]}>
             {formatCalories(meal.totalCalories)}
           </Text>
         </View>
@@ -171,7 +171,7 @@ export const FavoritesScreen: React.FC = () => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Text style={[styles.emptyIcon, { color: theme.colors.textSecondary }]}>♡</Text>
-      <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No Favorite Meals</Text>
+      <Text style={[styles.emptyTitle, { color: theme.colors.text.primary }]}>No Favorite Meals</Text>
       <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
         Mark meals as favorites in your meal history to see them here for quick logging.
       </Text>
@@ -195,7 +195,7 @@ export const FavoritesScreen: React.FC = () => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Favorite Meals</Text>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>Favorite Meals</Text>
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           Quickly log your favorite meals
         </Text>

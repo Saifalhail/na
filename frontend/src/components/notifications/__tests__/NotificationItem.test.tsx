@@ -36,13 +36,15 @@ jest.spyOn(Alert, 'alert');
 describe('NotificationItem', () => {
   const mockNotification: Notification = {
     id: '1',
+    user: 'user123',
     title: 'Test Notification',
     message: 'This is a test notification message',
     notification_type: 'meal_reminder',
+    channel: 'in_app',
     is_read: false,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     action_url: '/meals',
-    priority: 'medium',
   };
 
   const renderWithTheme = (component: React.ReactElement) => {
@@ -101,7 +103,7 @@ describe('NotificationItem', () => {
     Object.entries(iconMap).forEach(([type, icon]) => {
       const notification = {
         ...mockNotification,
-        notification_type: type,
+        notification_type: type as Notification['notification_type'],
       };
 
       const { rerender } = renderWithTheme(<NotificationItem notification={notification} />);

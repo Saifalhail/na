@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,26 +13,21 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { Camera, CameraType as CameraTypeEnum, FlashMode as FlashModeEnum } from 'expo-camera';
-
-// Use the values directly from the enums
-const CameraType = {
-  back: 'back' as const,
-  front: 'front' as const,
-};
-
-const FlashMode = {
-  off: 'off' as const,
-  on: 'on' as const,
-  auto: 'auto' as const,
-};
+import * as Location from 'expo-location';
+import { Camera, CameraView } from 'expo-camera';
+import type { CameraType, FlashMode } from 'expo-camera';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
 import { LoadingOverlay } from '@/components/base/Loading';
+import { Badge } from '@/components/base/Badge';
 import { useTheme } from '@/hooks/useTheme';
 import { MainStackParamList } from '@/navigation/types';
 import { CAMERA_CONFIG, ERROR_MESSAGES, LOADING_MESSAGES } from '@/constants';
 import { announce, getActionHint } from '@/utils/accessibility';
+import { CameraOptionsSheet, CameraOptions } from '@/components/camera/CameraOptionsSheet';
+import { SmartCameraOverlay } from '@/components/camera/SmartCameraOverlay';
+import { toastManager } from '@/components/base/Toast';
+import { AnalysisRequest } from '@/types/api';
 
 type CameraScreenNavigationProp = StackNavigationProp<MainStackParamList, 'Camera'>;
 type CameraScreenRouteProp = RouteProp<MainStackParamList, 'Camera'>;
@@ -49,14 +44,22 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [showCamera, setShowCamera] = useState(false);
-  const [type, setType] = useState(CameraType.back);
-  const [flashMode, setFlashMode] = useState(FlashMode.off);
+  const [type, setType] = useState<CameraType>('back');
+  const [flashMode, setFlashMode] = useState<FlashMode>('off');
   const [isCapturing, setIsCapturing] = useState(false);
   const [showGuidance, setShowGuidance] = useState(true);
+  const [showOptionsSheet, setShowOptionsSheet] = useState(false);
+  const [cameraOptions, setCameraOptions] = useState<CameraOptions | null>(null);
+  const [brightness, setBrightness] = useState(0.5);
+  const [distance, setDistance] = useState<'too_close' | 'too_far' | 'optimal'>('optimal');
+  const [angle, setAngle] = useState(45);
+  const [isOptimalPosition, setIsOptimalPosition] = useState(false);
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
 
-  const cameraRef = useRef<Camera>(null);
+  const cameraRef = useRef<any>(null);
   const guideAnimation = useRef(new Animated.Value(0)).current;
   const pulseAnimation = useRef(new Animated.Value(1)).current;
+  const captureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Start guide animation
@@ -90,12 +93,33 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
         }),
       ])
     ).start();
+
+    // Get location permission and current location
+    getLocationAsync();
+
+    return () => {
+      if (captureTimeoutRef.current) {
+        clearTimeout(captureTimeoutRef.current);
+      }
+    };
   }, []);
 
   const requestCameraPermissions = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
     setHasPermission(status === 'granted');
     return status === 'granted';
+  };
+
+  const getLocationAsync = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const currentLocation = await Location.getCurrentPositionAsync({});
+        setLocation(currentLocation);
+      }
+    } catch (error) {
+      console.log('Location permission not granted');
+    }
   };
 
   const requestGalleryPermissions = async () => {
@@ -110,11 +134,54 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   const handleOpenCamera = async () => {
     const hasPermission = await requestCameraPermissions();
     if (hasPermission) {
-      setShowCamera(true);
+      // Show options sheet first
+      setShowOptionsSheet(true);
     } else {
       Alert.alert('Permission Required', ERROR_MESSAGES.CAMERA_PERMISSION);
     }
   };
+
+  const handleOptionsConfirm = useCallback((options: CameraOptions) => {
+    setCameraOptions(options);
+    setShowOptionsSheet(false);
+    setShowCamera(true);
+    toastManager.success('Context applied! Take your photo when ready.');
+  }, []);
+
+  const handleOptionsClose = useCallback(() => {
+    setShowOptionsSheet(false);
+    setShowCamera(true);
+  }, []);
+
+  const handleOptimalPosition = useCallback(() => {
+    setIsOptimalPosition(true);
+    // Auto-capture after 2 seconds when optimal
+    if (!isCapturing) {
+      captureTimeoutRef.current = setTimeout(() => {
+        if (isOptimalPosition) {
+          handleTakePicture();
+        }
+      }, 2000);
+    }
+  }, [isCapturing, isOptimalPosition]);
+
+  // Simulate brightness detection (in real app, would use camera exposure)
+  const updateCameraMetrics = useCallback(() => {
+    if (cameraRef.current) {
+      // Simulate metrics - in production, use actual camera data
+      setBrightness(0.6 + Math.random() * 0.2);
+      setDistance(Math.random() > 0.7 ? 'optimal' : Math.random() > 0.5 ? 'too_close' : 'too_far');
+      setAngle(35 + Math.random() * 20);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showCamera) {
+      const interval = setInterval(updateCameraMetrics, 1000);
+      return () => clearInterval(interval);
+    }
+    return undefined;
+  }, [showCamera, updateCameraMetrics]);
 
   const handleTakePicture = async () => {
     if (!cameraRef.current || isCapturing) return;
@@ -128,8 +195,26 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
         skipProcessing: false,
       });
 
+      // Prepare metadata for analysis
+      const metadata: AnalysisRequest['metadata'] = {
+        mealType: cameraOptions?.mealType,
+        cuisine: cameraOptions?.cuisines.join(', '),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
+
+      if (location) {
+        metadata.location = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+      }
+
       setShowCamera(false);
-      navigation.navigate('AnalysisResults', { imageUri: photo.uri });
+      navigation.navigate('AnalysisResults', { 
+        imageUri: photo.uri,
+        metadata,
+        context: cameraOptions,
+      });
     } catch (error) {
       console.error('Error taking photo:', error);
       Alert.alert('Error', ERROR_MESSAGES.GENERIC_ERROR);
@@ -167,22 +252,34 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const toggleCameraType = () => {
-    setType((current) => (current === CameraType.back ? CameraType.front : CameraType.back));
+    const newType = type === 'back' ? 'front' : 'back';
+    setType(newType);
+    
+    // Voice-over feedback for camera direction
+    announce(`Switched to ${newType} camera`);
   };
 
   const toggleFlash = () => {
-    setFlashMode((current) => {
-      if (current === FlashMode.off) return FlashMode.on;
-      if (current === FlashMode.on) return FlashMode.auto;
-      return FlashMode.off;
+    setFlashMode(current => {
+      const newMode = current === 'off' ? 'on' : current === 'on' ? 'auto' : 'off';
+      
+      // Voice-over feedback for flash setting
+      const flashModeNames = {
+        'off': 'Flash off',
+        'on': 'Flash on',
+        'auto': 'Flash auto'
+      };
+      announce(`${flashModeNames[newMode]}`);
+      
+      return newMode;
     });
   };
 
   const getFlashIcon = () => {
     switch (flashMode) {
-      case FlashMode.on:
+      case 'on':
         return '🔦';
-      case FlashMode.auto:
+      case 'auto':
         return '⚡️';
       default:
         return '🚫';
@@ -200,12 +297,11 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   if (showCamera) {
     return (
       <View style={styles.cameraContainer}>
-        <Camera
+        <CameraView
           ref={cameraRef}
           style={styles.camera}
-          type={type}
-          flashMode={flashMode}
-          ratio="16:9"
+          facing={type}
+          flash={flashMode}
         >
           <View style={styles.cameraOverlay}>
             {/* Header Controls */}
@@ -228,30 +324,63 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             </View>
 
-            {/* Guided Capture Overlay */}
-            {showGuidance && (
-              <View style={styles.guidanceContainer}>
-                <Animated.View
-                  style={[
-                    styles.plateGuide,
-                    {
-                      opacity: guideAnimation,
-                      borderColor: theme.colors.primary[500],
-                    },
-                  ]}
+            {/* Smart Camera Overlay */}
+            <SmartCameraOverlay
+              brightness={brightness}
+              distance={distance}
+              angle={angle}
+              isCapturing={isCapturing}
+              showGuidance={showGuidance}
+              onOptimalPosition={handleOptimalPosition}
+            />
+            
+            {/* Context Badge */}
+            {cameraOptions && (
+              <View style={styles.contextBadge}>
+                <Badge
+                  variant="primary"
+                  size="medium"
                 >
-                  <View style={[styles.corner, styles.cornerTopLeft]} />
-                  <View style={[styles.corner, styles.cornerTopRight]} />
-                  <View style={[styles.corner, styles.cornerBottomLeft]} />
-                  <View style={[styles.corner, styles.cornerBottomRight]} />
-                </Animated.View>
-
-                <Text style={styles.guidanceText}>Center your meal within the frame</Text>
+                  {`${cameraOptions.mealType} • ${cameraOptions.cuisines.length > 0 ? cameraOptions.cuisines[0] : 'All cuisines'}`}
+                </Badge>
               </View>
             )}
 
             {/* Bottom Controls */}
             <View style={styles.cameraBottom}>
+              <TouchableOpacity
+                onPress={() => setShowOptionsSheet(true)}
+                style={styles.contextButton}
+                accessible={true}
+                accessibilityLabel="Change meal context"
+                accessibilityHint={getActionHint('open context options')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.contextButtonText}>⚙️</Text>
+              </TouchableOpacity>
+
+              <Animated.View style={{ transform: [{ scale: pulseAnimation }] }}>
+                <TouchableOpacity
+                  onPress={handleTakePicture}
+                  style={[
+                    styles.captureButton,
+                    isCapturing && styles.captureButtonActive,
+                    isOptimalPosition && styles.captureButtonOptimal,
+                  ]}
+                  disabled={isCapturing}
+                  accessible={true}
+                  accessibilityLabel="Capture photo"
+                  accessibilityHint={getActionHint('capture')}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isCapturing }}
+                >
+                  <View style={[
+                    styles.captureButtonInner,
+                    isOptimalPosition && styles.captureButtonInnerOptimal,
+                  ]} />
+                </TouchableOpacity>
+              </Animated.View>
+              
               <TouchableOpacity
                 onPress={() => {
                   setShowGuidance(!showGuidance);
@@ -263,23 +392,8 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
                 accessibilityHint={getActionHint('toggle guidance')}
                 accessibilityRole="button"
               >
-                <Text style={styles.guidanceToggleText}>{showGuidance ? '📐' : '📐'}</Text>
+                <Text style={styles.guidanceToggleText}>{showGuidance ? '👁️' : '👁️‍🗨️'}</Text>
               </TouchableOpacity>
-
-              <Animated.View style={{ transform: [{ scale: pulseAnimation }] }}>
-                <TouchableOpacity
-                  onPress={handleTakePicture}
-                  style={[styles.captureButton, isCapturing && styles.captureButtonActive]}
-                  disabled={isCapturing}
-                  accessible={true}
-                  accessibilityLabel="Capture photo"
-                  accessibilityHint={getActionHint('capture')}
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: isCapturing }}
-                >
-                  <View style={styles.captureButtonInner} />
-                </TouchableOpacity>
-              </Animated.View>
 
               <TouchableOpacity
                 onPress={handleSelectFromGallery}
@@ -293,7 +407,15 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
-        </Camera>
+        </CameraView>
+        
+        {/* Camera Options Sheet */}
+        <CameraOptionsSheet
+          visible={showOptionsSheet}
+          onClose={() => setShowOptionsSheet(false)}
+          onConfirm={handleOptionsConfirm}
+          initialOptions={cameraOptions || undefined}
+        />
       </View>
     );
   }
@@ -316,7 +438,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
 
           <Spacer size="xl" />
 
-          <Text style={[styles.title, { color: theme.colors.text }]}>Capture Your Meal</Text>
+          <Text style={[styles.title, { color: theme.colors.text.primary }]}>Capture Your Meal</Text>
 
           <Spacer size="md" />
 
@@ -329,35 +451,37 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
 
           <View style={styles.buttons}>
             <Button
-              title="📸 Take Photo"
               onPress={handleOpenCamera}
               variant="primary"
               disabled={isLoading}
               style={styles.button}
               accessibilityLabel="Take photo"
               accessibilityHint={getActionHint('camera')}
-            />
+            >
+              📸 Take Photo
+            </Button>
 
             <Spacer size="lg" />
 
             <Button
-              title="🖼️ Choose from Gallery"
               onPress={handleSelectFromGallery}
               variant="outline"
               disabled={isLoading}
               style={styles.button}
               accessibilityLabel="Choose from gallery"
               accessibilityHint={getActionHint('open gallery')}
-            />
+            >
+              🖼️ Choose from Gallery
+            </Button>
           </View>
         </View>
 
         <View style={styles.tips}>
-          <Text style={[styles.tipsTitle, { color: theme.colors.text }]}>
+          <Text style={[styles.tipsTitle, { color: theme.colors.text.primary }]}>
             Tips for best results:
           </Text>
 
-          <Spacer size="sm" />
+          <Spacer size="small" />
 
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>💡</Text>
@@ -389,7 +513,15 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </View>
 
-      {isLoading && <LoadingOverlay visible={true} message={LOADING_MESSAGES.PREPARING_CAMERA} />}
+      {isLoading && <LoadingOverlay visible={isLoading} message={LOADING_MESSAGES.PREPARING_CAMERA} />}
+      
+      {/* Camera Options Sheet for main screen */}
+      <CameraOptionsSheet
+        visible={showOptionsSheet}
+        onClose={() => setShowOptionsSheet(false)}
+        onConfirm={handleOptionsConfirm}
+        initialOptions={cameraOptions || undefined}
+      />
     </Container>
   );
 };
@@ -573,12 +705,40 @@ const styles = StyleSheet.create({
   captureButtonActive: {
     backgroundColor: '#ddd',
   },
+  captureButtonOptimal: {
+    backgroundColor: '#4CAF50',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 10,
+  },
   captureButtonInner: {
     flex: 1,
     borderRadius: 36,
     backgroundColor: '#fff',
     borderWidth: 2,
     borderColor: '#000',
+  },
+  captureButtonInnerOptimal: {
+    borderColor: '#fff',
+    backgroundColor: '#4CAF50',
+  },
+  contextButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contextButtonText: {
+    fontSize: 24,
+  },
+  contextBadge: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 120 : 100,
+    left: 20,
   },
   guidanceToggle: {
     width: 50,

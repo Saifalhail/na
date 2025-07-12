@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, ViewProps, StyleSheet, ViewStyle, ScrollView, ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@theme/ThemeContext';
-import { Theme } from '@theme/index';
+import { useTheme } from '@/hooks/useTheme';
+import { Theme } from '@/theme';
 
 // Container component
 interface ContainerProps extends ViewProps {
@@ -13,7 +13,7 @@ interface ContainerProps extends ViewProps {
   scrollProps?: ScrollViewProps;
 }
 
-export const Container: React.FC<ContainerProps> = ({
+export const Container: React.FC<ContainerProps> = memo(({
   safe = true,
   scroll = false,
   padding = 'medium',
@@ -52,7 +52,7 @@ export const Container: React.FC<ContainerProps> = ({
   }
 
   return content;
-};
+});
 
 // Row component
 interface RowProps extends ViewProps {
@@ -62,7 +62,7 @@ interface RowProps extends ViewProps {
   gap?: number;
 }
 
-export const Row: React.FC<RowProps> = ({
+export const Row: React.FC<RowProps> = memo(({
   align = 'center',
   justify = 'start',
   wrap = false,
@@ -102,7 +102,7 @@ export const Row: React.FC<RowProps> = ({
       {children}
     </View>
   );
-};
+});
 
 // Column component
 interface ColumnProps extends ViewProps {
@@ -111,7 +111,7 @@ interface ColumnProps extends ViewProps {
   gap?: number;
 }
 
-export const Column: React.FC<ColumnProps> = ({
+export const Column: React.FC<ColumnProps> = memo(({
   align = 'stretch',
   justify = 'start',
   gap = 0,
@@ -149,15 +149,15 @@ export const Column: React.FC<ColumnProps> = ({
       {children}
     </View>
   );
-};
+});
 
 // Spacer component
 interface SpacerProps {
-  size?: 'xs' | 'xsmall' | 's' | 'small' | 'm' | 'medium' | 'l' | 'large' | 'xl' | 'xlarge' | 'xxl';
+  size?: 'xs' | 'xsmall' | 's' | 'small' | 'm' | 'medium' | 'md' | 'l' | 'large' | 'lg' | 'xl' | 'xlarge' | 'xxl';
   horizontal?: boolean;
 }
 
-export const Spacer: React.FC<SpacerProps> = ({ size = 'medium', horizontal = false }) => {
+export const Spacer: React.FC<SpacerProps> = memo(({ size = 'medium', horizontal = false }) => {
   const { theme } = useTheme();
 
   const spacing = {
@@ -167,8 +167,10 @@ export const Spacer: React.FC<SpacerProps> = ({ size = 'medium', horizontal = fa
     small: theme.spacing.s,
     m: theme.spacing.m,
     medium: theme.spacing.m,
+    md: theme.spacing.m,
     l: theme.spacing.l,
     large: theme.spacing.l,
+    lg: theme.spacing.l,
     xl: theme.spacing.xl,
     xlarge: theme.spacing.xl,
     xxl: theme.spacing.xxl || theme.spacing.xl * 1.5,
@@ -177,7 +179,7 @@ export const Spacer: React.FC<SpacerProps> = ({ size = 'medium', horizontal = fa
   const spacerStyle: ViewStyle = horizontal ? { width: spacing[size] } : { height: spacing[size] };
 
   return <View style={spacerStyle} />;
-};
+});
 
 // Divider component
 interface DividerProps {
@@ -187,7 +189,7 @@ interface DividerProps {
   style?: ViewStyle;
 }
 
-export const Divider: React.FC<DividerProps> = ({
+export const Divider: React.FC<DividerProps> = memo(({
   color,
   thickness = 1,
   spacing = 'medium',
@@ -207,7 +209,7 @@ export const Divider: React.FC<DividerProps> = ({
   ];
 
   return <View style={dividerStyle} />;
-};
+});
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({

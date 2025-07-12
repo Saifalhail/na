@@ -16,9 +16,29 @@ class TestGeminiService:
     
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Set up test environment."""
+        """Set up test environment for each test method."""
+        # Use context managers for proper cleanup
         with patch('django.conf.settings.GEMINI_API_KEY', 'test-api-key'):
-            self.service = GeminiService()
+            with patch('google.generativeai.configure'):
+                with patch('google.generativeai.GenerativeModel') as mock_model_class:
+                    with patch('django.core.cache.cache') as mock_cache:
+                        # Create a fresh mock model instance for each test
+                        mock_instance = MagicMock()
+                        mock_model_class.return_value = mock_instance
+                        
+                        # Configure cache mock - IMPORTANT: Reset side_effect to None
+                        mock_cache.get.return_value = None
+                        mock_cache.get.side_effect = None  # Clear any side effects from previous tests
+                        mock_cache.set.return_value = None
+                        mock_cache.set.side_effect = None  # Clear any side effects from previous tests
+                        
+                        # Create service instance and disable caching for tests
+                        self.service = GeminiService()
+                        self.service.use_cache = False  # Disable caching for tests by default
+                        self.mock_model = mock_instance
+                        self.mock_cache = mock_cache
+                        
+                        yield
     
     def create_test_image_bytes(self):
         """Create test image bytes."""
@@ -27,14 +47,23 @@ class TestGeminiService:
         image.save(buffer, format='JPEG')
         return buffer.getvalue()
     
+    def reset_mocks(self):
+        """Reset all mocks to ensure test isolation."""
+        self.mock_model.reset_mock()
+        self.mock_cache.reset_mock()
+        # Clear any side effects that might have been set
+        self.mock_cache.get.return_value = None
+        self.mock_cache.get.side_effect = None
+        self.mock_cache.set.return_value = None
+        self.mock_cache.set.side_effect = None
+    
     def test_init_no_api_key(self):
         """Test initialization without API key."""
         with patch('django.conf.settings.GEMINI_API_KEY', None):
             with pytest.raises(ValueError, match="GEMINI_API_KEY not found"):
                 GeminiService()
     
-    @patch('google.generativeai.GenerativeModel.generate_content')
-    def test_analyze_food_image_success(self, mock_generate):
+    def test_analyze_food_image_success(self):
         """Test successful food image analysis."""
         # Mock Gemini response
         mock_response = MagicMock()
@@ -78,7 +107,10 @@ class TestGeminiService:
                 "portions_estimated": 88
             }
         })
-        mock_generate.return_value = mock_response
+        self.mock_model.generate_content.return_value = mock_response
+        
+        # Reset mocks
+        self.reset_mocks()
         
         # Test analysis
         image_bytes = self.create_test_image_bytes()
@@ -91,15 +123,17 @@ class TestGeminiService:
         assert result['data']['nutrition']['calories'] == 267.5
         
         # Verify API was called correctly
-        mock_generate.assert_called_once()
-        call_args = mock_generate.call_args[0][0]
+        self.mock_model.generate_content.assert_called_once()
+        call_args = self.mock_model.generate_content.call_args[0][0]
         assert len(call_args) == 2  # Prompt and image
         assert isinstance(call_args[0], str)  # Prompt
         assert call_args[1]['mime_type'] == 'image/jpeg'
     
-    @patch('google.generativeai.GenerativeModel.generate_content')
-    def test_analyze_food_image_with_context(self, mock_generate):
+    def test_analyze_food_image_with_context(self):
         """Test image analysis with context."""
+        # Reset mocks first
+        self.reset_mocks()
+        
         mock_response = MagicMock()
         mock_response.text = json.dumps({
             "description": "Breakfast eggs",
@@ -126,7 +160,7 @@ class TestGeminiService:
                 "sodium": 300
             }
         })
-        mock_generate.return_value = mock_response
+        self.mock_model.generate_content.return_value = mock_response
         
         context = {
             'meal_type': 'breakfast',
@@ -142,7 +176,7 @@ class TestGeminiService:
         assert result['success'] is True
         
         # Verify context was included in prompt
-        call_args = mock_generate.call_args[0][0]
+        call_args = self.mock_model.generate_content.call_args[0][0]
         prompt = call_args[0]
         assert 'breakfast' in prompt
         assert 'american' in prompt
@@ -164,9 +198,11 @@ class TestGeminiService:
         assert result['success'] is False
         assert 'No image data provided' in result['error']
     
-    @patch('google.generativeai.GenerativeModel.generate_content')
-    def test_analyze_food_image_json_with_markdown(self, mock_generate):
+    def test_analyze_food_image_json_with_markdown(self):
         """Test handling of JSON wrapped in markdown."""
+        # Reset mocks first
+        self.reset_mocks()
+        
         mock_response = MagicMock()
         mock_response.text = """```json
 {
@@ -182,10 +218,15 @@ class TestGeminiService:
         "fiber": 2,
         "sugar": 3,
         "sodium": 100
+    },
+    "confidence": {
+        "overall": 90,
+        "ingredients_identified": 90,
+        "portions_estimated": 90
     }
 }
 ```"""
-        mock_generate.return_value = mock_response
+        self.mock_model.generate_content.return_value = mock_response
         
         image_bytes = self.create_test_image_bytes()
         result = self.service.analyze_food_image(image_bytes)
@@ -193,12 +234,14 @@ class TestGeminiService:
         assert result['success'] is True
         assert result['data']['description'] == "Test food"
     
-    @patch('google.generativeai.GenerativeModel.generate_content')
-    def test_analyze_food_image_invalid_json(self, mock_generate):
+    def test_analyze_food_image_invalid_json(self):
         """Test handling of invalid JSON response."""
+        # Reset mocks first
+        self.reset_mocks()
+        
         mock_response = MagicMock()
         mock_response.text = "This is not JSON"
-        mock_generate.return_value = mock_response
+        self.mock_model.generate_content.return_value = mock_response
         
         image_bytes = self.create_test_image_bytes()
         result = self.service.analyze_food_image(image_bytes)
@@ -206,15 +249,17 @@ class TestGeminiService:
         assert result['success'] is False
         assert 'Failed to parse nutrition data' in result['error']
     
-    @patch('google.generativeai.GenerativeModel.generate_content')
-    def test_analyze_food_image_missing_fields(self, mock_generate):
+    def test_analyze_food_image_missing_fields(self):
         """Test handling of response with missing required fields."""
+        # Reset mocks first
+        self.reset_mocks()
+        
         mock_response = MagicMock()
         mock_response.text = json.dumps({
             "description": "Test food",
             # Missing required fields
         })
-        mock_generate.return_value = mock_response
+        self.mock_model.generate_content.return_value = mock_response
         
         image_bytes = self.create_test_image_bytes()
         result = self.service.analyze_food_image(image_bytes)
@@ -222,9 +267,11 @@ class TestGeminiService:
         assert result['success'] is False
         assert 'Invalid response format' in result['error']
     
-    @patch('google.generativeai.GenerativeModel.generate_content')
-    def test_calculate_nutrition_success(self, mock_generate):
+    def test_calculate_nutrition_success(self):
         """Test successful nutrition calculation from ingredients."""
+        # Reset mocks first
+        self.reset_mocks()
+        
         mock_response = MagicMock()
         mock_response.text = json.dumps({
             "description": "Chicken and rice meal",
@@ -261,7 +308,7 @@ class TestGeminiService:
                 "serving_size": "165g per serving"
             }
         })
-        mock_generate.return_value = mock_response
+        self.mock_model.generate_content.return_value = mock_response
         
         ingredients = ["chicken breast: 200g", "white rice: 130g"]
         result = self.service.calculate_nutrition_from_ingredients(ingredients, serving_size=2)
@@ -270,9 +317,11 @@ class TestGeminiService:
         assert result['data']['nutrition']['calories'] == 450
         assert result['data']['per_serving']['calories'] == 225
     
-    @patch('google.generativeai.GenerativeModel.generate_content')
-    def test_caching_functionality(self, mock_generate):
+    def test_caching_functionality(self):
         """Test that caching works correctly."""
+        # Reset mocks first
+        self.reset_mocks()
+        
         mock_response = MagicMock()
         mock_response.text = json.dumps({
             "description": "Cached food",
@@ -287,26 +336,52 @@ class TestGeminiService:
                 "fiber": 2,
                 "sugar": 3,
                 "sodium": 100
+            },
+            "confidence": {
+                "overall": 90,
+                "ingredients_identified": 90,
+                "portions_estimated": 90
             }
         })
-        mock_generate.return_value = mock_response
+        self.mock_model.generate_content.return_value = mock_response
         
         # Enable caching
         with patch.object(self.service, 'use_cache', True):
             image_bytes = self.create_test_image_bytes()
             
-            # First call - should hit API
-            result1 = self.service.analyze_food_image(image_bytes)
-            assert result1['success'] is True
-            assert mock_generate.call_count == 1
+            # Configure cache behavior using a local variable
+            cached_result = None
+            def cache_get(key):
+                return cached_result
             
-            # Second call with same image - should use cache
-            result2 = self.service.analyze_food_image(image_bytes)
-            assert result2['success'] is True
-            assert mock_generate.call_count == 1  # No additional API call
+            def cache_set(key, value, timeout):
+                nonlocal cached_result
+                cached_result = value
             
-            # Results should be identical
-            assert result1 == result2
+            # Store original side_effects to restore later
+            original_get_side_effect = self.mock_cache.get.side_effect
+            original_set_side_effect = self.mock_cache.set.side_effect
+            
+            try:
+                self.mock_cache.get.side_effect = cache_get
+                self.mock_cache.set.side_effect = cache_set
+                
+                # First call - should hit API
+                result1 = self.service.analyze_food_image(image_bytes)
+                assert result1['success'] is True
+                assert self.mock_model.generate_content.call_count == 1
+                
+                # Second call with same image - should use cache
+                result2 = self.service.analyze_food_image(image_bytes)
+                assert result2['success'] is True
+                assert self.mock_model.generate_content.call_count == 1  # No additional API call
+                
+                # Results should be identical
+                assert result1 == result2
+            finally:
+                # IMPORTANT: Restore original side effects to prevent affecting other tests
+                self.mock_cache.get.side_effect = original_get_side_effect
+                self.mock_cache.set.side_effect = original_set_side_effect
     
     def test_validate_nutrition_response(self):
         """Test nutrition response validation."""

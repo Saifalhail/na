@@ -8,7 +8,9 @@ import os
 from .base import *
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-$!005p&h=9+t*lxr9gnqjjnis#wdqwa*l9(ceaawzlr2+mbmv*')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required for development")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -32,8 +34,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:19006',
 ]
 
-# Enable CORS for all origins in development (less secure but convenient)
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS restricted to specific development origins for security
+CORS_ALLOW_ALL_ORIGINS = False
 
 # Logging configuration for development
 LOGGING = {

@@ -58,15 +58,15 @@ class UserModelTest(TestCase):
         self.assertTrue(user.last_name)
         self.assertTrue(user.is_active)
         self.assertTrue(user.is_verified)
-        self.assertIn(user.account_type, ['free', 'premium'])
+        self.assertIn(user.account_type, ['free', 'premium', 'professional'])
         
     def test_user_factory_with_profile(self):
         """Test creating user with profile using factory."""
         profile = UserProfileFactory()
         
         self.assertIsNotNone(profile.user)
-        self.assertIsNotNone(profile.date_of_birth)
-        self.assertIn(profile.gender, ['M', 'F', 'O'])
+        self.assertIsNotNone(profile.user.date_of_birth)  # date_of_birth is on User model
+        self.assertIn(profile.gender, ['M', 'F', 'O', 'N'])
         self.assertGreaterEqual(profile.height, 150)
         self.assertLessEqual(profile.height, 210)
     
@@ -425,7 +425,8 @@ class DietaryRestrictionModelTest(TestCase):
         """Test severity field choices."""
         restriction = DietaryRestriction.objects.create(
             user=self.user,
-            name='Test'
+            name='Test',
+            restriction_type='allergy'  # restriction_type is required
         )
         
         # Test valid choices

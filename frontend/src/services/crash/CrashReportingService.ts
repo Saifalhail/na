@@ -1,6 +1,6 @@
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import { MMKV } from 'react-native-mmkv';
+import { createStorage, Storage } from '@/utils/storage';
 import { enableCrashReporting, sentryDsn, environment, appVersion } from '@/config/env';
 import { analytics } from '@/services/analytics/AnalyticsService';
 
@@ -42,7 +42,7 @@ interface Breadcrumb {
 
 class CrashReportingService {
   private static instance: CrashReportingService;
-  private storage: MMKV;
+  private storage: Storage;
   private breadcrumbs: Breadcrumb[] = [];
   private maxBreadcrumbs = 50;
   private userId?: string;
@@ -50,7 +50,7 @@ class CrashReportingService {
   private isInitialized = false;
 
   private constructor() {
-    this.storage = new MMKV({ id: 'crash-reporting' });
+    this.storage = createStorage('crash-reporting');
   }
 
   static getInstance(): CrashReportingService {
@@ -72,14 +72,16 @@ class CrashReportingService {
     this.setupErrorHandlers();
 
     // Load persisted breadcrumbs
-    this.loadPersistedBreadcrumbs();
+    this.loadPersistedBreadcrumbs().catch(error => {
+      console.error('[CrashReporting] Failed to load persisted breadcrumbs:', error);
+    });
 
     console.log('[CrashReporting] Initialized');
   }
 
   setUser(userId: string, email?: string): void {
     this.userId = userId;
-    this.addBreadcrumb('user', 'User context updated', { userId, email });
+    this.addBreadcrumb('action', 'User context updated', { userId, email });
   }
 
   setCurrentScreen(screenName: string): void {
@@ -131,7 +133,9 @@ class CrashReportingService {
     }
 
     // Persist breadcrumbs
-    this.persistBreadcrumbs();
+    this.persistBreadcrumbs().catch(error => {
+      console.error('[CrashReporting] Failed to persist breadcrumbs:', error);
+    });
   }
 
   // Track HTTP requests
@@ -154,8 +158,8 @@ class CrashReportingService {
 
   private setupErrorHandlers(): void {
     // Handle unhandled promise rejections
-    const originalHandler = global.Promise.prototype.constructor.onunhandledrejection;
-    global.Promise.prototype.constructor.onunhandledrejection = (event: any) => {
+    const originalHandler = (global as any).onunhandledrejection;
+    (global as any).onunhandledrejection = (event: any) => {
       const error = new Error(event.reason || 'Unhandled Promise Rejection');
       error.name = 'UnhandledPromiseRejection';
       this.captureException(error, { event });
@@ -215,7 +219,7 @@ class CrashReportingService {
     }
 
     // Store locally for debugging
-    this.storage.set(`crash_${report.id}`, JSON.stringify(report));
+    await this.storage.set(`crash_${report.id}`, JSON.stringify(report));
 
     // Log in development
     if (__DEV__) {
@@ -223,12 +227,12 @@ class CrashReportingService {
     }
   }
 
-  private persistBreadcrumbs(): void {
-    this.storage.set('breadcrumbs', JSON.stringify(this.breadcrumbs));
+  private async persistBreadcrumbs(): Promise<void> {
+    await this.storage.set('breadcrumbs', JSON.stringify(this.breadcrumbs));
   }
 
-  private loadPersistedBreadcrumbs(): void {
-    const stored = this.storage.getString('breadcrumbs');
+  private async loadPersistedBreadcrumbs(): Promise<void> {
+    const stored = await this.storage.getString('breadcrumbs');
     if (stored) {
       try {
         this.breadcrumbs = JSON.parse(stored);
@@ -247,13 +251,13 @@ class CrashReportingService {
   }
 
   // Get stored crash reports (for debugging)
-  getStoredReports(): CrashReport[] {
+  async getStoredReports(): Promise<CrashReport[]> {
     const reports: CrashReport[] = [];
-    const keys = this.storage.getAllKeys();
+    const keys = await this.storage.getAllKeys();
 
-    keys.forEach((key) => {
+    for (const key of keys) {
       if (key.startsWith('crash_')) {
-        const stored = this.storage.getString(key);
+        const stored = await this.storage.getString(key);
         if (stored) {
           try {
             reports.push(JSON.parse(stored));
@@ -262,32 +266,32 @@ class CrashReportingService {
           }
         }
       }
-    });
+    }
 
     return reports.sort((a, b) => b.timestamp - a.timestamp);
   }
 
   // Clear old reports
-  clearOldReports(daysToKeep: number = 7): void {
+  async clearOldReports(daysToKeep: number = 7): Promise<void> {
     const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
-    const keys = this.storage.getAllKeys();
+    const keys = await this.storage.getAllKeys();
 
-    keys.forEach((key) => {
+    for (const key of keys) {
       if (key.startsWith('crash_')) {
-        const stored = this.storage.getString(key);
+        const stored = await this.storage.getString(key);
         if (stored) {
           try {
             const report: CrashReport = JSON.parse(stored);
             if (report.timestamp < cutoffTime) {
-              this.storage.delete(key);
+              await this.storage.delete(key);
             }
           } catch (error) {
             // Invalid report, delete it
-            this.storage.delete(key);
+            await this.storage.delete(key);
           }
         }
       }
-    });
+    }
   }
 }
 

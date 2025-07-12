@@ -134,18 +134,33 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }));
 
-// Mock MMKV
-jest.mock('react-native-mmkv', () => ({
-  MMKV: jest.fn().mockImplementation(() => ({
-    set: jest.fn(),
-    getString: jest.fn(),
-    getNumber: jest.fn(),
-    getBoolean: jest.fn(),
-    contains: jest.fn(),
-    delete: jest.fn(),
-    getAllKeys: jest.fn(),
-    clearAll: jest.fn(),
-  })),
+
+// Mock AsyncStorage
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(() => Promise.resolve(null)),
+  setItem: jest.fn(() => Promise.resolve()),
+  removeItem: jest.fn(() => Promise.resolve()),
+  clear: jest.fn(() => Promise.resolve()),
+  getAllKeys: jest.fn(() => Promise.resolve([])),
+  multiGet: jest.fn(() => Promise.resolve([])),
+  multiSet: jest.fn(() => Promise.resolve()),
+  multiRemove: jest.fn(() => Promise.resolve()),
+}));
+
+// Mock expo-constants
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    appOwnership: 'standalone', // Kept for backward compatibility
+    executionEnvironment: 'standalone', // Not 'storeClient' for standalone mode
+    manifest: {},
+    expoVersion: '53.0.0',
+  },
+  ExecutionEnvironment: {
+    Bare: 'bare',
+    Standalone: 'standalone',
+    StoreClient: 'storeClient',
+  },
 }));
 
 // Mock react-native-gesture-handler
@@ -345,6 +360,16 @@ const mockTheme = {
   isDark: false,
 };
 
+// Mock theme hooks
+jest.mock('./src/hooks/useTheme', () => ({
+  useTheme: () => ({
+    theme: mockTheme,
+    toggleTheme: jest.fn(),
+    setTheme: jest.fn(),
+    themeMode: 'light',
+  }),
+}));
+
 jest.mock('./src/theme/ThemeContext', () => ({
   ThemeProvider: ({ children }) => children,
   useTheme: () => ({
@@ -407,25 +432,34 @@ jest.mock('react-native-qrcode-svg', () => {
   return QRCode;
 });
 
-// Mock Google Sign-In
-jest.mock('@react-native-google-signin/google-signin', () => ({
-  GoogleSignin: {
-    configure: jest.fn(),
-    hasPlayServices: jest.fn().mockResolvedValue(true),
-    signIn: jest.fn(),
-    signOut: jest.fn(),
-    isSignedIn: jest.fn().mockResolvedValue(false),
-    getCurrentUser: jest.fn(),
-    getTokens: jest.fn(),
-    revokeAccess: jest.fn(),
-    clearCachedAccessToken: jest.fn(),
+// Mock Expo Auth Session
+jest.mock('expo-auth-session', () => ({
+  useAutoDiscovery: jest.fn(() => ({
+    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+    tokenEndpoint: 'https://oauth2.googleapis.com/token',
+  })),
+  useAuthRequest: jest.fn(() => [
+    { codeChallenge: 'test' }, // request
+    null, // response
+    jest.fn(), // promptAsync
+  ]),
+  makeRedirectUri: jest.fn(() => 'exp://localhost:19000'),
+  ResponseType: {
+    Token: 'token',
+    Code: 'code',
   },
-  statusCodes: {
-    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
-    IN_PROGRESS: 'IN_PROGRESS',
-    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
-    SIGN_IN_REQUIRED: 'SIGN_IN_REQUIRED',
-  },
+}));
+
+// Mock Expo Web Browser
+jest.mock('expo-web-browser', () => ({
+  maybeCompleteAuthSession: jest.fn(),
+  openBrowserAsync: jest.fn().mockResolvedValue({ type: 'success' }),
+}));
+
+// Mock Expo Crypto
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => 'test-uuid'),
+  digestStringAsync: jest.fn().mockResolvedValue('test-hash'),
 }));
 
 // Mock axios
@@ -479,6 +513,9 @@ jest.mock('./src/utils/accessibility', () => ({
     accessibilityRole: 'button',
     accessibilityState: { disabled, busy: loading },
   })),
+  announce: jest.fn(),
+  getActionHint: jest.fn(() => 'Tap to perform action'),
+  getNutritionLabel: jest.fn((value, unit, nutrient) => `${value} ${unit} of ${nutrient}`),
 }));
 
 // Mock base components that use theme
@@ -553,6 +590,55 @@ jest.mock('./src/components/base/ErrorDisplay', () => {
     );
   };
   return { ErrorDisplay };
+});
+
+// Mock new components
+jest.mock('./src/components/base/InfoTooltip', () => {
+  const React = require('react');
+  const InfoTooltip = (props) => {
+    return React.createElement(
+      'div',
+      {
+        ...props,
+        'data-testid': 'InfoTooltip',
+        'data-component': 'InfoTooltip',
+      },
+      props.children
+    );
+  };
+  return { InfoTooltip };
+});
+
+jest.mock('./src/components/base/SegmentedControl', () => {
+  const React = require('react');
+  const SegmentedControl = (props) => {
+    return React.createElement(
+      'div',
+      {
+        ...props,
+        'data-testid': 'SegmentedControl',
+        'data-component': 'SegmentedControl',
+      },
+      'Segmented Control'
+    );
+  };
+  return { SegmentedControl };
+});
+
+jest.mock('./src/components/base/NutritionGauge', () => {
+  const React = require('react');
+  const NutritionGauge = (props) => {
+    return React.createElement(
+      'div',
+      {
+        ...props,
+        'data-testid': 'NutritionGauge',
+        'data-component': 'NutritionGauge',
+      },
+      `${props.value || 0}${props.unit || ''} ${props.label || ''}`
+    );
+  };
+  return { NutritionGauge };
 });
 
 // Additional testing utilities can be added here

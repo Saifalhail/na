@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 import { AuthStackParamList } from '@/navigation/types';
 import { validateEmail, validateRequired } from '@/utils/validation';
 import { APP_CONFIG, ERROR_MESSAGES, LOADING_MESSAGES } from '@/constants';
+import { enableSocialAuth } from '@/config/env';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -56,7 +57,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     if (!validateForm()) return;
 
     try {
-      await login(formData.email, formData.password);
+      await login({ email: formData.email, password: formData.password });
     } catch (error: any) {
       setErrors({
         email: '',
@@ -91,7 +92,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>Welcome Back</Text>
+            <Text style={[styles.title, { color: theme.colors.text.primary }]}>Welcome Back</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
               Sign in to continue your nutrition journey
             </Text>
@@ -142,29 +143,33 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               {isLoading ? LOADING_MESSAGES.LOGGING_IN : 'Sign In'}
             </Button>
 
-            <Spacer size="lg" />
+            {enableSocialAuth && (
+              <>
+                <Spacer size="lg" />
 
-            <View style={styles.divider}>
-              <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-              <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>or</Text>
-              <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-            </View>
+                <View style={styles.divider}>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+                  <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>or</Text>
+                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
+                </View>
 
-            <Spacer size="lg" />
+                <Spacer size="lg" />
 
-            <SocialLoginButton
-              provider="google"
-              onSuccess={() => {
-                // Handle successful social login
-                // Navigation will be handled by auth store
-              }}
-              onError={(error) => {
-                setErrors({
-                  email: '',
-                  password: error,
-                });
-              }}
-            />
+                <SocialLoginButton
+                  provider="google"
+                  onSuccess={() => {
+                    // Handle successful social login
+                    // Navigation will be handled by auth store
+                  }}
+                  onError={(error) => {
+                    setErrors({
+                      email: '',
+                      password: error,
+                    });
+                  }}
+                />
+              </>
+            )}
 
             <Spacer size="md" />
 

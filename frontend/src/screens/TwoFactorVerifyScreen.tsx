@@ -74,7 +74,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
           text: 'Continue',
           onPress: () => {
             // Navigate back to profile or wherever appropriate
-            navigation.navigate('Profile');
+            navigation.navigate('Login');
           },
         },
       ]
@@ -96,7 +96,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
   if (isVerified && backupCodes.length > 0) {
     return (
       <Container padding="large">
-        <Text style={[styles.title, { color: theme.colors.text }]}>Save Your Backup Codes</Text>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>Save Your Backup Codes</Text>
 
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           Store these codes in a safe place. You can use them to access your account if you lose
@@ -106,7 +106,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
         <Spacer size="xl" />
 
         <Card style={styles.backupCodesCard}>
-          <Text style={[styles.backupCodesTitle, { color: theme.colors.text }]}>Backup Codes</Text>
+          <Text style={[styles.backupCodesTitle, { color: theme.colors.text.primary }]}>Backup Codes</Text>
           <Text style={[styles.backupCodesSubtitle, { color: theme.colors.textSecondary }]}>
             Each code can only be used once
           </Text>
@@ -119,7 +119,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
                 key={index}
                 style={[
                   styles.backupCode,
-                  { color: theme.colors.text, backgroundColor: theme.colors.neutral[100] },
+                  { color: theme.colors.text.primary, backgroundColor: theme.colors.neutral[100] },
                 ]}
               >
                 {code}
@@ -139,7 +139,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
 
   return (
     <Container padding="large">
-      <Text style={[styles.title, { color: theme.colors.text }]}>Verify Your Setup</Text>
+      <Text style={[styles.title, { color: theme.colors.text.primary }]}>Verify Your Setup</Text>
 
       <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
         Enter the 6-digit code from your authenticator app

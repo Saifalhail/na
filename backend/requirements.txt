@@ -48,6 +48,9 @@ tzdata==2025.2
 uritemplate==4.2.0
 urllib3==2.5.0
 
+# API filters
+django-filter==24.2
+
 # OAuth2 and social authentication
 django-allauth==65.9.0
 dj-rest-auth==7.0.1
@@ -59,12 +62,13 @@ pytest-django==4.10.0
 pytest-cov==6.0.0
 pytest-xdist==3.6.1
 factory-boy==3.3.1
-faker==33.7.0
+faker==24.14.1
 
 # Security dependencies
 djangorestframework-simplejwt==5.4.0
 django-ratelimit==4.1.0
-django-security==0.20.0
+# django-security==1.0.7  # Removed - conflicts with Django 5.2.4, functionality replaced by custom middleware
+bleach==6.2.0
 
 # Development dependencies
 ipython==8.31.0
@@ -77,6 +81,26 @@ pyotp==2.9.0
 # Production dependencies
 sentry-sdk==2.20.0
 celery==5.4.0
-redis==5.2.2
-gunicorn==23.1.0
+redis==5.1.1
+gunicorn==23.0.0
 psutil==7.0.0
+
+# WebSocket and real-time features
+channels==4.0.0
+channels-redis==4.2.1
+
+# File type detection and malware scanning
+python-magic-bin==0.4.14; sys_platform == 'win32'
+python-magic==0.4.27; sys_platform != 'win32'
+pyclamd==0.4.0
+
+# Payment processing
+stripe==7.8.0
+
+# SMS notifications
+twilio==8.11.0
+
+
+# Image processing and AI caching
+numpy==1.26.4
+scipy==1.14.1

@@ -108,7 +108,7 @@ export const Modal: React.FC<ModalProps> = ({
         >
           {title && (
             <Text
-              style={[styles.title, { color: theme.colors.text }]}
+              style={[styles.title, { color: theme.colors.text.primary }]}
               accessible={true}
               accessibilityRole="header"
             >

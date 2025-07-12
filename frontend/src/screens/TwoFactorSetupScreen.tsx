@@ -38,7 +38,7 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleContinue = () => {
     if (setupData) {
-      navigation.navigate('TwoFactorVerify', { secret: setupData.secret });
+      navigation.navigate('TwoFactorVerify', { secret: setupData.secret || '' });
     }
   };
 
@@ -67,7 +67,7 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
   if (error) {
     return (
       <Container>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Setup Failed</Text>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>Setup Failed</Text>
         <Text style={[styles.error, { color: theme.colors.error[500] }]}>{error}</Text>
         <Spacer size="lg" />
         <Button onPress={handleGetQRCode} variant="primary">
@@ -79,7 +79,7 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <Container padding="large">
-      <Text style={[styles.title, { color: theme.colors.text }]}>
+      <Text style={[styles.title, { color: theme.colors.text.primary }]}>
         Set up Two-Factor Authentication
       </Text>
 
@@ -91,7 +91,7 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
 
       <Card style={styles.card}>
         <Text style={[styles.stepNumber, { color: theme.colors.primary[500] }]}>Step 1</Text>
-        <Text style={[styles.stepTitle, { color: theme.colors.text }]}>
+        <Text style={[styles.stepTitle, { color: theme.colors.text.primary }]}>
           Install an Authenticator App
         </Text>
         <Text style={[styles.stepDescription, { color: theme.colors.textSecondary }]}>
@@ -104,14 +104,14 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
 
       <Card style={styles.card}>
         <Text style={[styles.stepNumber, { color: theme.colors.primary[500] }]}>Step 2</Text>
-        <Text style={[styles.stepTitle, { color: theme.colors.text }]}>Scan QR Code</Text>
+        <Text style={[styles.stepTitle, { color: theme.colors.text.primary }]}>Scan QR Code</Text>
 
         {setupData?.qr_code ? (
           <View style={styles.qrContainer}>
             <QRCode
               value={setupData.qr_code}
               size={200}
-              color={theme.colors.text}
+              color={theme.colors.text.primary}
               backgroundColor={theme.colors.background}
               logo={undefined}
               logoSize={0}
@@ -126,7 +126,7 @@ export const TwoFactorSetupScreen: React.FC<Props> = ({ navigation }) => {
               style={[styles.secretKeyContainer, { backgroundColor: theme.colors.neutral[100] }]}
               onPress={handleCopySecretKey}
             >
-              <Text style={[styles.secretKey, { color: theme.colors.text }]}>
+              <Text style={[styles.secretKey, { color: theme.colors.text.primary }]}>
                 {setupData.manual_entry_key}
               </Text>
               <Text style={[styles.copyHint, { color: theme.colors.textSecondary }]}>

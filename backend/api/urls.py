@@ -1,13 +1,5 @@
 from django.urls import path, include
-# Import legacy views from legacy_views.py file
-from .legacy_views import (
-    AnalyzeImageView as LegacyAnalyzeImageView,
-    NutritionDataDetailView,
-    RecalculateNutritionView as LegacyRecalculateNutritionView,
-    IngredientsListView,
-    RecalculateView as LegacyRecalculateView,
-)
-# Import from views package for new views
+# Import from views package
 from .views import (
     HealthCheckView,
     ReadinessCheckView,
@@ -42,15 +34,18 @@ v1_patterns = [
     # Notification endpoints
     path('notifications/', include('api.notifications.urls')),
     
-    # User endpoints (to be implemented)
-    # path('users/', include('api.users.urls')),
+    # Payment and subscription endpoints
+    path('payments/', include('api.payments.urls')),
     
-    # Legacy endpoints (deprecated, will be removed in v2)
-    path('analyze-image/', LegacyAnalyzeImageView.as_view(), name='analyze-image-legacy'),
-    path('recalculate/', LegacyRecalculateView.as_view(), name='recalculate-legacy'),
-    path('nutrition/<int:pk>/', NutritionDataDetailView.as_view(), name='nutrition-detail'),
-    path('nutrition/<int:pk>/recalculate/', LegacyRecalculateNutritionView.as_view(), name='nutrition-recalculate'),
-    path('nutrition/<int:nutrition_data_id>/ingredients/', IngredientsListView.as_view(), name='ingredients-list'),
+    # Mobile-optimized endpoints
+    path('mobile/', include('api.mobile.urls')),
+    
+    # User endpoints
+    path('users/', include('api.users.urls')),
+    
+    # Webhook endpoints
+    path('webhooks/', include('api.webhooks.urls')),
+    
 ]
 
 urlpatterns = [

@@ -37,7 +37,8 @@ You are the Frontend Agent. Work ONLY on UI/frontend tasks.
 - Need backend: "BACKEND_REQUEST: [what]"
 - Fixed tests: "TEST_FIX: [component] - [fix]"
 
-Stay in /frontend/. Update PROJECT_PLAN.md status regularly.
+Stay in /frontend/. Update PROJECT_PLAN.md status regularly. Continue Working on project plan tasks,
+tick off any done tasks and work on remaining tasks, create tasks if required to achieve project goal from Readme.
 
 #################################################################################################################################################
 
@@ -57,4 +58,7 @@ You are the Backend Agent. Work ONLY on API/backend tasks.
 - API ready: "API_READY: [endpoint] - [schema]"
 - Fixed tests: "BACKEND_FIX: [module] - [fix]"
 
-Stay in /backend/. Update PROJECT_PLAN.md status regularly.
+Stay in /backend/. Update PROJECT_PLAN.md status regularly. Continue Working on project plan tasks,
+tick off any done tasks and work on remaining tasks, create tasks if required to achieve project goal from Readme.
+
+#################################################################################################################################################

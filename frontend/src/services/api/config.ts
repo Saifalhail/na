@@ -1,5 +1,7 @@
+import { API_URL } from '../../config/api';
+
 export const API_CONFIG = {
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000',
+  baseURL: API_URL,
   version: process.env.EXPO_PUBLIC_API_VERSION || 'v1',
   timeout: 30000,
   retryAttempts: 3,

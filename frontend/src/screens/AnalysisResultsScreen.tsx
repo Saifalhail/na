@@ -28,6 +28,7 @@ import { useAuthStore } from '@/store/authStore';
 import { MainStackParamList } from '@/navigation/types';
 import { formatCalories, formatMacros } from '@/utils/formatting';
 import { LOADING_MESSAGES } from '@/constants';
+import { MealType, Meal } from '@/types/models';
 import { aiApi } from '@/services/api/endpoints/ai';
 
 type AnalysisResultsScreenNavigationProp = StackNavigationProp<
@@ -112,27 +113,27 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           // Call AI analysis API
           const result = await aiApi.analyzeImage({
             image: base64,
-            context: {
-              meal_type: getMealType(),
-              user_preferences: user?.dietary_restrictions || [],
+            imageUri: imageUri,
+            metadata: {
+              mealType: getMealType(),
             },
           });
 
           // Transform API response to our format
           const transformedData: AnalysisData = {
-            total_calories: result.total_calories,
-            protein: result.macronutrients.protein,
-            carbs: result.macronutrients.carbohydrates,
-            fat: result.macronutrients.fat,
-            fiber: result.macronutrients.fiber || 0,
-            sugar: result.macronutrients.sugar || 0,
+            total_calories: result.total_calories || 0,
+            protein: result.macronutrients?.protein || 0,
+            carbs: result.macronutrients?.carbs || 0,
+            fat: result.macronutrients?.fat || 0,
+            fiber: result.macronutrients?.fiber || 0,
+            sugar: result.macronutrients?.sugar || 0,
             sodium: result.micronutrients?.sodium || 0,
-            items: result.items.map((item: any, index: number) => ({
+            items: (result.items || []).map((item: any, index: number) => ({
               id: `item-${index}`,
               name: item.name,
               calories: item.calories,
               protein: item.protein,
-              carbs: item.carbohydrates,
+              carbs: item.carbs,
               fat: item.fat,
               fiber: item.fiber || 0,
               sugar: item.sugar || 0,
@@ -177,7 +178,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
     }
   };
 
-  const getMealType = () => {
+  const getMealType = (): 'breakfast' | 'lunch' | 'dinner' | 'snack' => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 11) return 'breakfast';
     if (hour >= 11 && hour < 16) return 'lunch';
@@ -222,12 +223,12 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
       // Update analysis data
       const newData: AnalysisData = {
         ...analysisData,
-        total_calories: result.total_calories,
-        protein: result.macronutrients.protein,
-        carbs: result.macronutrients.carbohydrates,
-        fat: result.macronutrients.fat,
-        fiber: result.macronutrients.fiber || 0,
-        sugar: result.macronutrients.sugar || 0,
+        total_calories: result.total_calories || 0,
+        protein: result.macronutrients?.protein || 0,
+        carbs: result.macronutrients?.carbs || 0,
+        fat: result.macronutrients?.fat || 0,
+        fiber: result.macronutrients?.fiber || 0,
+        sugar: result.macronutrients?.sugar || 0,
         sodium: result.micronutrients?.sodium || 0,
         items: updatedItems,
       };
@@ -329,20 +330,20 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
       const newItem: FoodItem = {
         id: `item-${Date.now()}`,
         name: newItemName,
-        calories: Math.round(result.total_calories - analysisData.total_calories),
-        protein: Math.round(result.macronutrients.protein - analysisData.protein),
-        carbs: Math.round(result.macronutrients.carbohydrates - analysisData.carbs),
-        fat: Math.round(result.macronutrients.fat - analysisData.fat),
+        calories: Math.round((result.total_calories || 0) - analysisData.total_calories),
+        protein: Math.round((result.macronutrients?.protein || 0) - analysisData.protein),
+        carbs: Math.round((result.macronutrients?.carbs || 0) - analysisData.carbs),
+        fat: Math.round((result.macronutrients?.fat || 0) - analysisData.fat),
         quantity: 1,
         unit: 'serving',
       };
 
       setAnalysisData({
         ...analysisData,
-        total_calories: result.total_calories,
-        protein: result.macronutrients.protein,
-        carbs: result.macronutrients.carbohydrates,
-        fat: result.macronutrients.fat,
+        total_calories: result.total_calories || 0,
+        protein: result.macronutrients?.protein || 0,
+        carbs: result.macronutrients?.carbs || 0,
+        fat: result.macronutrients?.fat || 0,
         items: [...analysisData.items, newItem],
       });
 
@@ -363,18 +364,31 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
     try {
       await addMeal({
         name: mealName,
-        meal_type: analysisData.meal_type || getMealType(),
-        calories: analysisData.total_calories,
-        protein: analysisData.protein,
-        carbs: analysisData.carbs,
-        fat: analysisData.fat,
-        fiber: analysisData.fiber,
-        sugar: analysisData.sugar,
-        sodium: analysisData.sodium,
-        image_url: imageUri,
-        items: analysisData.items,
+        mealType: (analysisData.meal_type as MealType) || getMealType(),
+        totalCalories: analysisData.total_calories,
+        totalProtein: analysisData.protein,
+        totalCarbs: analysisData.carbs,
+        totalFat: analysisData.fat,
+        totalFiber: analysisData.fiber,
+        totalSugar: analysisData.sugar,
+        totalSodium: analysisData.sodium,
+        image: imageUri,
+        mealItems: analysisData.items.map((item, index) => ({
+          id: item.id,
+          foodItem: item,
+          quantity: item.quantity,
+          unit: item.unit,
+          calories: item.calories,
+          protein: item.protein,
+          carbs: item.carbs,
+          fat: item.fat,
+          fiber: item.fiber || 0,
+          sugar: item.sugar || 0,
+          sodium: item.sodium || 0,
+          order: index
+        })),
         notes: notes,
-      });
+      } as unknown as Partial<Meal>);
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -398,7 +412,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
         <View style={styles.loadingContainer}>
           <Image source={{ uri: imageUri }} style={styles.loadingImage} />
           <Spacer size="xl" />
-          <Loading message={LOADING_MESSAGES.ANALYZING_IMAGE} />
+          <LoadingOverlay visible={isAnalyzing} message={LOADING_MESSAGES.ANALYZING_IMAGE} />
           <Spacer size="lg" />
           <Text style={[styles.loadingTip, { color: theme.colors.textSecondary }]}>
             Our AI is identifying foods and calculating nutrition...
@@ -457,7 +471,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           {/* Meal Name Input */}
           <Card style={styles.mealNameCard}>
             <TextInput
-              style={[styles.mealNameInput, { color: theme.colors.text }]}
+              style={[styles.mealNameInput, { color: theme.colors.text.primary }]}
               value={mealName}
               onChangeText={setMealName}
               placeholder="Name your meal"
@@ -495,7 +509,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
           {/* Interactive Macros Bubbles */}
           <Card style={styles.macrosCard}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Macronutrients</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Macronutrients</Text>
 
             <Spacer size="md" />
 
@@ -535,7 +549,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
           {/* Interactive Food Items */}
           <Card style={styles.itemsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               Detected Items ({analysisData.items.length})
             </Text>
 
@@ -557,9 +571,9 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
           {/* Notes */}
           <Card style={styles.notesCard}>
-            <Text style={[styles.notesLabel, { color: theme.colors.text }]}>Notes (optional)</Text>
+            <Text style={[styles.notesLabel, { color: theme.colors.text.primary }]}>Notes (optional)</Text>
             <TextInput
-              style={[styles.notesInput, { color: theme.colors.text }]}
+              style={[styles.notesInput, { color: theme.colors.text.primary }]}
               value={notes}
               onChangeText={setNotes}
               placeholder="Add notes about this meal..."
@@ -574,21 +588,23 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           {/* Actions */}
           <View style={styles.actions}>
             <Button
-              title={isSaving ? 'Saving...' : 'Save Meal'}
               onPress={handleSaveMeal}
               variant="primary"
               disabled={isSaving || isRecalculating}
               style={styles.saveButton}
-            />
+            >
+              {isSaving ? 'Saving...' : 'Save Meal'}
+            </Button>
 
             <Spacer size="md" />
 
             <Button
-              title="Retake Photo"
               onPress={handleRetakePhoto}
               variant="outline"
               style={styles.retakeButton}
-            />
+            >
+              Retake Photo
+            </Button>
           </View>
 
           <Spacer size="xxl" />
@@ -602,7 +618,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
         >
           {editingItem && (
             <View style={styles.modalContent}>
-              <Text style={[styles.modalItemName, { color: theme.colors.text }]}>
+              <Text style={[styles.modalItemName, { color: theme.colors.text.primary }]}>
                 {editingItem.name}
               </Text>
 
@@ -610,7 +626,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
               <View style={styles.portionInputContainer}>
                 <TextInput
-                  style={[styles.portionInput, { color: theme.colors.text }]}
+                  style={[styles.portionInput, { color: theme.colors.text.primary }]}
                   value={editingItem.quantity.toString()}
                   onChangeText={(text) => {
                     const num = parseFloat(text) || 0;
@@ -620,7 +636,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
                   placeholder="1"
                 />
                 <TextInput
-                  style={[styles.unitInput, { color: theme.colors.text }]}
+                  style={[styles.unitInput, { color: theme.colors.text.primary }]}
                   value={editingItem.unit}
                   onChangeText={(text) => setEditingItem({ ...editingItem, unit: text })}
                   placeholder="serving"
@@ -629,7 +645,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
               <Spacer size="lg" />
 
-              <Button title="Update" onPress={handlePortionUpdate} variant="primary" fullWidth />
+              <Button onPress={handlePortionUpdate} variant="primary" fullWidth>Update</Button>
             </View>
           )}
         </Modal>
@@ -645,7 +661,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
         >
           <View style={styles.modalContent}>
             <TextInput
-              style={[styles.addItemInput, { color: theme.colors.text }]}
+              style={[styles.addItemInput, { color: theme.colors.text.primary }]}
               value={newItemName}
               onChangeText={setNewItemName}
               placeholder="Enter food item name"
@@ -656,19 +672,20 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
             <Spacer size="lg" />
 
             <Button
-              title="Add"
               onPress={handleAddItem}
               variant="primary"
               fullWidth
               disabled={!newItemName.trim()}
-            />
+            >
+              Add
+            </Button>
           </View>
         </Modal>
 
         {/* Recalculating Overlay */}
         {isRecalculating && (
           <View style={styles.recalculatingOverlay}>
-            <Loading message="Recalculating nutrition..." />
+            <LoadingOverlay visible={true} message="Recalculating nutrition..." />
           </View>
         )}
       </Container>
@@ -687,33 +704,116 @@ interface MacroBubbleProps {
 
 const MacroBubble: React.FC<MacroBubbleProps> = ({ label, value, color, theme, isAnimating }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const translateYAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
 
+  // Continuous floating animation
+  useEffect(() => {
+    const floatingAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(translateYAnim, {
+          toValue: -5,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateYAnim, {
+          toValue: 5,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateYAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    floatingAnimation.start();
+
+    return () => floatingAnimation.stop();
+  }, []);
+
+  // Bounce animation when recalculating
   useEffect(() => {
     if (isAnimating) {
-      Animated.sequence([
-        Animated.spring(scaleAnim, {
-          toValue: 1.2,
-          friction: 3,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 3,
-          tension: 40,
-          useNativeDriver: true,
-        }),
+      Animated.parallel([
+        Animated.sequence([
+          Animated.spring(scaleAnim, {
+            toValue: 1.3,
+            friction: 3,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+          Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 5,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(opacityAnim, {
+            toValue: 0.6,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+        ]),
       ]).start();
     }
   }, [isAnimating]);
 
+  const bubbleRotation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
-    <Animated.View style={[styles.macroBubble, { transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View 
+      style={[
+        styles.macroBubble, 
+        { 
+          transform: [
+            { scale: scaleAnim },
+            { translateY: translateYAnim },
+            { rotate: bubbleRotation },
+          ],
+          opacity: opacityAnim,
+        }
+      ]}
+    >
       <View style={[styles.macroBubbleInner, { backgroundColor: color + '20' }]}>
         <View style={[styles.macroIndicator, { backgroundColor: color }]} />
-        <Text style={[styles.macroValue, { color: theme.colors.text }]}>{formatMacros(value)}</Text>
+        <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>{formatMacros(value)}</Text>
         <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
       </View>
+      
+      {/* 3D Effect Shadow */}
+      <View 
+        style={[
+          styles.bubbleShadow,
+          {
+            backgroundColor: color + '10',
+          }
+        ]} 
+      />
     </Animated.View>
   );
 };
@@ -729,7 +829,7 @@ interface NutrientRowProps {
 const NutrientRow: React.FC<NutrientRowProps> = ({ label, value, unit, theme }) => (
   <View style={styles.nutrientRow}>
     <Text style={[styles.nutrientLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
-    <Text style={[styles.nutrientValue, { color: theme.colors.text }]}>
+    <Text style={[styles.nutrientValue, { color: theme.colors.text.primary }]}>
       {value}
       {unit}
     </Text>
@@ -789,7 +889,7 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
         <TouchableOpacity style={styles.foodItemTouchable} onPress={onEdit} activeOpacity={0.7}>
           <View style={styles.foodItemContent}>
             <View style={styles.foodItemHeader}>
-              <Text style={[styles.foodItemName, { color: theme.colors.text }]}>{item.name}</Text>
+              <Text style={[styles.foodItemName, { color: theme.colors.text.primary }]}>{item.name}</Text>
               {item.confidence && item.confidence > 0.8 && (
                 <View style={styles.confidenceBadge}>
                   <Text style={styles.confidenceBadgeText}>✓</Text>
@@ -931,6 +1031,7 @@ const styles = StyleSheet.create({
   },
   macroBubble: {
     alignItems: 'center',
+    position: 'relative',
   },
   macroBubbleInner: {
     width: 90,
@@ -938,6 +1039,25 @@ const styles = StyleSheet.create({
     borderRadius: 45,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  bubbleShadow: {
+    position: 'absolute',
+    width: 85,
+    height: 85,
+    borderRadius: 42.5,
+    top: 5,
+    left: 2.5,
+    zIndex: -1,
   },
   macroIndicator: {
     width: 12,

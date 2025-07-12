@@ -29,9 +29,9 @@ describe('NotificationBadge', () => {
   });
 
   it('does not render when count is 0 and showZero is false', () => {
-    const { container } = renderWithTheme(<NotificationBadge count={0} />);
+    const { queryByText } = renderWithTheme(<NotificationBadge count={0} />);
 
-    expect(container.children.length).toBe(0);
+    expect(queryByText('0')).toBeNull();
   });
 
   it('renders when count is 0 and showZero is true', () => {

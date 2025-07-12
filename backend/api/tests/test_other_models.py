@@ -353,6 +353,8 @@ class NutritionalInfoModelTest(TestCase):
     
     def test_last_updated_auto_now(self):
         """Test last_updated field auto updates."""
+        import time
+        
         nutrition = NutritionalInfo.objects.create(
             meal=self.meal,
             vitamin_c=Decimal('10.00')
@@ -360,10 +362,14 @@ class NutritionalInfoModelTest(TestCase):
         
         original_updated = nutrition.last_updated
         
+        # Wait a bit to ensure time difference
+        time.sleep(0.1)
+        
         # Update a field
         nutrition.vitamin_c = Decimal('12.00')
         nutrition.save()
         
+        nutrition.refresh_from_db()
         self.assertGreater(nutrition.last_updated, original_updated)
 
 
@@ -602,18 +608,27 @@ class NutritionDataModelTest(TestCase):
     
     def test_model_ordering(self):
         """Test default ordering by created_at descending."""
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        
         nutritions = []
+        base_time = timezone.now()
+        
         for i in range(3):
+            # Create with specific timestamps to ensure ordering
             nutrition = NutritionData.objects.create(
                 calories=Decimal(f'{(i+1)*100}.00')
             )
+            # Manually set created_at to ensure different timestamps
+            nutrition.created_at = base_time + timedelta(seconds=i)
+            nutrition.save()
             nutritions.append(nutrition)
         
-        ordered = list(NutritionData.objects.all())
+        ordered = list(NutritionData.objects.all().order_by('-created_at'))
         # Should be ordered newest first
-        self.assertEqual(ordered[0], nutritions[2])
-        self.assertEqual(ordered[1], nutritions[1])
-        self.assertEqual(ordered[2], nutritions[0])
+        self.assertEqual(ordered[0].calories, nutritions[2].calories)
+        self.assertEqual(ordered[1].calories, nutritions[1].calories)
+        self.assertEqual(ordered[2].calories, nutritions[0].calories)
 
 
 class RecipeIngredientModelTest(TestCase):

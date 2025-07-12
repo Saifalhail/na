@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Container } from '@/components/layout/Container';
-import { Button } from '@/components/Button';
-import { TextInput } from '@/components/TextInput';
-import { Spacer } from '@/components/layout/Spacer';
+import { Container, Spacer } from '@/components/layout';
+import { Button } from '@/components/base/Button';
+import { TextInput } from '@/components/base/TextInput';
+
 import { useTheme } from '@/hooks/useTheme';
 import { AuthStackParamList } from '@/navigation/types';
 import { validateEmail } from '@/utils/validation';
@@ -57,7 +57,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
           <Spacer size="xl" />
 
-          <Text style={[styles.title, { color: theme.colors.text }]}>Check Your Email</Text>
+          <Text style={[styles.title, { color: theme.colors.text.primary }]}>Check Your Email</Text>
 
           <Spacer size="md" />
 
@@ -68,11 +68,12 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
           <Spacer size="xxl" />
 
           <Button
-            title="Back to Sign In"
             onPress={handleBackToLogin}
             variant="primary"
             style={styles.button}
-          />
+          >
+            Back to Sign In
+          </Button>
         </View>
       </Container>
     );
@@ -81,7 +82,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Reset Password</Text>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>Reset Password</Text>
 
         <Spacer size="md" />
 
@@ -109,16 +110,19 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         <Spacer size="xl" />
 
         <Button
-          title={isLoading ? 'Sending...' : 'Send Reset Link'}
           onPress={handleResetPassword}
           variant="primary"
           disabled={isLoading}
           style={styles.button}
-        />
+        >
+          {isLoading ? 'Sending...' : 'Send Reset Link'}
+        </Button>
 
         <Spacer size="lg" />
 
-        <Button title="Back to Sign In" onPress={handleBackToLogin} variant="text" />
+        <Button onPress={handleBackToLogin} variant="text">
+          Back to Sign In
+        </Button>
       </View>
     </Container>
   );

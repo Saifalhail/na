@@ -4,7 +4,7 @@ import { mmkvStorage } from './persist';
 import { mealsApi } from '@/services/api';
 import { OfflineManager } from '@/services/offline/OfflineManager';
 import type { Meal, MealType } from '@/types/models';
-import type { MealFilters, PaginatedResponse } from '@/types/api';
+import type { MealFilters, PaginatedResponse, CreateMealData, UpdateMealData } from '@/types/api';
 
 interface MealState {
   // State
@@ -101,7 +101,7 @@ export const useMealStore = create<MealState>()(
           const cacheKey = `meals_page_${page}_${JSON.stringify(appliedFilters)}`;
 
           // Check for cached data first
-          const cachedData = offlineManager.getCachedData<PaginatedResponse<Meal>>(cacheKey);
+          const cachedData = await offlineManager.getCachedData<PaginatedResponse<Meal>>(cacheKey);
           if (cachedData && offlineManager.isConnected()) {
             // Use cached data while fetching fresh data in background
             set({
@@ -116,7 +116,7 @@ export const useMealStore = create<MealState>()(
           }
 
           if (offlineManager.isConnected()) {
-            const response = await mealsApi.getMeals(page, get().pageSize, appliedFilters);
+            const response = await mealsApi.getMeals({ ...appliedFilters, page, pageSize: get().pageSize });
 
             // Cache the response
             offlineManager.cacheData(cacheKey, response, 1000 * 60 * 30); // 30 minute cache
@@ -188,7 +188,7 @@ export const useMealStore = create<MealState>()(
         try {
           if (offlineManager.isConnected()) {
             // Online: create immediately
-            const newMeal = await mealsApi.createMeal(mealData);
+            const newMeal = await mealsApi.createMeal(mealData as unknown as CreateMealData);
 
             // Replace temp meal with real one
             const updatedMeals = get().meals.map((meal) =>
@@ -243,7 +243,7 @@ export const useMealStore = create<MealState>()(
           ),
           currentMeal:
             get().currentMeal?.id === id
-              ? { ...get().currentMeal, ...data, updatedAt: new Date().toISOString() }
+              ? { ...get().currentMeal, ...data, updatedAt: new Date().toISOString() } as Meal
               : get().currentMeal,
           isLoading: false,
           error: null,
@@ -251,7 +251,7 @@ export const useMealStore = create<MealState>()(
 
         try {
           if (offlineManager.isConnected()) {
-            const updatedMeal = await mealsApi.updateMeal(id, data);
+            const updatedMeal = await mealsApi.updateMeal(id, data as UpdateMealData);
 
             // Update with real data
             set({

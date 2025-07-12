@@ -1,6 +1,6 @@
 import { Platform, Linking } from 'react-native';
 import * as StoreReview from 'expo-store-review';
-import { MMKV } from 'react-native-mmkv';
+import { createStorage, Storage } from '@/utils/storage';
 import { analytics } from '@/services/analytics/AnalyticsService';
 
 interface ReviewPromptConditions {
@@ -22,7 +22,7 @@ interface ReviewStats {
 
 class AppReviewService {
   private static instance: AppReviewService;
-  private storage: MMKV;
+  private storage: Storage;
   private stats: ReviewStats;
   private conditions: ReviewPromptConditions = {
     minDaysSinceInstall: 7,
@@ -33,8 +33,19 @@ class AppReviewService {
   };
 
   private constructor() {
-    this.storage = new MMKV({ id: 'app-review' });
-    this.stats = this.loadStats();
+    this.storage = createStorage('app-review');
+    this.stats = {
+      installDate: Date.now(),
+      mealsLogged: 0,
+      appOpens: 0,
+      promptsThisYear: 0,
+      hasRated: false,
+    };
+    this.initializeStats();
+  }
+
+  private async initializeStats(): Promise<void> {
+    this.stats = await this.loadStats();
   }
 
   static getInstance(): AppReviewService {
@@ -142,7 +153,9 @@ class AppReviewService {
   // Update review stats
   incrementMealsLogged(): void {
     this.stats.mealsLogged++;
-    this.saveStats();
+    this.saveStats().catch(error => {
+      console.error('Failed to save review stats:', error);
+    });
 
     // Check if we should prompt after this milestone
     if (this.stats.mealsLogged === 10 || this.stats.mealsLogged === 50) {
@@ -152,12 +165,16 @@ class AppReviewService {
 
   incrementAppOpens(): void {
     this.stats.appOpens++;
-    this.saveStats();
+    this.saveStats().catch(error => {
+      console.error('Failed to save review stats:', error);
+    });
   }
 
   markAsRated(): void {
     this.stats.hasRated = true;
-    this.saveStats();
+    this.saveStats().catch(error => {
+      console.error('Failed to save review stats:', error);
+    });
 
     analytics.track('app_rated', {
       meals_logged: this.stats.mealsLogged,
@@ -194,8 +211,8 @@ class AppReviewService {
     return Math.floor((Date.now() - timestamp) / msPerDay);
   }
 
-  private loadStats(): ReviewStats {
-    const stored = this.storage.getString('review_stats');
+  private async loadStats(): Promise<ReviewStats> {
+    const stored = await this.storage.getString('review_stats');
     if (stored) {
       try {
         return JSON.parse(stored);
@@ -214,8 +231,8 @@ class AppReviewService {
     };
   }
 
-  private saveStats(): void {
-    this.storage.set('review_stats', JSON.stringify(this.stats));
+  private async saveStats(): Promise<void> {
+    await this.storage.set('review_stats', JSON.stringify(this.stats));
   }
 
   // Reset stats (for testing)
@@ -227,7 +244,9 @@ class AppReviewService {
       promptsThisYear: 0,
       hasRated: false,
     };
-    this.saveStats();
+    this.saveStats().catch(error => {
+      console.error('Failed to save review stats:', error);
+    });
   }
 }
 

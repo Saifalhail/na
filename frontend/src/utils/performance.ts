@@ -49,7 +49,7 @@ export function useDebounce<T>(value: T, delay: number): T {
  */
 export function useThrottle<T extends (...args: any[]) => any>(callback: T, delay: number): T {
   const lastCall = React.useRef(0);
-  const lastCallTimer = React.useRef<NodeJS.Timeout>();
+  const lastCallTimer = React.useRef<NodeJS.Timeout | undefined>(undefined);
 
   return React.useCallback(
     ((...args) => {
@@ -87,7 +87,7 @@ export function batchedUpdates<T extends (...args: any[]) => void>(callback: T):
  */
 export function usePerformanceMonitor(componentName: string) {
   const renderCount = React.useRef(0);
-  const renderStartTime = React.useRef<number>();
+  const renderStartTime = React.useRef<number | undefined>(undefined);
 
   React.useEffect(() => {
     renderStartTime.current = performance.now();
@@ -207,7 +207,7 @@ export const MemoryOptimization = {
   /**
    * Monitor memory usage in development
    */
-  monitorMemoryUsage(): void {
+  monitorMemoryUsage(): (() => void) | void {
     if (__DEV__) {
       const memoryInterval = setInterval(() => {
         // @ts-ignore

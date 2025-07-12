@@ -17,8 +17,13 @@ export type MainStackParamList = {
   AnalysisResults: {
     imageUri: string;
     analysisData?: any;
+    metadata?: any;
+    context?: any;
   };
   Profile: undefined;
+  Notifications: undefined;
+  TwoFactorSetup: undefined;
+  TwoFactorVerify: { secret: string };
 };
 
 export type HomeTabParamList = {

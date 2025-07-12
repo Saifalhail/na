@@ -1,4 +1,5 @@
 export interface SpacingScale {
+  xxs: number;
   xs: number;
   s: number;
   m: number;
@@ -8,6 +9,7 @@ export interface SpacingScale {
 }
 
 export const spacing: SpacingScale = {
+  xxs: 2,
   xs: 4,
   s: 8,
   m: 16,

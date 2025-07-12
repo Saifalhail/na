@@ -120,7 +120,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
             <Text
               style={[
                 styles.title,
-                { color: theme.colors.text },
+                { color: theme.colors.text.primary },
                 !notification.is_read && styles.unreadTitle,
               ]}
               numberOfLines={1}
