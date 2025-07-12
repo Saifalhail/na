@@ -3,18 +3,20 @@ export interface User {
   id: string;
   email: string;
   username?: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber?: string;
-  dateOfBirth?: string;
-  accountType: 'free' | 'premium' | 'professional';
-  isVerified: boolean;
-  isActive: boolean;
-  dateJoined: string;
-  lastLogin?: string;
+  first_name: string;
+  last_name: string;
+  phone_number?: string;
+  date_of_birth?: string;
+  account_type?: 'free' | 'premium' | 'professional';
+  is_verified: boolean;
+  is_active?: boolean;
+  date_joined?: string;
+  last_login?: string;
   avatar?: string;
-  socialAvatarUrl?: string;
+  social_avatar_url?: string;
   dietary_restrictions?: string[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UserProfile {

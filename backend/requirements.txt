@@ -70,6 +70,8 @@ djangorestframework-simplejwt==5.4.0
 django-ratelimit==4.1.0
 # django-security==1.0.7  # Removed - conflicts with Django 5.2.4, functionality replaced by custom middleware
 bleach==6.2.0
+bandit==1.8.0
+safety==3.2.8
 
 # Development dependencies
 ipython==8.31.0
@@ -84,7 +86,7 @@ sentry-sdk==2.20.0
 celery==5.4.0
 redis==5.1.1
 gunicorn==23.0.0
-psutil==7.0.0
+psutil==6.0.0
 
 # WebSocket and real-time features
 channels==4.0.0

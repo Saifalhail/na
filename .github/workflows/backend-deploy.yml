@@ -69,14 +69,6 @@ jobs:
         # Check if API is healthy
         curl -f ${{ secrets.STAGING_URL }}/api/health/ || exit 1
 
-    - name: Notify deployment status
-      if: always()
-      uses: 8398a7/action-slack@v3
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      with:
-        status: ${{ job.status }}
-        channel: '#deployments'
 
   deploy-production:
     if: github.event.inputs.environment == 'production'

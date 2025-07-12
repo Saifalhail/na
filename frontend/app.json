@@ -36,6 +36,7 @@
       "enableSocialAuth": "$EXPO_PUBLIC_ENABLE_SOCIAL_AUTH",
       "enableAiAnalysis": "$EXPO_PUBLIC_ENABLE_AI_ANALYSIS",
       "enableOfflineMode": "$EXPO_PUBLIC_ENABLE_OFFLINE_MODE",
+      "enableDemoMode": "$EXPO_PUBLIC_ENABLE_DEMO_MODE",
       "sentryDsn": "$EXPO_PUBLIC_SENTRY_DSN"
     }
   }

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } fr
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
+import { GradientButton } from '@/components/base/GradientButton';
 import { TextInput } from '@/components/base/TextInput';
 import { LoadingOverlay } from '@/components/base/Loading';
 import { SocialLoginButton } from '@/components/auth/SocialLoginButton';
@@ -12,6 +13,8 @@ import { AuthStackParamList } from '@/navigation/types';
 import { validateEmail, validateRequired } from '@/utils/validation';
 import { APP_CONFIG, ERROR_MESSAGES, LOADING_MESSAGES } from '@/constants';
 import { enableSocialAuth } from '@/config/env';
+import { Ionicons } from '@expo/vector-icons';
+import { Alert } from 'react-native';
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -21,7 +24,7 @@ interface Props {
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
-  const { login, isLoading } = useAuthStore();
+  const { login, demoLogin, isLoading } = useAuthStore();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -72,6 +75,14 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleRegister = () => {
     navigation.navigate('Register');
+  };
+
+  const handleDemoLogin = async () => {
+    try {
+      await demoLogin();
+    } catch (error: any) {
+      Alert.alert('Demo Login Failed', 'Unable to start demo session. Please try again.');
+    }
   };
 
   const updateFormData = (field: keyof typeof formData) => (value: string) => {
@@ -134,14 +145,17 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="xl" />
 
-            <Button
+            <GradientButton
               onPress={handleLogin}
               variant="primary"
-              disabled={isLoading}
-              style={styles.loginButton}
+              size="large"
+              fullWidth
+              loading={isLoading}
+              icon={<Ionicons name="log-in-outline" size={24} color="#FFFFFF" />}
+              iconPosition="right"
             >
               {isLoading ? LOADING_MESSAGES.LOGGING_IN : 'Sign In'}
-            </Button>
+            </GradientButton>
 
             {enableSocialAuth && (
               <>
@@ -173,9 +187,33 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="md" />
 
-            <Button onPress={handleRegister} variant="outline" style={styles.registerButton}>
+            <GradientButton
+              onPress={handleRegister}
+              variant="secondary"
+              size="large"
+              fullWidth
+              icon={<Ionicons name="person-add-outline" size={22} color="#FFFFFF" />}
+            >
               Create New Account
-            </Button>
+            </GradientButton>
+
+            {APP_CONFIG.ENABLE_DEMO_MODE && (
+              <>
+                <Spacer size="md" />
+                <Button
+                  onPress={handleDemoLogin}
+                  variant="text"
+                  style={styles.demoButton}
+                >
+                  <View style={styles.demoButtonContent}>
+                    <Ionicons name="eye-outline" size={20} color={theme.colors.primary[500]} style={styles.demoIcon} />
+                    <Text style={[styles.demoButtonText, { color: theme.colors.primary[500] }]}>
+                      Try Demo Mode
+                    </Text>
+                  </View>
+                </Button>
+              </>
+            )}
           </View>
         </ScrollView>
 
@@ -231,5 +269,21 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: 16,
     fontSize: 14,
+  },
+  demoButton: {
+    alignSelf: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  demoButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  demoIcon: {
+    marginRight: 8,
+  },
+  demoButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

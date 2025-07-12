@@ -11,6 +11,7 @@ interface Environment {
   enableSocialAuth: boolean;
   enableAiAnalysis: boolean;
   enableOfflineMode: boolean;
+  enableDemoMode: boolean;
   sentryDsn?: string;
 }
 
@@ -26,6 +27,7 @@ const getEnvVars = (): Environment => {
     enableSocialAuth: Constants.expoConfig?.extra?.enableSocialAuth || false,
     enableAiAnalysis: Constants.expoConfig?.extra?.enableAiAnalysis || true,
     enableOfflineMode: Constants.expoConfig?.extra?.enableOfflineMode || true,
+    enableDemoMode: Constants.expoConfig?.extra?.enableDemoMode || true,
     sentryDsn: Constants.expoConfig?.extra?.sentryDsn,
   };
 };
@@ -50,6 +52,7 @@ export const {
   enableSocialAuth,
   enableAiAnalysis,
   enableOfflineMode,
+  enableDemoMode,
   sentryDsn,
 } = env;
 

@@ -23,6 +23,7 @@ interface AuthState {
   clearError: () => void;
   checkAuthStatus: () => Promise<void>;
   reset: () => void;
+  demoLogin: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -40,6 +41,11 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.login(credentials);
+
+          // Save tokens to SecureStore
+          if (response.tokens) {
+            await TokenStorage.saveTokens(response.tokens);
+          }
 
           set({
             user: response.user,
@@ -63,6 +69,11 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.register(data);
+
+          // Save tokens to SecureStore
+          if (response.tokens) {
+            await TokenStorage.saveTokens(response.tokens);
+          }
 
           set({
             user: response.user,
@@ -113,6 +124,11 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const response = await authApi.refreshToken(tokens.refresh);
+
+          // Save new tokens to SecureStore
+          if (response) {
+            await TokenStorage.saveTokens(response);
+          }
 
           set({
             tokens: response,
@@ -201,6 +217,63 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
           error: null,
         });
+      },
+
+      // Demo login for testing/preview
+      demoLogin: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          // For demo mode, we'll use a special demo account
+          const demoCredentials = {
+            email: 'demo@nutritionai.com',
+            password: 'demo123456',
+          };
+
+          const response = await authApi.login(demoCredentials);
+
+          // Save tokens to SecureStore
+          if (response.tokens) {
+            await TokenStorage.saveTokens(response.tokens);
+          }
+
+          set({
+            user: response.user,
+            tokens: response.tokens,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        } catch (error: any) {
+          // If demo account doesn't exist, create a mock session
+          const mockUser: User = {
+            id: 'demo-user',
+            email: 'demo@nutritionai.com',
+            username: 'DemoUser',
+            first_name: 'Demo',
+            last_name: 'User',
+            is_verified: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            account_type: 'premium', // Give demo user premium access
+          };
+
+          const mockTokens: TokenPair = {
+            access: 'demo-access-token',
+            refresh: 'demo-refresh-token',
+            accessExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+          };
+
+          // Save mock tokens
+          await TokenStorage.saveTokens(mockTokens);
+
+          set({
+            user: mockUser,
+            tokens: mockTokens,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        }
       },
     }),
     {

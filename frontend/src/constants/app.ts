@@ -1,3 +1,5 @@
+import { enableDemoMode } from '@/config/env';
+
 export const APP_CONFIG = {
   NAME: 'Nutrition AI',
   VERSION: '1.0.0',
@@ -5,6 +7,7 @@ export const APP_CONFIG = {
   SUPPORT_EMAIL: 'support@nutritionai.com',
   PRIVACY_POLICY_URL: 'https://nutritionai.com/privacy',
   TERMS_OF_SERVICE_URL: 'https://nutritionai.com/terms',
+  ENABLE_DEMO_MODE: enableDemoMode,
 };
 
 export const API_CONFIG = {

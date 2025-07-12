@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Alert } from 'react-native';
+import { StyleSheet, Alert, View, Image } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { Button } from '@/components/base/Button';
+import { GradientButton } from '@/components/base/GradientButton';
 import { useTwoFactorStore } from '@/store/twoFactorStore';
 import { useAuthStore } from '@/store/authStore';
 import { googleOAuthClientId } from '@/config/env';
+import { Ionicons } from '@expo/vector-icons';
 
 // Ensure web browser sessions complete properly
 WebBrowser.maybeCompleteAuthSession();
@@ -139,18 +141,16 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
     }
   };
 
-  const getButtonStyle = () => {
-    switch (provider) {
-      case 'google':
-        return {
-          backgroundColor: '#FFFFFF',
-          borderColor: '#E8E8E8',
-          borderWidth: 1,
-        };
-      default:
-        return {};
-    }
-  };
+  const getGoogleIcon = () => (
+    <View style={styles.iconContainer}>
+      <View style={styles.googleIconWrapper}>
+        <View style={[styles.googleBar, { backgroundColor: '#4285F4' }]} />
+        <View style={[styles.googleBar, { backgroundColor: '#EA4335' }]} />
+        <View style={[styles.googleBar, { backgroundColor: '#FBBC04' }]} />
+        <View style={[styles.googleBar, { backgroundColor: '#34A853' }]} />
+      </View>
+    </View>
+  );
 
   const isDisabled = isSocialLoading || !request || !discovery;
 
@@ -159,7 +159,11 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
       onPress={provider === 'google' ? handleGoogleLogin : undefined}
       variant="outline"
       disabled={isDisabled}
-      style={[styles.socialButton, getButtonStyle()]}
+      loading={isSocialLoading}
+      icon={getGoogleIcon()}
+      iconPosition="left"
+      style={styles.socialButton}
+      elevation={true}
     >
       {getButtonText()}
     </Button>
@@ -170,5 +174,32 @@ const styles = StyleSheet.create({
   socialButton: {
     width: '100%',
     marginVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  iconContainer: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleIconWrapper: {
+    width: 18,
+    height: 18,
+    position: 'relative',
+  },
+  googleBar: {
+    position: 'absolute',
+    width: 9,
+    height: 9,
   },
 });

@@ -119,4 +119,21 @@ config.server = {
 // Additional optimizations for Metro
 config.resetCache = true;
 
+// Performance optimizations for faster loading
+config.transformer = {
+  ...config.transformer,
+  // Enable experimental features for faster builds
+  experimentalImportSupport: false,
+  inlineRequires: true, // Defer module loading for faster startup
+};
+
+// Optimize bundling for production-like performance in dev
+if (process.env.NODE_ENV !== 'production') {
+  config.transformer.minifierConfig = {
+    ...config.transformer.minifierConfig,
+    keep_fnames: true,
+    mangle: false, // Disable mangling for faster builds in dev
+  };
+}
+
 module.exports = config;

@@ -172,6 +172,31 @@ clean_caches() {
     log_info "Caches cleaned"
 }
 
+# Function for fast backend startup (skips all checks)
+start_backend_fast() {
+    log_info "⚡ Fast Backend Start (skipping checks)..."
+    
+    cd backend
+    
+    # Just activate and run
+    source venv/bin/activate
+    
+    log_info "Backend starting on http://127.0.0.1:8000"
+    python manage.py runserver 0.0.0.0:8000 &
+    BACKEND_PID=$!
+    
+    cd ..
+    
+    sleep 2
+    if ps -p $BACKEND_PID > /dev/null; then
+        log_info "✅ Backend started successfully (PID: $BACKEND_PID)"
+        echo $BACKEND_PID > backend.pid
+    else
+        log_error "❌ Backend failed to start - try normal mode: ./start.sh backend"
+        exit 1
+    fi
+}
+
 # Function to start backend
 start_backend() {
     log_info "Starting Backend (Django)..."
@@ -229,23 +254,28 @@ start_backend() {
     
     log_info "Virtual environment activated: $VIRTUAL_ENV"
     
-    # Install dependencies
-    if [ ! -f "venv/.installed" ] || [ "requirements.txt" -nt "venv/.installed" ]; then
-        log_info "Installing dependencies..."
-        
-        # Use explicit virtual environment python and pip to avoid externally-managed-environment errors
-        if ! $VENV_PYTHON -m pip install --upgrade pip; then
-            log_warn "Failed to upgrade pip normally, trying auto-fix..."
-            auto_fix_python_issues
-            
-            if ! $VENV_PYTHON -m pip install --upgrade pip --break-system-packages; then
-                log_error "Failed to upgrade pip even after auto-fix attempts"
-                log_info "Manual fix: sudo apt install python3-full python3-dev build-essential"
-                return 1
-            fi
+    # Check if core packages are installed before full reinstall
+    DJANGO_INSTALLED=$($VENV_PYTHON -m pip show Django 2>/dev/null | grep -c "Name: Django")
+    
+    # Install dependencies if needed
+    if [ "$DJANGO_INSTALLED" -eq 0 ] || [ ! -f "venv/.installed" ] || [ "requirements.txt" -nt "venv/.installed" ]; then
+        if [ "$DJANGO_INSTALLED" -eq 0 ]; then
+            log_info "Core packages missing, installing dependencies..."
+        else
+            log_info "Requirements file updated, checking dependencies..."
         fi
         
-        if ! $VENV_PYTHON -m pip install -r requirements.txt; then
+        # Only upgrade pip if it's older than 6 months
+        PIP_VERSION=$($VENV_PYTHON -m pip --version | grep -oE '[0-9]+\.[0-9]+' | head -1)
+        PIP_MAJOR=$(echo $PIP_VERSION | cut -d. -f1)
+        if [ "$PIP_MAJOR" -lt "23" ]; then
+            log_info "Upgrading pip (current: $PIP_VERSION)..."
+            $VENV_PYTHON -m pip install --upgrade pip --quiet
+        fi
+        
+        # Install with optimizations for WSL/OneDrive
+        log_info "Installing packages (this may take a few minutes on first run)..."
+        if ! $VENV_PYTHON -m pip install -r requirements.txt --exists-action i --progress-bar on; then
             log_warn "Failed to install dependencies normally, trying auto-fix..."
             auto_fix_python_issues
             
@@ -259,6 +289,8 @@ start_backend() {
         
         touch venv/.installed
         log_info "Dependencies installed successfully"
+    else
+        log_info "✅ Dependencies already installed, skipping..."
     fi
     
     # Create .env if missing
@@ -270,6 +302,10 @@ start_backend() {
     
     # Run migrations
     $VENV_PYTHON manage.py migrate --noinput 2>/dev/null || log_warn "Migrations failed - continuing anyway"
+    
+    # Create demo user if it doesn't exist
+    log_info "Creating demo user (if not exists)..."
+    $VENV_PYTHON manage.py create_demo_user 2>/dev/null || log_info "Demo user already exists or creation skipped"
     
     # Get local IP for mobile access
     LOCAL_IP=$(ip addr show eth0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1 || echo "127.0.0.1")
@@ -313,16 +349,31 @@ start_frontend() {
         npm install
     fi
     
-    # Create .env if missing
-    if [ ! -f ".env" ]; then
-        LOCAL_IP=$(ip addr show eth0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1 || echo "127.0.0.1")
-        log_info "Creating .env file..."
-        cat > .env << EOF
-EXPO_PUBLIC_API_URL=http://127.0.0.1:8000
-EXPO_PUBLIC_API_URL_PHYSICAL=http://$LOCAL_IP:8000
-EXPO_PUBLIC_ENV=development
+    # Create or update .env with current IP
+    LOCAL_IP=$(ip addr show eth0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1 || echo "127.0.0.1")
+    log_info "Updating .env file with IP: $LOCAL_IP"
+    cat > .env << EOF
+# API Configuration
+EXPO_PUBLIC_API_URL=http://$LOCAL_IP:8000
+EXPO_PUBLIC_API_VERSION=v1
+
+# OAuth Configuration
+EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=your_google_client_id_here
+
+# Environment
+EXPO_PUBLIC_ENVIRONMENT=development
+
+# Feature Flags
+EXPO_PUBLIC_ENABLE_ANALYTICS=false
+EXPO_PUBLIC_ENABLE_CRASH_REPORTING=false
+EXPO_PUBLIC_ENABLE_SOCIAL_AUTH=true
+EXPO_PUBLIC_ENABLE_AI_ANALYSIS=true
+EXPO_PUBLIC_ENABLE_OFFLINE_MODE=true
+EXPO_PUBLIC_ENABLE_DEMO_MODE=true
+
+# Analytics (optional)
+EXPO_PUBLIC_SENTRY_DSN=
 EOF
-    fi
     
     # Enhanced cache clearing for WSL/OneDrive environments
     log_info "Clearing Metro cache and temporary files..."
@@ -342,11 +393,21 @@ EOF
         export WATCHMAN_DISABLE_WATCH_REMOVAL=true
     fi
     
-    log_info "Frontend starting with tunnel mode for phone access..."
+    log_info "Frontend starting..."
     log_info "📱 Scan QR code with Expo Go app on your phone"
     
-    # Enhanced startup command with WSL-specific options
-    EXPO_OPTS="--tunnel --clear"
+    # Try LAN mode first, fall back to tunnel if needed
+    EXPO_OPTS="--clear"
+    
+    # Check if we can use LAN mode
+    LOCAL_IP=$(ip addr show eth0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1)
+    if [[ -n "$LOCAL_IP" && "$LOCAL_IP" != "127.0.0.1" ]]; then
+        log_info "Using LAN mode with IP: $LOCAL_IP"
+        EXPO_OPTS="$EXPO_OPTS --lan"
+    else
+        log_info "Using tunnel mode for phone access..."
+        EXPO_OPTS="$EXPO_OPTS --tunnel"
+    fi
     
     # Add reset cache flag for WSL/OneDrive to prevent bundling issues
     if [[ "$PLATFORM" == "wsl" ]] || [[ "$(pwd)" =~ OneDrive ]]; then
@@ -372,6 +433,18 @@ EOF
     if ps -p $FRONTEND_PID > /dev/null; then
         log_info "✅ Frontend started successfully (PID: $FRONTEND_PID)"
         echo $FRONTEND_PID > frontend.pid
+        
+        # Show connection instructions
+        echo ""
+        log_info "📱 Mobile Access Instructions:"
+        log_info "1. Make sure your phone is on the same WiFi network"
+        log_info "2. Open Expo Go app on your phone"
+        log_info "3. Scan the QR code shown in terminal"
+        log_info ""
+        log_info "If tunnel mode fails (ERR_NGROK_3200):"
+        log_info "  - Press 's' in the terminal to switch connection mode"
+        log_info "  - Or manually enter: exp://$LOCAL_IP:8081"
+        echo ""
     else
         log_error "❌ Frontend failed to start"
         log_warn "If you see Metro bundler errors, try:"
@@ -487,24 +560,42 @@ EOF
             exit 1
         fi
         ;;
-    "help"|"--help")
+    "backend-fast"|"fast-backend"|"bfast")
+        cleanup_processes
+        
+        if start_backend_fast; then
+            log_info "🎉 Fast backend mode - Django running on http://127.0.0.1:8000"
+            log_info "Press Ctrl+C to stop"
+            wait
+        else
+            exit 1
+        fi
+        ;;
+    "help"|"--help"|"-h")
+        echo "🍎 Nutrition AI Startup Script"
+        echo ""
         echo "Usage: $0 [command]"
         echo ""
         echo "Commands:"
-        echo "  start     Start both backend and frontend (default)"
-        echo "  backend   Start only Django backend"
-        echo "  frontend  Start only Expo frontend"
-        echo "  docker    Start production Docker environment"
-        echo "  clean     Clean caches and stop processes"
-        echo "  help      Show this help"
+        echo "  (no command)  Start entire app (backend + frontend) - DEFAULT"
+        echo "  backend       Start only Django backend server"
+        echo "  backend-fast  Quick backend start (skip all checks)"
+        echo "  frontend      Start only Expo React Native app"
+        echo "  clean         Stop all processes and clean caches"
+        echo "  help          Show this help message"
         echo ""
-        echo "Examples:"
-        echo "  $0              # Start everything"
-        echo "  $0 frontend     # Frontend only"
-        echo "  $0 docker       # Production Docker"
-        echo "  $0 clean        # Clean up"
+        echo "Quick Start:"
+        echo "  $0            # Start everything (recommended)"
+        echo ""
+        echo "Development:"
+        echo "  $0 backend-fast   # Quick restart backend during development"
+        echo "  $0 frontend       # Test frontend only"
+        echo "  $0 clean          # Clean up when things go wrong"
+        echo ""
+        echo "Advanced:"
+        echo "  $0 docker         # Production deployment (requires Docker)"
         ;;
-    "start"|*)
+    ""|"start"|*)
         cleanup_processes
         
         # Check system dependencies
@@ -512,7 +603,7 @@ EOF
             exit 1
         fi
         
-        log_info "🚀 Starting both backend and frontend..."
+        log_info "🚀 Starting Nutrition AI (Backend + Frontend)..."
         
         # Start backend first
         if start_backend; then
@@ -535,7 +626,7 @@ EOF
         fi
         
         echo ""
-        log_info "🎉 Both services started successfully!"
+        log_info "🎉 Nutrition AI is running!"
         log_info "📱 Backend: http://127.0.0.1:8000"
         log_info "📱 Frontend: Scan QR code with Expo Go app"
         log_info "Press Ctrl+C to stop both services"
