@@ -6,17 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0009_add_mobile_indexes'),
+        ("api", "0009_add_mobile_indexes"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='receive_sms_notifications',
+            model_name="userprofile",
+            name="receive_sms_notifications",
             field=models.BooleanField(
                 default=False,
-                help_text='Whether to receive SMS notifications',
-                verbose_name='receive SMS notifications'
+                help_text="Whether to receive SMS notifications",
+                verbose_name="receive SMS notifications",
             ),
         ),
     ]

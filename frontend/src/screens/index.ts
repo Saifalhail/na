@@ -15,3 +15,4 @@ export { ProfileScreen } from './ProfileScreen';
 // Tab Screens
 export { MealHistoryScreen } from './MealHistoryScreen';
 export { FavoritesScreen } from './FavoritesScreen';
+export { SettingsScreen } from './SettingsScreen';

@@ -1,5 +1,6 @@
 import { Theme, Colors, TextColors, ColorScale } from '@/theme';
 import { useTheme as useThemeContext } from '@/theme/ThemeContext';
+import { rs } from '@/utils/responsive';
 
 // Extended colors interface with flattened text colors
 interface ExtendedColors extends Colors {

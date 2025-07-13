@@ -6,18 +6,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0005_rename_backup_code_user_id_used_idx_backup_code_user_id_691aaf_idx_and_more'),
+        (
+            "api",
+            "0005_rename_backup_code_user_id_used_idx_backup_code_user_id_691aaf_idx_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='is_premium',
-            field=models.BooleanField(default=False, help_text='Whether the user has a premium subscription', verbose_name='is premium user'),
+            model_name="userprofile",
+            name="is_premium",
+            field=models.BooleanField(
+                default=False,
+                help_text="Whether the user has a premium subscription",
+                verbose_name="is premium user",
+            ),
         ),
         migrations.AlterField(
-            model_name='mealanalysis',
-            name='ai_response',
-            field=models.JSONField(blank=True, default=dict, help_text='Raw response from AI service', verbose_name='AI response'),
+            model_name="mealanalysis",
+            name="ai_response",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="Raw response from AI service",
+                verbose_name="AI response",
+            ),
         ),
     ]

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { rs } from '@/utils/responsive';
 import {
   Image,
   ImageProps,
@@ -7,6 +8,7 @@ import {
   View,
   Animated,
   ActivityIndicator,
+  Text,
 } from 'react-native';
 import { ImageOptimization } from '@/utils/performance';
 import { useTheme } from '@/hooks/useTheme';
@@ -182,5 +184,3 @@ const styles = StyleSheet.create({
   },
 });
 
-// Import fix for Text
-import { Text } from 'react-native';

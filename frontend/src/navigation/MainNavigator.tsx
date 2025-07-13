@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { HomeScreen } from '@/screens/HomeScreen';
@@ -7,8 +8,10 @@ import { AnalysisResultsScreen } from '@/screens/AnalysisResultsScreen';
 import { MealHistoryScreen } from '@/screens/MealHistoryScreen';
 import { FavoritesScreen } from '@/screens/FavoritesScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
+import { SettingsScreen } from '@/screens/SettingsScreen';
 import { useTheme } from '@/hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
+import { rs } from '@/utils/responsive';
 
 export type MainStackParamList = {
   HomeTabs: undefined;
@@ -18,12 +21,14 @@ export type MainStackParamList = {
     analysisData?: any;
   };
   Profile: undefined;
+  Settings: undefined;
 };
 
 export type HomeTabParamList = {
   Home: undefined;
   History: undefined;
   Favorites: undefined;
+  Settings: undefined;
 };
 
 const Stack = createStackNavigator<MainStackParamList>();
@@ -48,6 +53,9 @@ const HomeTabs: React.FC = () => {
             case 'Favorites':
               iconName = focused ? 'heart' : 'heart-outline';
               break;
+            case 'Settings':
+              iconName = focused ? 'settings' : 'settings-outline';
+              break;
             default:
               iconName = 'home-outline';
           }
@@ -59,6 +67,26 @@ const HomeTabs: React.FC = () => {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
+          borderTopWidth: 1,
+          paddingTop: 8,
+          paddingBottom: Platform.OS === 'ios' ? 34 : 12,
+          height: Platform.OS === 'ios' ? 88 : 64,
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: -2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          elevation: 5,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
         },
         headerShown: false,
       })}
@@ -66,6 +94,7 @@ const HomeTabs: React.FC = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="History" component={MealHistoryScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 };
@@ -82,6 +111,7 @@ export const MainNavigator: React.FC = () => {
       <Stack.Screen name="Camera" component={CameraScreen} />
       <Stack.Screen name="AnalysisResults" component={AnalysisResultsScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 };

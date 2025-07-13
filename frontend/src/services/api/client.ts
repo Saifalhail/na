@@ -3,6 +3,7 @@ import { API_CONFIG, getApiUrl } from './config';
 import { TokenStorage } from '@services/storage/tokenStorage';
 import { handleApiError, AuthenticationError } from './errors';
 import { TokenPair } from '@/types/api';
+import { rs } from '@/utils/responsive';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -46,6 +47,12 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    
+    // Handle network errors with user-friendly messages
+    if (!error.response) {
+      console.log('Network error - no response received:', error.message);
+      throw new Error('Network connection failed. Please check your internet connection and try again.');
+    }
 
     // Handle 401 errors (unauthorized)
     if (error.response?.status === 401 && !originalRequest._retry) {

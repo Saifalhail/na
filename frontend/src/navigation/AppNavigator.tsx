@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
 import { LoadingOverlay } from '@/components/base/Loading';
+import { rs } from '@/utils/responsive';
 
 const Stack = createStackNavigator();
 

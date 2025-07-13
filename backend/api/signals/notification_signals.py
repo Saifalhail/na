@@ -1,7 +1,9 @@
 """
 Signal handlers for notification-related events.
 """
+
 import logging
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -16,7 +18,7 @@ logger = logging.getLogger(__name__)
 def handle_notification_created(sender, instance, created, **kwargs):
     """
     Handle notification creation and trigger appropriate sending mechanisms.
-    
+
     Args:
         sender: The model class (Notification)
         instance: The actual notification instance
@@ -25,37 +27,45 @@ def handle_notification_created(sender, instance, created, **kwargs):
     """
     if not created:
         return
-    
+
     # Only process pending notifications
-    if instance.status != 'pending':
+    if instance.status != "pending":
         return
-    
+
     # Trigger appropriate sending based on channel
     try:
-        if instance.channel == 'email':
+        if instance.channel == "email":
             # Send email notification asynchronously
             send_email_notification.delay(instance.id)
-            logger.info(f"Queued email notification {instance.id} for {instance.user.email}")
-            
-        elif instance.channel == 'sms':
+            logger.info(
+                f"Queued email notification {instance.id} for {instance.user.email}"
+            )
+
+        elif instance.channel == "sms":
             # Send SMS notification asynchronously
             send_sms_notification.delay(instance.id)
-            logger.info(f"Queued SMS notification {instance.id} for {instance.user.email}")
-            
-        elif instance.channel == 'push':
+            logger.info(
+                f"Queued SMS notification {instance.id} for {instance.user.email}"
+            )
+
+        elif instance.channel == "push":
             # Push notifications are handled by push notification service
             # which should be triggered separately
-            logger.info(f"Push notification {instance.id} created for {instance.user.email}")
-            
-        elif instance.channel == 'in_app':
+            logger.info(
+                f"Push notification {instance.id} created for {instance.user.email}"
+            )
+
+        elif instance.channel == "in_app":
             # In-app notifications are automatically available
             # Can trigger WebSocket notification here if needed
-            instance.status = 'sent'
+            instance.status = "sent"
             instance.save()
-            logger.info(f"In-app notification {instance.id} created for {instance.user.email}")
-            
+            logger.info(
+                f"In-app notification {instance.id} created for {instance.user.email}"
+            )
+
     except Exception as e:
         logger.error(f"Error processing notification {instance.id}: {e}")
-        instance.status = 'failed'
+        instance.status = "failed"
         instance.error_message = str(e)
         instance.save()

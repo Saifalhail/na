@@ -1,6 +1,6 @@
-# Documentation - Nutrition AI
+# Documentation - Bite Sight
 
-Complete documentation for the Nutrition AI application.
+Complete documentation for the Bite Sight application.
 
 ## 📚 Documentation Structure
 

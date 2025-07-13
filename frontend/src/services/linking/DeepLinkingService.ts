@@ -1,6 +1,7 @@
 import { Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { analytics } from '@/services/analytics/AnalyticsService';
+import { rs } from '@/utils/responsive';
 
 interface DeepLinkHandler {
   pattern: RegExp;
@@ -17,8 +18,8 @@ class DeepLinkingService {
   private handlers: DeepLinkHandler[] = [];
   private navigationRef: any = null;
   private config: DeepLinkConfig = {
-    scheme: 'nutritionai',
-    universalLinks: ['https://nutritionai.app', 'https://app.nutritionai.com'],
+    scheme: 'bitesight',
+    universalLinks: ['https://bitesight.app', 'https://app.bitesight.com'],
   };
 
   private constructor() {
@@ -70,37 +71,37 @@ class DeepLinkingService {
 
   // Common deep link handlers
   setupCommonHandlers(): void {
-    // Meal detail: nutritionai://meal/123
+    // Meal detail: bitesight://meal/123
     this.registerHandler(/^meal\/(?<mealId>\w+)$/, ({ mealId }) => {
       this.navigate('MealDetail', { mealId });
     });
 
-    // Profile: nutritionai://profile
+    // Profile: bitesight://profile
     this.registerHandler(/^profile$/, () => {
       this.navigate('Profile');
     });
 
-    // Camera: nutritionai://camera
+    // Camera: bitesight://camera
     this.registerHandler(/^camera$/, () => {
       this.navigate('Camera');
     });
 
-    // Favorites: nutritionai://favorites
+    // Favorites: bitesight://favorites
     this.registerHandler(/^favorites$/, () => {
       this.navigate('Favorites');
     });
 
-    // Settings: nutritionai://settings
+    // Settings: bitesight://settings
     this.registerHandler(/^settings$/, () => {
       this.navigate('Settings');
     });
 
-    // Notification settings: nutritionai://settings/notifications
+    // Notification settings: bitesight://settings/notifications
     this.registerHandler(/^settings\/notifications$/, () => {
       this.navigate('NotificationSettings');
     });
 
-    // Share meal: nutritionai://share/meal/123
+    // Share meal: bitesight://share/meal/123
     this.registerHandler(/^share\/meal\/(?<mealId>\w+)$/, ({ mealId }) => {
       this.navigate('ShareMeal', { mealId });
     });
@@ -125,14 +126,14 @@ class DeepLinkingService {
   }
 
   createUniversalLink(path: string): string {
-    const baseUrl = this.config.universalLinks?.[0] || 'https://nutritionai.app';
+    const baseUrl = this.config.universalLinks?.[0] || 'https://bitesight.app';
     return `${baseUrl}/${path}`;
   }
 
   // Share functionality
   async shareMeal(mealId: string, mealName: string): Promise<void> {
     const url = this.createUniversalLink(`meal/${mealId}`);
-    const message = `Check out my meal "${mealName}" on Nutrition AI!`;
+    const message = `Check out my meal "${mealName}" on Bite Sight!`;
 
     try {
       await Linking.openURL(

@@ -2,6 +2,8 @@ import React from 'react';
 import { View, ViewProps, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { useTheme } from '@theme/ThemeContext';
 import { Theme } from '@theme/index';
+import { getModernShadow } from '@/theme/shadows';
+import { borderRadius, rs } from '@/utils/responsive';
 
 interface CardProps extends ViewProps {
   variant?: 'elevated' | 'outlined' | 'filled';
@@ -61,8 +63,7 @@ const createStyles = (theme: Theme) =>
 
     // Variants
     elevated: {
-      ...theme.shadows.sm,
-      shadowColor: theme.shadows.sm.shadowColor,
+      ...getModernShadow('card'),
     },
     outlined: {
       borderWidth: 1,

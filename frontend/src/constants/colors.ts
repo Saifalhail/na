@@ -29,13 +29,13 @@ export const COLORS = {
   GRAY_900: '#212529',
 
   // Nutrition colors
-  CALORIES: '#FF6B35',
-  PROTEIN: '#4ECDC4',
-  CARBS: '#45B7D1',
-  FAT: '#F7DC6F',
-  FIBER: '#82E0AA',
-  SUGAR: '#F1948A',
-  SODIUM: '#BB8FCE',
+  CALORIES: '#2196F3',
+  PROTEIN: '#4CAF50',
+  CARBS: '#009688',
+  FAT: '#FF9800',
+  FIBER: '#8BC34A',
+  SUGAR: '#FFC107',
+  SODIUM: '#9C27B0',
 
   // Meal type colors
   BREAKFAST: '#FFE082',

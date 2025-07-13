@@ -1,4 +1,5 @@
 import React from 'react';
+import { borderRadius, rs } from '@/utils/responsive';
 import {
   View,
   Text,

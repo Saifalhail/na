@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { rs } from '@/utils/responsive';
 import {
   View,
   Text,

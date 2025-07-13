@@ -1,6 +1,7 @@
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { createStorage, Storage } from '@/utils/storage';
 import { apiClient } from '@/services/api';
+import { rs } from '@/utils/responsive';
 
 interface QueuedRequest {
   id: string;

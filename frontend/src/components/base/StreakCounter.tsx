@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { rs } from '@/utils/responsive';
 import {
   View,
   Text,
@@ -114,7 +115,11 @@ export const StreakCounter: React.FC<StreakCounterProps> = ({
     >
       {count > 0 ? (
         <LinearGradient
-          colors={isMilestone ? ['#f59e0b', '#dc2626'] : ['#fbbf24', '#f59e0b']}
+          colors={
+            isMilestone 
+              ? [theme.colors.primary[500], theme.colors.primary[700]] 
+              : [theme.colors.primary[400], theme.colors.primary[600]]
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.gradient, containerStyle]}
@@ -126,7 +131,7 @@ export const StreakCounter: React.FC<StreakCounterProps> = ({
                 { fontSize: flameSize, transform: [{ rotate }] },
               ]}
             >
-              🔥
+⚡
             </Animated.Text>
           )}
           <View style={styles.content}>

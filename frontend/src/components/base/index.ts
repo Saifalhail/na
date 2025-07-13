@@ -66,3 +66,21 @@ export type { SegmentedControlSize, SegmentedControlVariant, SegmentOption } fro
 
 export { NutritionGauge } from './NutritionGauge';
 export type { NutritionGaugeSize } from './NutritionGauge';
+
+export { TouchableMinimum, withMinimumTouchTarget } from './TouchableMinimum';
+
+// New unified design system components
+export { GradientCard } from './GradientCard';
+export type { GradientVariant } from './GradientCard';
+
+export { GlassCard } from './GlassCard';
+
+export { FloatingActionButton } from './FloatingActionButton';
+
+export { IconButton } from './IconButton';
+export type { IconButtonVariant, IconButtonSize } from './IconButton';
+
+export { AnimatedGradientBackground } from './AnimatedGradientBackground';
+export type { GradientType } from './AnimatedGradientBackground';
+
+export { NutritionBubble } from './NutritionBubble';

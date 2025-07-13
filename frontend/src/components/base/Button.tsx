@@ -1,4 +1,5 @@
 import React from 'react';
+import { borderRadius, rs } from '@/utils/responsive';
 import {
   TouchableOpacity,
   Text,
@@ -13,6 +14,7 @@ import {
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 import { getButtonAccessibilityProps } from '@/utils/accessibility';
+import { getModernShadow } from '@/theme/shadows';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text' | 'danger' | 'ghost';
 export type ButtonSize = 'small' | 'medium' | 'large';
@@ -235,18 +237,9 @@ const createStyles = (theme: Theme) =>
     },
 
     // Elevation
-    elevation: Platform.select({
-      ios: {
-        shadowColor: theme.colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-      default: {},
-    }),
+    elevation: {
+      ...getModernShadow('button'),
+    },
 
     // Layout
     content: {

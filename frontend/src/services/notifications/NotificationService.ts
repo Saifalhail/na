@@ -6,6 +6,7 @@ import { PlatformUtils } from '@/utils/platform';
 import { TokenStorage } from '@/services/storage/tokenStorage';
 import { notificationApi } from '@/api/notifications';
 import { deepLinking } from '@/services/linking/DeepLinkingService';
+import { rs } from '@/utils/responsive';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({

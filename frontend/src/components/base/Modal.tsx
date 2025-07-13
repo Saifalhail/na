@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { rs } from '@/utils/responsive';
 import {
   Modal as RNModal,
   View,
@@ -17,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useFocusTrap } from '@/hooks/useFocusManagement';
 import { announce } from '@/utils/accessibility';
+import { getModernShadow } from '@/theme/shadows';
 
 interface ModalProps {
   visible: boolean;
@@ -94,7 +96,7 @@ export const Modal: React.FC<ModalProps> = ({
   const content = (
     <View
       ref={modalRef}
-      style={[styles.modalContent, sizeStyles, { backgroundColor: theme.colors.surface }]}
+      style={[styles.modalContent, sizeStyles, { backgroundColor: theme.colors.surface }, getModernShadow('modal')]}
       accessible={true}
       accessibilityRole="none"
       accessibilityLabel={accessibilityLabel || title || 'Modal dialog'}
@@ -188,14 +190,6 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   header: {
     flexDirection: 'row',

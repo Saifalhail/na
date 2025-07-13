@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/base/Card';
 import type { Notification } from '@/types/api';
+import { rs } from '@/utils/responsive';
 
 interface NotificationItemProps {
   notification: Notification;

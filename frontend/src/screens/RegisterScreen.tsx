@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
@@ -9,6 +9,7 @@ import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { AuthStackParamList } from '@/navigation/types';
+import { rs } from '@/utils/responsive';
 import {
   validateEmail,
   validatePassword,
@@ -129,6 +130,12 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
+            <Image 
+              source={require('../../assets/logo_cropped.png')} 
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+            <Spacer size="md" />
             <Text style={[styles.title, { color: theme.colors.text.primary }]}>Create Account</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
               Join us and start your nutrition journey
@@ -270,6 +277,10 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
+  },
+  headerLogo: {
+    width: 60,
+    height: 60,
   },
   title: {
     fontSize: 28,

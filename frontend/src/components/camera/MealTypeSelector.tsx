@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { borderRadius, rs } from '@/utils/responsive';
 import {
   View,
   Text,
@@ -97,24 +98,24 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
           iconSize: 24,
           fontSize: 12,
           padding: 8,
-          width: 70,
-          height: showDescriptions ? 80 : 70,
+          width: 85,
+          height: showDescriptions ? 95 : 80,
         };
       case 'large':
         return {
           iconSize: 40,
           fontSize: 16,
           padding: 16,
-          width: 110,
-          height: showDescriptions ? 130 : 110,
+          width: 130,
+          height: showDescriptions ? 150 : 130,
         };
       default:
         return {
           iconSize: 32,
           fontSize: 14,
           padding: 12,
-          width: 90,
-          height: showDescriptions ? 105 : 90,
+          width: 110,
+          height: showDescriptions ? 120 : 100,
         };
     }
   };

@@ -10,6 +10,7 @@ import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useTwoFactorStore } from '@/store/twoFactorStore';
 import { AuthStackParamList } from '@/navigation/types';
+import { rs } from '@/utils/responsive';
 
 type TwoFactorVerifyScreenNavigationProp = StackNavigationProp<
   AuthStackParamList,
@@ -167,7 +168,7 @@ export const TwoFactorVerifyScreen: React.FC<Props> = ({ navigation, route }) =>
         <Spacer size="md" />
 
         <Text style={[styles.codeHint, { color: theme.colors.textSecondary }]}>
-          Open your authenticator app and enter the 6-digit code for Nutrition AI
+          Open your authenticator app and enter the 6-digit code for Bite Sight
         </Text>
       </Card>
 

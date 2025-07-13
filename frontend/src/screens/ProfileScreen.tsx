@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
-import { Container, Spacer, Row } from '@/components/layout';
+import { SafeAreaContainer, Container, Spacer, Row } from '@/components/layout';
 import { Card } from '@/components/base/Card';
 import { Button } from '@/components/base/Button';
 import { Modal } from '@/components/base/Modal';
@@ -27,6 +27,8 @@ import { useMealStore } from '@/store/mealStore';
 import { MainStackParamList } from '@/navigation/types';
 import { formatDate } from '@/utils/formatting';
 import { authApi } from '@/services/api';
+import { rs, rTouchTarget, scale, moderateScale, layout, fontScale } from '@/utils/responsive';
+import { KeyboardAvoidingView } from 'react-native';
 
 type ProfileScreenNavigationProp = StackNavigationProp<MainStackParamList, 'Profile'>;
 
@@ -105,17 +107,17 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [profileData, setProfileData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
+    firstName: user?.first_name || '',
+    lastName: user?.last_name || '',
     email: user?.email || '',
-    phoneNumber: user?.phoneNumber || '',
+    phoneNumber: user?.phone_number || '',
   });
 
   const [healthMetrics, setHealthMetrics] = useState<HealthMetrics>({
     height: profile?.height || 170,
     weight: profile?.weight || 70,
     activityLevel: profile?.activityLevel || 'moderate',
-    age: calculateAge(user?.dateOfBirth) || 25,
+    age: calculateAge(user?.date_of_birth) || 25,
     gender: profile?.gender || 'other',
   });
 
@@ -295,7 +297,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const getAccountTypeInfo = () => {
-    const accountType = user?.accountType || 'free';
+    const accountType = user?.account_type || 'free';
     const types = {
       free: { label: 'Free', color: theme.colors.neutral[500], icon: '🆓' },
       premium: { label: 'Premium', color: theme.colors.primary[500], icon: '⭐' },
@@ -314,15 +316,20 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const accountType = getAccountTypeInfo();
 
   return (
-    <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaContainer style={styles.container} scrollable scrollViewProps={{ showsVerticalScrollIndicator: false }}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleGoBack}>
+          <TouchableOpacity onPress={handleGoBack} style={styles.backButtonTouch}>
             <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Back</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+          <Image 
+            source={require('../../assets/logo_cropped.png')} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.notificationTouch}>
             <Text style={styles.notificationIcon}>🔔</Text>
           </TouchableOpacity>
         </View>
@@ -331,26 +338,26 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Profile Info */}
         <Card style={styles.profileCard}>
-          <TouchableOpacity onPress={handleAvatarChange}>
-            <View style={[styles.avatar, { backgroundColor: theme.colors.primary[500] }]}>
+          <View style={styles.avatarContainer}>
+            <TouchableOpacity onPress={handleAvatarChange} style={styles.avatar}>
               {user?.avatar ? (
                 <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
               ) : (
                 <Text style={[styles.avatarText, { color: theme.colors.background }]}>
-                  {(user?.firstName?.[0] || 'U').toUpperCase()}
+                  {(user?.first_name?.[0] || 'U').toUpperCase()}
                 </Text>
               )}
               <View style={styles.avatarEdit}>
                 <Text style={styles.avatarEditIcon}>📷</Text>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
 
           <Spacer size="lg" />
 
           <View style={styles.nameContainer}>
             <Text style={[styles.name, { color: theme.colors.text.primary }]}>
-              {user?.firstName} {user?.lastName}
+              {user?.first_name} {user?.last_name}
             </Text>
             <Badge
               variant="primary"
@@ -363,7 +370,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{user?.email}</Text>
 
           <Text style={[styles.joinDate, { color: theme.colors.textSecondary }]}>
-            Member since {formatDate(new Date(user?.dateJoined || new Date().toISOString()))}
+            Member since {formatDate(new Date(user?.date_joined || new Date().toISOString()))}
           </Text>
 
           <Spacer size="lg" />
@@ -524,11 +531,11 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
           <SettingItem
             title="Two-Factor Authentication"
-            subtitle={user?.isVerified ? 'Enabled' : 'Secure your account'}
+            subtitle={user?.is_verified ? 'Enabled' : 'Secure your account'}
             icon="🔐"
             onPress={() => navigation.navigate('TwoFactorSetup')}
             theme={theme}
-            showBadge={user?.isVerified || false}
+            showBadge={user?.is_verified || false}
           />
 
           <SettingItem
@@ -571,7 +578,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             title="Help & Support"
             subtitle="Get help or contact us"
             icon="❓"
-            onPress={() => Alert.alert('Help & Support', 'Contact us at support@nutritionai.app')}
+            onPress={() => Alert.alert('Help & Support', 'Contact us at support@bitesight.app')}
             theme={theme}
             showBadge={false}
           />
@@ -610,11 +617,10 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         </Button>
 
         <Spacer size="xxl" />
-      </ScrollView>
 
       {/* Edit Profile Modal */}
-      <Modal visible={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Profile">
-        <View style={styles.modalContent}>
+      <Modal visible={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Profile" scrollable>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContent}>
           <TextInput
             style={[styles.input, { color: theme.colors.text.primary }]}
             value={profileData.firstName}
@@ -654,7 +660,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           >
             Save Changes
           </Button>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Health Metrics Modal */}
@@ -952,7 +958,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           </Button>
         </View>
       </Modal>
-    </Container>
+    </SafeAreaContainer>
   );
 };
 
@@ -1008,60 +1014,81 @@ const MetricRow: React.FC<MetricRowProps> = ({ label, value, theme }) => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: rs.medium,
+  },
+  headerLogo: {
+    width: moderateScale(32),
+    height: moderateScale(32),
+  },
+  backButtonTouch: {
+    padding: rs.small,
+    marginLeft: -rs.small,
   },
   backButton: {
-    fontSize: 16,
+    fontSize: moderateScale(16),
     fontWeight: '500',
   },
+  notificationTouch: {
+    padding: rs.small,
+    marginRight: -rs.small,
+  },
   notificationIcon: {
-    fontSize: 20,
+    fontSize: moderateScale(20),
   },
   profileCard: {
-    padding: 24,
+    padding: rs.large,
     alignItems: 'center',
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: rs.medium,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: scale(100),
+    height: scale(100),
+    borderRadius: scale(50),
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    overflow: 'hidden',
+  },
+  avatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: scale(100),
+    height: scale(100),
+    borderRadius: scale(50),
   },
   avatarText: {
-    fontSize: 36,
+    fontSize: moderateScale(36),
     fontWeight: 'bold',
   },
   avatarEdit: {
     position: 'absolute',
     bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    right: -scale(8),
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
   avatarEditIcon: {
-    fontSize: 16,
+    fontSize: moderateScale(18),
   },
   nameContainer: {
     flexDirection: 'row',
@@ -1069,7 +1096,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   name: {
-    fontSize: 24,
+    fontSize: fontScale(24),
     fontWeight: 'bold',
   },
   accountBadge: {
@@ -1077,56 +1104,57 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   email: {
-    fontSize: 16,
-    marginTop: 4,
+    fontSize: fontScale(16),
+    marginTop: rs.tiny,
   },
   joinDate: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: fontScale(14),
+    marginTop: rs.tiny,
   },
   editButton: {
     width: '100%',
-    maxWidth: 200,
+    maxWidth: scale(200),
+    marginTop: rs.small,
   },
   progressCard: {
     padding: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: fontScale(18),
     fontWeight: '600',
   },
   progressItem: {
-    marginBottom: 16,
+    marginBottom: rs.medium,
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: rs.small,
   },
   progressLabel: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   progressValue: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '600',
   },
   progressBar: {
-    height: 8,
+    height: scale(10),
   },
   macrosRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 16,
+    marginTop: rs.medium,
   },
   macroItem: {
     alignItems: 'center',
   },
   macroLabel: {
-    fontSize: 12,
+    fontSize: fontScale(12),
   },
   macroValue: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '600',
     marginTop: 2,
   },
@@ -1139,7 +1167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editLink: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     fontWeight: '500',
   },
   metricsGrid: {
@@ -1155,11 +1183,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   metricLabel: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: fontScale(14),
+    marginTop: rs.tiny,
   },
   metricCategory: {
-    fontSize: 12,
+    fontSize: fontScale(12),
     marginTop: 2,
   },
   metricDetails: {
@@ -1172,10 +1200,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   metricRowLabel: {
-    fontSize: 14,
+    fontSize: fontScale(14),
   },
   metricRowValue: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     fontWeight: '500',
   },
   settingsCard: {
@@ -1184,9 +1212,10 @@ const styles = StyleSheet.create({
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'transparent',
+    paddingVertical: rs.medium,
+    paddingHorizontal: -rs.small,
+    marginHorizontal: -rs.small,
+    borderRadius: rs.small,
   },
   settingContent: {
     flex: 1,
@@ -1194,18 +1223,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    fontSize: moderateScale(20),
+    marginRight: rs.medium,
+    width: rTouchTarget.minimum,
+    textAlign: 'center',
+  },
+  switchContainer: {
+    marginLeft: rs.small,
   },
   settingText: {
     flex: 1,
   },
   settingTitle: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   settingSubtitle: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     marginTop: 2,
   },
   settingRight: {
@@ -1219,7 +1253,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   settingArrow: {
-    fontSize: 16,
+    fontSize: fontScale(16),
   },
   accountCard: {
     padding: 20,
@@ -1228,32 +1262,35 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   accountActionText: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   logoutButton: {
     width: '100%',
+    marginHorizontal: rs.medium,
   },
   modalContent: {
-    padding: 20,
+    paddingHorizontal: rs.medium,
+    paddingBottom: rs.large,
   },
   modalScrollContent: {
-    maxHeight: 400,
+    maxHeight: scale(400),
   },
   input: {
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderRadius: rs.small,
+    padding: rs.medium,
+    fontSize: moderateScale(16),
+    minHeight: rTouchTarget.minimum,
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: rs.medium,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     fontWeight: '500',
-    marginBottom: 8,
+    marginBottom: rs.small,
   },
   radioOption: {
     flexDirection: 'row',
@@ -1268,37 +1305,37 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: scale(24),
+    height: scale(24),
+    borderRadius: scale(12),
     borderWidth: 2,
     borderColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: rs.medium,
   },
   radioCircleSelected: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: scale(14),
+    height: scale(14),
+    borderRadius: scale(7),
   },
   radioText: {
     flex: 1,
   },
   radioLabel: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   radioDescription: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     marginTop: 2,
   },
   checkboxItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 4,
+    padding: rs.medium,
+    borderRadius: rs.small,
+    marginVertical: rs.tiny,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
   },
@@ -1306,30 +1343,30 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
+    width: scale(28),
+    height: scale(28),
+    borderRadius: scale(4),
     borderWidth: 2,
     borderColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: rs.medium,
   },
   checkmark: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: 'bold',
   },
   checkboxLabel: {
-    fontSize: 16,
+    fontSize: fontScale(16),
   },
   deleteWarning: {
-    fontSize: 24,
+    fontSize: fontScale(24),
     fontWeight: 'bold',
     textAlign: 'center',
   },
   deleteText: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     textAlign: 'center',
     lineHeight: 24,
   },

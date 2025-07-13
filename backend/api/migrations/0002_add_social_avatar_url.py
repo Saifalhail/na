@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0001_initial'),
+        ("api", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='social_avatar_url',
-            field=models.URLField(blank=True, help_text='Avatar URL from social provider', max_length=500, verbose_name='social avatar URL'),
+            model_name="userprofile",
+            name="social_avatar_url",
+            field=models.URLField(
+                blank=True,
+                help_text="Avatar URL from social provider",
+                max_length=500,
+                verbose_name="social avatar URL",
+            ),
         ),
     ]

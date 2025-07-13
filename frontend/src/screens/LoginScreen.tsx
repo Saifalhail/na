@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image, Animated, Dimensions } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
@@ -7,6 +7,9 @@ import { GradientButton } from '@/components/base/GradientButton';
 import { TextInput } from '@/components/base/TextInput';
 import { LoadingOverlay } from '@/components/base/Loading';
 import { SocialLoginButton } from '@/components/auth/SocialLoginButton';
+import { AnimatedGradientBackground } from '@/components/base/AnimatedGradientBackground';
+import { GlassCard } from '@/components/base/GlassCard';
+import { IconButton } from '@/components/base/IconButton';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { AuthStackParamList } from '@/navigation/types';
@@ -15,6 +18,11 @@ import { APP_CONFIG, ERROR_MESSAGES, LOADING_MESSAGES } from '@/constants';
 import { enableSocialAuth } from '@/config/env';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert } from 'react-native';
+import { rs, moderateScale, fontScale } from '@/utils/responsive';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+
+const { height: screenHeight } = Dimensions.get('window');
 
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -56,8 +64,38 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     return !Object.values(newErrors).some((error) => error !== '');
   };
 
+  const logoScale = useRef(new Animated.Value(1)).current;
+  const formOpacity = useRef(new Animated.Value(0)).current;
+  
+  React.useEffect(() => {
+    // Logo animation
+    Animated.sequence([
+      Animated.timing(logoScale, {
+        toValue: 0.9,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoScale, {
+        toValue: 1,
+        friction: 3,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    // Form fade in
+    Animated.timing(formOpacity, {
+      toValue: 1,
+      duration: 800,
+      delay: 300,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   const handleLogin = async () => {
     if (!validateForm()) return;
+    
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     try {
       await login({ email: formData.email, password: formData.password });
@@ -93,109 +131,163 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text.primary }]}>Welcome Back</Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-              Sign in to continue your nutrition journey
-            </Text>
-          </View>
-
-          <Spacer size="xxl" />
-
-          <View style={styles.form}>
-            <TextInput
-              label="Email"
-              value={formData.email}
-              onChangeText={updateFormData('email')}
-              error={errors.email}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              textContentType="emailAddress"
-            />
-
-            <Spacer size="lg" />
-
-            <TextInput
-              label="Password"
-              value={formData.password}
-              onChangeText={updateFormData('password')}
-              error={errors.password}
-              placeholder="Enter your password"
-              secureTextEntry
-              autoComplete="password"
-              textContentType="password"
-            />
-
-            <Spacer size="md" />
-
-            <Button onPress={handleForgotPassword} variant="text" style={styles.forgotButton}>
-              Forgot Password?
-            </Button>
-
-            <Spacer size="xl" />
-
-            <GradientButton
-              onPress={handleLogin}
-              variant="primary"
-              size="large"
-              fullWidth
-              loading={isLoading}
-              icon={<Ionicons name="log-in-outline" size={24} color="#FFFFFF" />}
-              iconPosition="right"
+    <View style={{ flex: 1 }}>
+      {/* Full-screen animated gradient */}
+      <AnimatedGradientBackground 
+        type="aurora" 
+        animated={true} 
+        speed="slow"
+      />
+      
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <Container style={styles.container}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Glassmorphic header card */}
+            <GlassCard
+              style={styles.header}
+              animated={true}
+              animationDelay={0}
+              intensity={100}
+              glassBorder={true}
             >
-              {isLoading ? LOADING_MESSAGES.LOGGING_IN : 'Sign In'}
-            </GradientButton>
+              <Animated.View style={{ transform: [{ scale: logoScale }] }}>
+                <Image 
+                  source={require('../../assets/logo_cropped.png')} 
+                  style={styles.headerLogo}
+                  resizeMode="contain"
+                />
+              </Animated.View>
+              <Spacer size="md" />
+              <Text style={[styles.title, { color: theme.colors.text.primary }]}>Welcome Back</Text>
+              <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                Sign in to continue your nutrition journey
+              </Text>
+            </GlassCard>
+
+            <Spacer size="xxl" />
+
+            <Animated.View style={[styles.form, { opacity: formOpacity }]}>
+              <GlassCard style={styles.inputCard} intensity={80}>
+                <View style={styles.inputContainer}>
+                  <Ionicons 
+                    name="mail-outline" 
+                    size={moderateScale(20)} 
+                    color={theme.colors.primary[500]} 
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    label="Email"
+                    value={formData.email}
+                    onChangeText={updateFormData('email')}
+                    error={errors.email}
+                    placeholder="Enter your email"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    textContentType="emailAddress"
+                    style={styles.input}
+                  />
+                </View>
+              </GlassCard>
+
+              <Spacer size="md" />
+
+              <GlassCard style={styles.inputCard} intensity={80}>
+                <View style={styles.inputContainer}>
+                  <Ionicons 
+                    name="lock-closed-outline" 
+                    size={moderateScale(20)} 
+                    color={theme.colors.primary[500]} 
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    label="Password"
+                    value={formData.password}
+                    onChangeText={updateFormData('password')}
+                    error={errors.password}
+                    placeholder="Enter your password"
+                    secureTextEntry
+                    autoComplete="password"
+                    textContentType="password"
+                    style={styles.input}
+                  />
+                </View>
+              </GlassCard>
+
+              <Spacer size="md" />
+
+              <Button onPress={handleForgotPassword} variant="text" style={styles.forgotButton}>
+                <Text style={[styles.forgotText, { color: theme.colors.primary[400] }]}>
+                  Forgot Password?
+                </Text>
+              </Button>
+
+              <Spacer size="xl" />
+
+              <GradientButton
+                onPress={handleLogin}
+                variant="primary"
+                size="large"
+                fullWidth
+                loading={isLoading}
+                icon={<Ionicons name="log-in-outline" size={moderateScale(24)} color="#FFFFFF" />}
+                iconPosition="right"
+                style={styles.loginButton}
+              >
+                {isLoading ? LOADING_MESSAGES.LOGGING_IN : 'Sign In'}
+              </GradientButton>
 
             {enableSocialAuth && (
               <>
-                <Spacer size="lg" />
+                  <Spacer size="lg" />
 
-                <View style={styles.divider}>
-                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-                  <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>or</Text>
-                  <View style={[styles.dividerLine, { backgroundColor: theme.colors.border }]} />
-                </View>
+                  <View style={styles.divider}>
+                    <View style={[styles.dividerLine, { backgroundColor: theme.colors.border + '50' }]} />
+                    <GlassCard style={styles.dividerTextContainer} intensity={60}>
+                      <Text style={[styles.dividerText, { color: theme.colors.textSecondary }]}>or</Text>
+                    </GlassCard>
+                    <View style={[styles.dividerLine, { backgroundColor: theme.colors.border + '50' }]} />
+                  </View>
 
-                <Spacer size="lg" />
+                  <Spacer size="lg" />
 
-                <SocialLoginButton
-                  provider="google"
-                  onSuccess={() => {
-                    // Handle successful social login
-                    // Navigation will be handled by auth store
-                  }}
-                  onError={(error) => {
-                    setErrors({
-                      email: '',
-                      password: error,
-                    });
-                  }}
-                />
+                  <GlassCard style={styles.socialCard} intensity={80}>
+                    <SocialLoginButton
+                      provider="google"
+                      onSuccess={() => {
+                        // Handle successful social login
+                        // Navigation will be handled by auth store
+                      }}
+                      onError={(error) => {
+                        setErrors({
+                          email: '',
+                          password: error,
+                        });
+                      }}
+                    />
+                  </GlassCard>
               </>
             )}
 
-            <Spacer size="md" />
+              <Spacer size="md" />
 
-            <GradientButton
-              onPress={handleRegister}
-              variant="secondary"
-              size="large"
-              fullWidth
-              icon={<Ionicons name="person-add-outline" size={22} color="#FFFFFF" />}
-            >
-              Create New Account
-            </GradientButton>
+              <GradientButton
+                onPress={handleRegister}
+                variant="secondary"
+                size="large"
+                fullWidth
+                icon={<Ionicons name="person-add-outline" size={moderateScale(22)} color="#FFFFFF" />}
+                style={styles.registerButton}
+              >
+                Create New Account
+              </GradientButton>
 
             {APP_CONFIG.ENABLE_DEMO_MODE && (
               <>
@@ -211,79 +303,125 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                       Try Demo Mode
                     </Text>
                   </View>
-                </Button>
-              </>
-            )}
-          </View>
-        </ScrollView>
+                  </Button>
+                </>
+              )}
+            </Animated.View>
+          </ScrollView>
 
-        {isLoading && <LoadingOverlay visible={true} message={LOADING_MESSAGES.LOGGING_IN} />}
-      </Container>
-    </KeyboardAvoidingView>
+          {isLoading && <LoadingOverlay visible={true} message={LOADING_MESSAGES.LOGGING_IN} />}
+        </Container>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingHorizontal: rs.large,
+    paddingTop: moderateScale(60),
+    paddingBottom: moderateScale(40),
+    minHeight: screenHeight,
   },
   header: {
     alignItems: 'center',
+    padding: rs.xlarge,
+    marginBottom: rs.large,
+  },
+  headerLogo: {
+    width: moderateScale(80),
+    height: moderateScale(80),
+    marginBottom: rs.small,
   },
   title: {
-    fontSize: 28,
+    fontSize: fontScale(32),
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: rs.small,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: fontScale(24),
+    opacity: 0.8,
   },
   form: {
     flex: 1,
   },
+  inputCard: {
+    padding: 0,
+    overflow: 'hidden',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: rs.medium,
+  },
+  inputIcon: {
+    marginRight: rs.medium,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: Platform.OS === 'ios' ? rs.medium : rs.small,
+  },
   forgotButton: {
     alignSelf: 'flex-end',
+    paddingVertical: rs.small,
+  },
+  forgotText: {
+    fontSize: fontScale(14),
+    fontWeight: '500',
   },
   loginButton: {
-    width: '100%',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   registerButton: {
-    width: '100%',
+    elevation: 2,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginVertical: rs.small,
   },
   dividerLine: {
     flex: 1,
     height: 1,
   },
+  dividerTextContainer: {
+    paddingHorizontal: rs.large,
+    paddingVertical: rs.small,
+    marginHorizontal: rs.medium,
+  },
   dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
+    fontSize: fontScale(14),
+    fontWeight: '500',
+  },
+  socialCard: {
+    padding: rs.small,
   },
   demoButton: {
     alignSelf: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: rs.medium,
+    paddingHorizontal: rs.large,
   },
   demoButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   demoIcon: {
-    marginRight: 8,
+    marginRight: rs.small,
   },
   demoButtonText: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '600',
   },
 });

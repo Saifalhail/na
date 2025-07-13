@@ -1,16 +1,17 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from ..views.meals import MealViewSet
 
-app_name = 'meals'
+app_name = "meals"
 
 # Create router for viewset
 router = DefaultRouter()
-router.register('', MealViewSet, basename='meal')
+router.register("", MealViewSet, basename="meal")
 
 urlpatterns = [
     # Include all viewset routes
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]
 
 # The router automatically generates the following URL patterns:

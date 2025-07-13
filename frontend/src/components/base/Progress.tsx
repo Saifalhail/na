@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { borderRadius, rs } from '@/utils/responsive';
 import {
   View,
   Text,

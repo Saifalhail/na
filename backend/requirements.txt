@@ -108,3 +108,11 @@ twilio==8.11.0
 # Image processing and AI caching
 numpy==1.26.4
 scipy==1.14.1
+
+# Firebase integration
+firebase-admin==6.5.0
+google-cloud-firestore==2.20.1
+google-auth==2.40.3  # Already included above, version updated for Firebase compatibility
+
+# Phone number validation and formatting
+phonenumbers==8.13.34

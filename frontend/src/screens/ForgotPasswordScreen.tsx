@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
@@ -8,6 +8,7 @@ import { TextInput } from '@/components/base/TextInput';
 import { useTheme } from '@/hooks/useTheme';
 import { AuthStackParamList } from '@/navigation/types';
 import { validateEmail } from '@/utils/validation';
+import { rs } from '@/utils/responsive';
 
 type ForgotPasswordScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
@@ -82,6 +83,12 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
+        <Image 
+          source={require('../../assets/logo_cropped.png')} 
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
+        <Spacer size="md" />
         <Text style={[styles.title, { color: theme.colors.text.primary }]}>Reset Password</Text>
 
         <Spacer size="md" />
@@ -137,6 +144,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 80,
     alignItems: 'center',
+  },
+  headerLogo: {
+    width: 60,
+    height: 60,
   },
   title: {
     fontSize: 28,

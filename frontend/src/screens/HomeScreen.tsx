@@ -1,28 +1,33 @@
-import React, { useCallback, useMemo, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated } from 'react-native';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Image, RefreshControl } from 'react-native';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Container, Spacer, Row } from '@/components/layout';
-import { Card } from '@/components/base/Card';
-import { Button } from '@/components/base/Button';
 import { OptimizedImage } from '@/components/base/OptimizedImage';
-import { OptimizedList } from '@/components/base/OptimizedList';
-import { AnimatedCard, AnimatedCardPresets } from '@/components/base/AnimatedCard';
-import { GradientButton, GradientButtonPresets } from '@/components/base/GradientButton';
-import { ProgressRing, MultiProgressRing } from '@/components/base/ProgressRing';
+import { AnimatedCard } from '@/components/base/AnimatedCard';
+import { GradientButton } from '@/components/base/GradientButton';
 import { StreakCounter } from '@/components/base/StreakCounter';
+import { AnimatedGradientBackground } from '@/components/base/AnimatedGradientBackground';
+import { GradientCard } from '@/components/base/GradientCard';
+import { GlassCard } from '@/components/base/GlassCard';
+import { FloatingActionButton } from '@/components/base/FloatingActionButton';
+import { IconButton } from '@/components/base/IconButton';
+import { NutritionBubble } from '@/components/base/NutritionBubble';
+import { WaveBackground } from '@/components/base/WaveBackground';
 import { useTheme } from '@/hooks/useTheme';
+import { getModernShadow } from '@/theme/shadows';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { useMealStore, useMealSelectors } from '@/store/mealStore';
 import { usePerformanceMonitor } from '@/utils/performance';
+import { rs, rTouchTarget, layout, dimensions, fontScale, moderateScale } from '@/utils/responsive';
 import { HomeTabParamList, MainStackParamList } from '@/navigation/types';
 import { formatCalories, formatDate } from '@/utils/formatting';
 import { APP_CONFIG } from '@/constants';
-
-const { width: screenWidth } = Dimensions.get('window');
+import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<HomeTabParamList, 'Home'>,
@@ -42,25 +47,32 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
   const { todayStats } = useMealStore();
   const { todaysMeals, todaysNutrition } = useMealSelectors();
   
-  // Calculate progress values
-  const calorieGoal = profile?.dailyCalorieGoal || 2000;
-  const calorieProgress = Math.min(((todayStats?.calories || 0) / calorieGoal) * 100, 100);
-  const proteinGoal = profile?.dailyProteinGoal || 50;
-  const proteinProgress = Math.min(((todaysNutrition?.protein || 0) / proteinGoal) * 100, 100);
-  const carbsGoal = profile?.dailyCarbsGoal || 250;
-  const carbsProgress = Math.min(((todaysNutrition?.carbs || 0) / carbsGoal) * 100, 100);
-  const fatGoal = profile?.dailyFatGoal || 65;
-  const fatProgress = Math.min(((todaysNutrition?.fat || 0) / fatGoal) * 100, 100);
+  // Memoize progress values to prevent recalculation on every render
+  const progressValues = useMemo(() => {
+    const calorieGoal = profile?.dailyCalorieGoal || 2000;
+    const calorieProgress = Math.round(Math.min(((todayStats?.calories || 0) / calorieGoal) * 100, 100));
+    const proteinGoal = profile?.dailyProteinGoal || 50;
+    const proteinProgress = Math.round(Math.min(((todaysNutrition?.protein || 0) / proteinGoal) * 100, 100));
+    const carbsGoal = profile?.dailyCarbsGoal || 250;
+    const carbsProgress = Math.round(Math.min(((todaysNutrition?.carbs || 0) / carbsGoal) * 100, 100));
+    const fatGoal = profile?.dailyFatGoal || 65;
+    const fatProgress = Math.round(Math.min(((todaysNutrition?.fat || 0) / fatGoal) * 100, 100));
+    
+    return { calorieProgress, proteinProgress, carbsProgress, fatProgress, calorieGoal };
+  }, [profile, todayStats, todaysNutrition]);
   
   // Calculate streak (mock data for now)
   const [streak, setStreak] = useState(7);
+  const [refreshing, setRefreshing] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   // Memoize navigation handlers
   const handleCameraPress = useCallback(() => {
     navigation.navigate('Camera');
   }, [navigation]);
 
-  const handleProfilePress = useCallback(() => {
+  const handleProfilePress = useCallback(async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('Profile');
   }, [navigation]);
 
@@ -72,36 +84,97 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
     navigation.navigate('Favorites');
   }, [navigation]);
 
-  const handleMealPress = useCallback((mealId: string) => {
+  const handleMealPress = useCallback(async (mealId: string) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // TODO: Navigate to meal detail screen
     console.log('Meal pressed:', mealId);
+  }, []);
+  
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // TODO: Refresh data
+    setTimeout(() => setRefreshing(false), 1500);
   }, []);
 
   return (
     <Container style={styles.container}>
-      <LinearGradient
-        colors={[theme.colors.primary[500] + '20', theme.colors.background]}
-        style={styles.gradientBackground}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 0.3 }}
+      {/* Animated gradient background */}
+      <AnimatedGradientBackground 
+        type="mesh" 
+        animated={true} 
+        speed="slow"
       />
       
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      {/* Wave decoration */}
+      <WaveBackground 
+        position="bottom" 
+        height={150} 
+        colors={[
+          theme.colors.primary[300] + '20',
+          theme.colors.primary[400] + '15',
+          theme.colors.primary[500] + '10',
+        ]}
+        speed="slow"
+      />
+      
+      <Animated.ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary[500]}
+            colors={[theme.colors.primary[500]]}
+          />
+        }
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+      >
         {/* Header */}
-        <AnimatedCard
-          animationType="fadeIn"
-          delay={0}
-          style={styles.transparentCard}
-          elevation={0}
+        <GlassCard
+          animated={true}
+          animationDelay={0}
+          style={styles.headerCard}
+          glassBorder={true}
         >
           <View style={styles.header}>
-            <View>
-              <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
-                Good {getTimeOfDay()}
-              </Text>
-              <Text style={[styles.userName, { color: theme.colors.text.primary }]}>
-                {user?.firstName || 'Welcome'} 👋
-              </Text>
+            <View style={styles.headerLeft}>
+              <Animated.View style={{
+                transform: [{
+                  rotate: scrollY.interpolate({
+                    inputRange: [0, 100],
+                    outputRange: ['0deg', '360deg'],
+                    extrapolate: 'clamp',
+                  })
+                }]
+              }}>
+                <Image 
+                  source={require('../../assets/logo_cropped.png')} 
+                  style={styles.headerLogo}
+                  resizeMode="contain"
+                />
+              </Animated.View>
+              <View style={styles.greetingContainer}>
+                <Text 
+                  style={[styles.greeting, { color: theme.colors.textSecondary }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Good {getTimeOfDay()}
+                </Text>
+                <Text 
+                  style={[styles.userName, { color: theme.colors.text.primary }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {user?.first_name || 'Welcome'} 👋
+                </Text>
+              </View>
             </View>
 
             <View style={styles.headerRight}>
@@ -110,131 +183,187 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
                 size="medium"
                 style={styles.streakCounter}
               />
-              <TouchableOpacity onPress={handleProfilePress} style={styles.avatarContainer}>
-                <LinearGradient
-                  colors={[theme.colors.primary[400], theme.colors.primary[600]]}
-                  style={styles.avatar}
-                >
-                  <Text style={[styles.avatarText, { color: '#FFFFFF' }]}>
-                    {(user?.firstName?.[0] || 'U').toUpperCase()}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <IconButton
+                icon={
+                  <LinearGradient
+                    colors={theme.colors.gradients.primary.colors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.avatarGradient}
+                  >
+                    <Text style={[styles.avatarText, { color: '#FFFFFF' }]}>
+                      {(user?.first_name?.[0] || 'U').toUpperCase()}
+                    </Text>
+                  </LinearGradient>
+                }
+                onPress={handleProfilePress}
+                variant="gradient"
+                size="medium"
+                style={styles.avatarButton}
+              />
             </View>
           </View>
-        </AnimatedCard>
+        </GlassCard>
 
         <Spacer size="xl" />
         
         {/* Hero Section - Daily Progress */}
-        <AnimatedCard
-          {...AnimatedCardPresets.hero}
-          delay={100}
+        <GradientCard
+          variant="primary"
+          animationType="zoomIn"
+          animationDelay={100}
           style={styles.heroCard}
+          elevation="high"
         >
           <Text style={[styles.heroTitle, { color: theme.colors.text.primary }]}>Today's Progress</Text>
           
-          <View style={styles.progressContainer}>
-            <MultiProgressRing
-              size={180}
-              strokeWidth={12}
-              rings={[
-                { progress: calorieProgress, color: theme.colors.primary[500], label: 'Calories' },
-                { progress: proteinProgress, color: '#10b981', label: 'Protein' },
-                { progress: carbsProgress, color: '#f59e0b', label: 'Carbs' },
-                { progress: fatProgress, color: '#ef4444', label: 'Fat' },
-              ]}
+          {/* 3D Nutrition Bubbles */}
+          <View style={styles.nutritionBubblesContainer}>
+            <NutritionBubble
+              value={todayStats?.calories || 0}
+              label="Calories"
+              unit="cal"
+              size="xlarge"
+              percentage={progressValues.calorieProgress}
+              gradientColors={theme.colors.gradients.primary.colors}
+              floatingAnimation={true}
+              onPress={() => console.log('Calories pressed')}
             />
-            <View style={styles.progressCenter}>
-              <Text style={[styles.progressValue, { color: theme.colors.primary[500] }]}>
-                {formatCalories(todayStats?.calories || 0)}
-              </Text>
-              <Text style={[styles.progressLabel, { color: theme.colors.textSecondary }]}>
-                of {formatCalories(calorieGoal)}
-              </Text>
-            </View>
           </View>
           
           <View style={styles.macroRow}>
-            <MacroIndicator label="Protein" value={todaysNutrition?.protein || 0} unit="g" color="#10b981" />
-            <MacroIndicator label="Carbs" value={todaysNutrition?.carbs || 0} unit="g" color="#f59e0b" />
-            <MacroIndicator label="Fat" value={todaysNutrition?.fat || 0} unit="g" color="#ef4444" />
+            <NutritionBubble
+              value={todaysNutrition?.protein || 0}
+              label="Protein"
+              unit="g"
+              size="medium"
+              percentage={(todaysNutrition?.protein || 0) / (profile?.dailyProteinGoal || 50) * 100}
+              gradientColors={theme.colors.gradients.success.colors}
+              floatingAnimation={true}
+            />
+            <NutritionBubble
+              value={todaysNutrition?.carbs || 0}
+              label="Carbs"
+              unit="g"
+              size="medium"
+              percentage={(todaysNutrition?.carbs || 0) / (profile?.dailyCarbsGoal || 250) * 100}
+              gradientColors={theme.colors.gradients.secondary.colors}
+              floatingAnimation={true}
+            />
+            <NutritionBubble
+              value={todaysNutrition?.fat || 0}
+              label="Fat"
+              unit="g"
+              size="medium"
+              percentage={(todaysNutrition?.fat || 0) / (profile?.dailyFatGoal || 65) * 100}
+              gradientColors={theme.colors.gradients.warning.colors}
+              floatingAnimation={true}
+            />
           </View>
-        </AnimatedCard>
+        </GradientCard>
 
         <Spacer size="xl" />
 
         {/* Quick Action - Camera */}
-        <AnimatedCard
-          animationType="slideUp"
-          delay={200}
+        <GlassCard
+          animated={true}
+          animationDelay={200}
           style={styles.cameraCard}
-          touchable
           onPress={handleCameraPress}
+          glassBorder={true}
+          intensity={100}
         >
           <LinearGradient
-            colors={[theme.colors.primary[500] + '10', theme.colors.primary[500] + '05']}
-            style={styles.cameraGradient}
+            colors={theme.colors.gradients.primary.colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cameraGradientBackground}
           >
             <View style={styles.cameraContent}>
               <View style={styles.cameraLeft}>
-                <Text style={[styles.cameraTitle, { color: theme.colors.text.primary }]}>Analyze Your Meal</Text>
-                <Text style={[styles.cameraSubtitle, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.cameraTitle, { color: '#FFFFFF' }]}>Analyze Your Meal</Text>
+                <Text style={[styles.cameraSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>
                   AI-powered nutrition insights
                 </Text>
               </View>
-              <View style={styles.cameraIcon}>
-                <Text style={styles.cameraEmoji}>📸</Text>
+              <View style={styles.cameraIconContainer}>
+                <Animated.View style={[
+                  styles.cameraIcon,
+                  {
+                    transform: [{
+                      scale: scrollY.interpolate({
+                        inputRange: [0, 100],
+                        outputRange: [1, 1.2],
+                        extrapolate: 'clamp',
+                      })
+                    }]
+                  }
+                ]}>
+                  <Ionicons name="camera" size={moderateScale(32)} color="#FFFFFF" />
+                </Animated.View>
               </View>
             </View>
             
-            <GradientButton
-              onPress={handleCameraPress}
-              variant="primary"
-              size="medium"
-              fullWidth
-              icon={<Text style={{ color: '#FFF', fontSize: 16 }}>→</Text>}
-              iconPosition="right"
-            >
-              Start Analysis
-            </GradientButton>
+            <View style={styles.cameraButtonContainer}>
+              <GradientButton
+                onPress={handleCameraPress}
+                variant="secondary"
+                size="medium"
+                fullWidth
+                icon={<Ionicons name="arrow-forward" size={moderateScale(20)} color="#FFF" />}
+                iconPosition="right"
+                style={styles.cameraButton}
+              >
+                Start Analysis
+              </GradientButton>
+            </View>
           </LinearGradient>
-        </AnimatedCard>
+        </GlassCard>
 
         <Spacer size="xl" />
 
         {/* Quick Stats */}
         <View style={styles.section}>
           <Row style={styles.statsRow}>
-            <AnimatedCard
-              animationType="scale"
-              delay={300}
+            <GlassCard
+              animated={true}
+              animationDelay={300}
               style={[styles.statCard, { flex: 1 }]}
+              intensity={90}
             >
+              <LinearGradient
+                colors={[theme.colors.gradients.ocean.colors[0] + '20', 'transparent']}
+                style={StyleSheet.absoluteFillObject}
+              />
               <View style={styles.statIconContainer}>
-                <Text style={styles.statIcon}>🍽️</Text>
+                <Ionicons name="restaurant" size={moderateScale(28)} color={theme.colors.primary[500]} />
               </View>
               <Text style={[styles.statValue, { color: theme.colors.text.primary }]}>
                 {todaysMeals?.length || 0}
               </Text>
               <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Meals Today</Text>
-            </AnimatedCard>
+            </GlassCard>
 
             <Spacer size="md" horizontal />
 
-            <AnimatedCard
-              animationType="scale"
-              delay={400}
+            <GlassCard
+              animated={true}
+              animationDelay={400}
               style={[styles.statCard, { flex: 1 }]}
+              intensity={90}
             >
+              <LinearGradient
+                colors={[theme.colors.gradients.info.colors[0] + '20', 'transparent']}
+                style={StyleSheet.absoluteFillObject}
+              />
               <View style={styles.statIconContainer}>
-                <Text style={styles.statIcon}>💧</Text>
+                <Ionicons name="water" size={moderateScale(28)} color={theme.colors.info[500]} />
               </View>
               <Text style={[styles.statValue, { color: theme.colors.text.primary }]}>
                 {0}
               </Text>
               <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Glasses of Water</Text>
-            </AnimatedCard>
+            </GlassCard>
           </Row>
         </View>
 
@@ -260,17 +389,18 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
 
           {todaysMeals.length > 0 ? (
             <View>
-              {todaysMeals.slice(0, 3).map((meal, index) => (
-                <AnimatedCard
+              {todaysMeals.slice(0, 2).map((meal, index) => (
+                <GradientCard
                   key={meal.id}
-                  animationType="slideUp"
-                  delay={600 + index * 100}
+                  variant="neutral"
+                  animationType="slideRight"
+                  animationDelay={600 + index * 100}
                   style={styles.mealCardAnimated}
-                  touchable
                   onPress={() => handleMealPress(meal.id)}
+                  elevation="medium"
                 >
                   <MealCard meal={meal} theme={theme} />
-                </AnimatedCard>
+                </GradientCard>
               ))}
             </View>
           ) : (
@@ -279,7 +409,11 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
               delay={600}
               style={styles.emptyCard}
             >
-              <Text style={styles.emptyIcon}>🍽️</Text>
+              <Image 
+                source={require('../../assets/logo_cropped.png')} 
+                style={styles.emptyIcon}
+                resizeMode="contain"
+              />
               <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
                 No meals logged yet today
               </Text>
@@ -314,7 +448,7 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
               onPress={handleViewFavorites}
             >
               <LinearGradient
-                colors={['#ef4444' + '20', '#ef4444' + '10']}
+                colors={[theme.colors.error[500] + '20', theme.colors.error[500] + '10']}
                 style={styles.quickActionGradient}
               >
                 <Text style={styles.quickActionIcon}>❤️</Text>
@@ -332,7 +466,7 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
               onPress={handleViewHistory}
             >
               <LinearGradient
-                colors={['#3b82f6' + '20', '#3b82f6' + '10']}
+                colors={[theme.colors.primary[500] + '20', theme.colors.primary[500] + '10']}
                 style={styles.quickActionGradient}
               >
                 <Text style={styles.quickActionIcon}>📊</Text>
@@ -343,7 +477,7 @@ export const HomeScreen: React.FC<Props> = React.memo(({ navigation }) => {
         </View>
 
         <Spacer size="xxl" />
-      </ScrollView>
+      </Animated.ScrollView>
     </Container>
   );
 });
@@ -362,15 +496,18 @@ interface MacroIndicatorProps {
   color: string;
 }
 
-const MacroIndicator: React.FC<MacroIndicatorProps> = ({ label, value, unit, color }) => (
-  <View style={styles.macroItem}>
-    <View style={[styles.macroDot, { backgroundColor: color }]} />
-    <Text style={styles.macroLabel}>{label}</Text>
-    <Text style={styles.macroValue}>
-      {value}{unit}
-    </Text>
-  </View>
-);
+const MacroIndicator: React.FC<MacroIndicatorProps> = ({ label, value, unit, color }) => {
+  const { theme } = useTheme();
+  return (
+    <View style={styles.macroItem}>
+      <View style={[styles.macroDot, { backgroundColor: color }]} />
+      <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
+        {value}{unit}
+      </Text>
+    </View>
+  );
+};
 
 interface MealCardProps {
   meal: any;
@@ -420,135 +557,203 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    height: 300,
+    height: moderateScale(300),
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 100,
+    paddingHorizontal: layout.containerPadding,
+    paddingTop: rs.xlarge,
+    paddingBottom: rs.xxlarge,
   },
   transparentCard: {
     backgroundColor: 'transparent',
     padding: 0,
+  },
+  headerCard: {
+    marginBottom: rs.large,
+    padding: rs.medium,
+  },
+  avatarButton: {
+    borderRadius: rTouchTarget.medium / 2,
+  },
+  avatarGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: rTouchTarget.medium / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+  },
+  headerLogo: {
+    width: moderateScale(40),
+    height: moderateScale(40),
+    marginRight: rs.medium,
+  },
+  greetingContainer: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: rs.medium,
+  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: rs.small,
+    flexShrink: 0,
   },
   greeting: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     opacity: 0.8,
   },
   userName: {
-    fontSize: 28,
+    fontSize: fontScale(28),
     fontWeight: 'bold',
-    marginTop: 4,
+    marginTop: rs.tiny,
   },
   avatarContainer: {
-    marginLeft: 12,
+    marginLeft: rs.medium,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: rTouchTarget.minimum,
+    height: rTouchTarget.minimum,
+    borderRadius: rTouchTarget.minimum / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 18,
+    fontSize: fontScale(18),
     fontWeight: 'bold',
   },
   streakCounter: {
-    marginRight: 8,
+    marginRight: rs.small,
+  },
+  quickCaptureButton: {
+    position: 'absolute',
+    bottom: -rs.large,
+    right: rs.large,
+    width: rTouchTarget.large,
+    height: rTouchTarget.large,
+    borderRadius: rTouchTarget.large / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  quickCaptureIcon: {
+    fontSize: fontScale(28),
+    color: '#FFFFFF',
   },
   heroCard: {
-    padding: 24,
+    padding: rs.xlarge,
     alignItems: 'center',
   },
+  nutritionBubblesContainer: {
+    alignItems: 'center',
+    marginVertical: rs.xlarge,
+  },
   heroTitle: {
-    fontSize: 20,
+    fontSize: fontScale(20),
     fontWeight: '600',
-    marginBottom: 20,
+    marginBottom: rs.large,
   },
   progressContainer: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 20,
+    marginVertical: rs.large,
+    marginBottom: rs.xxlarge,
   },
   progressCenter: {
     position: 'absolute',
     alignItems: 'center',
   },
   progressValue: {
-    fontSize: 32,
+    fontSize: fontScale(32),
     fontWeight: 'bold',
   },
   progressLabel: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: fontScale(14),
+    marginTop: rs.tiny,
   },
   macroRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginTop: 20,
+    marginTop: rs.large,
   },
   macroItem: {
     alignItems: 'center',
   },
   macroDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginBottom: 4,
+    width: moderateScale(8),
+    height: moderateScale(8),
+    borderRadius: moderateScale(4),
+    marginBottom: rs.tiny,
   },
   macroLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
+    fontSize: fontScale(12),
+    marginBottom: rs.tiny,
   },
   macroValue: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '600',
-    color: '#333',
   },
   cameraCard: {
     padding: 0,
     overflow: 'hidden',
   },
   cameraGradient: {
-    padding: 20,
-    borderRadius: 12,
+    padding: rs.large,
+    borderRadius: moderateScale(12),
+  },
+  cameraGradientBackground: {
+    flex: 1,
+    padding: rs.large,
+    borderRadius: moderateScale(16),
+  },
+  cameraIconContainer: {
+    width: moderateScale(60),
+    height: moderateScale(60),
+    borderRadius: moderateScale(30),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cameraButtonContainer: {
+    marginTop: rs.medium,
+  },
+  cameraButton: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
   },
   cameraContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: rs.medium,
   },
   cameraLeft: {
     flex: 1,
   },
   cameraTitle: {
-    fontSize: 18,
+    fontSize: fontScale(18),
     fontWeight: '600',
   },
   cameraSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: fontScale(14),
+    marginTop: rs.tiny,
   },
   cameraIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -563,83 +768,85 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: fontScale(18),
     fontWeight: '600',
   },
   seeAllText: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     fontWeight: '500',
   },
   statsRow: {
     width: '100%',
   },
   statCard: {
-    padding: 20,
+    padding: rs.large,
     alignItems: 'center',
   },
   statIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: moderateScale(48),
+    height: moderateScale(48),
+    borderRadius: moderateScale(24),
     backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: rs.medium,
   },
   statIcon: {
-    fontSize: 24,
+    fontSize: fontScale(24),
   },
   statValue: {
-    fontSize: 28,
+    fontSize: fontScale(28),
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: rs.tiny,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: fontScale(14),
   },
   mealCardAnimated: {
-    marginBottom: 12,
+    marginBottom: rs.medium,
   },
   mealCardContent: {
-    padding: 16,
+    padding: rs.medium,
   },
   mealInfo: {
     flex: 1,
   },
   mealInfoWithImage: {
-    marginLeft: 12,
+    marginLeft: rs.medium,
   },
   mealImage: {
-    borderRadius: 8,
+    borderRadius: moderateScale(8),
   },
   mealName: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   mealTime: {
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: fontScale(14),
+    marginTop: rs.tiny,
   },
   mealCalories: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '600',
   },
   emptyCard: {
-    padding: 40,
+    padding: rs.xxlarge,
     alignItems: 'center',
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
+    width: moderateScale(48),
+    height: moderateScale(48),
+    marginBottom: rs.medium,
+    opacity: 0.6,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: rs.small,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     textAlign: 'center',
   },
   quickActions: {
@@ -650,16 +857,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   quickActionGradient: {
-    padding: 24,
+    padding: rs.xlarge,
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: moderateScale(12),
   },
   quickActionIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: fontScale(24),
+    marginBottom: rs.small,
   },
   quickActionText: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     fontWeight: '500',
   },
 });

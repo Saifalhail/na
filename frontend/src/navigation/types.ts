@@ -19,17 +19,21 @@ export type MainStackParamList = {
     analysisData?: any;
     metadata?: any;
     context?: any;
+    source?: string;
   };
   Profile: undefined;
+  Settings: undefined;
   Notifications: undefined;
   TwoFactorSetup: undefined;
   TwoFactorVerify: { secret: string };
+  Auth: undefined;
 };
 
 export type HomeTabParamList = {
   Home: undefined;
   History: undefined;
   Favorites: undefined;
+  Settings: undefined;
 };
 
 // Navigation props for Auth screens

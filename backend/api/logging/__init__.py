@@ -1,9 +1,4 @@
 # Logging utilities
-from .structured_logging import (
-    setup_logging,
-    LogContext,
-    security_logger,
-    performance_logger,
-    CorrelationIdFilter,
-    NutritionAIJsonFormatter
-)
+from .structured_logging import (CorrelationIdFilter, LogContext,
+                                 NutritionAIJsonFormatter, performance_logger,
+                                 security_logger, setup_logging)

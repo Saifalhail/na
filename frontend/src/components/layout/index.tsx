@@ -3,6 +3,7 @@ import { View, ViewProps, StyleSheet, ViewStyle, ScrollView, ScrollViewProps } f
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
+import { rs } from '@/utils/responsive';
 
 // Container component
 interface ContainerProps extends ViewProps {
@@ -10,6 +11,8 @@ interface ContainerProps extends ViewProps {
   scroll?: boolean;
   padding?: 'none' | 'small' | 'medium' | 'large';
   center?: boolean;
+  maxWidth?: number;
+  fullHeight?: boolean;
   scrollProps?: ScrollViewProps;
 }
 
@@ -18,6 +21,8 @@ export const Container: React.FC<ContainerProps> = memo(({
   scroll = false,
   padding = 'medium',
   center = false,
+  maxWidth,
+  fullHeight = true,
   scrollProps,
   children,
   style,
@@ -27,16 +32,22 @@ export const Container: React.FC<ContainerProps> = memo(({
   const styles = createStyles(theme);
 
   const containerStyle: ViewStyle[] = [
-    styles.container,
+    fullHeight ? styles.container : styles.containerAutoHeight,
     styles[`${padding}Padding`],
     ...(center ? [styles.center] : []),
+    ...(maxWidth ? [{ maxWidth, alignSelf: 'center', width: '100%' }] : []),
     style as ViewStyle,
   ];
 
   const content = scroll ? (
     <ScrollView
-      contentContainerStyle={[containerStyle, styles.scrollContent]}
+      contentContainerStyle={[
+        containerStyle,
+        !fullHeight && styles.scrollContent,
+      ]}
+      style={fullHeight ? { flex: 1 } : undefined}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
       {...scrollProps}
     >
       {children}
@@ -48,7 +59,7 @@ export const Container: React.FC<ContainerProps> = memo(({
   );
 
   if (safe) {
-    return <SafeAreaView style={styles.safeArea}>{content}</SafeAreaView>;
+    return <SafeAreaView style={[styles.safeArea, !fullHeight && { flex: 0 }]}>{content}</SafeAreaView>;
   }
 
   return content;
@@ -60,6 +71,9 @@ interface RowProps extends ViewProps {
   justify?: 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
   wrap?: boolean;
   gap?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  overflow?: 'visible' | 'hidden' | 'scroll';
 }
 
 export const Row: React.FC<RowProps> = memo(({
@@ -67,6 +81,9 @@ export const Row: React.FC<RowProps> = memo(({
   justify = 'start',
   wrap = false,
   gap = 0,
+  minHeight,
+  maxWidth,
+  overflow = 'visible',
   children,
   style,
   ...props
@@ -95,6 +112,9 @@ export const Row: React.FC<RowProps> = memo(({
                 : 'center',
     flexWrap: wrap ? 'wrap' : 'nowrap',
     gap,
+    ...(minHeight && { minHeight }),
+    ...(maxWidth && { maxWidth }),
+    overflow,
   };
 
   return (
@@ -221,6 +241,9 @@ const createStyles = (theme: Theme) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    containerAutoHeight: {
+      backgroundColor: theme.colors.background,
+    },
     scrollContent: {
       flexGrow: 1,
     },
@@ -256,6 +279,9 @@ const createStyles = (theme: Theme) =>
       marginVertical: theme.spacing.l,
     },
   });
+
+// Export SafeAreaContainer components
+export * from './SafeAreaContainer';
 
 // Export all components as default for convenience
 export default {

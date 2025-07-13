@@ -1,4 +1,4 @@
-# Project Plan: Nutrition AI (NA)
+# Project Plan: Bite Sight
 
 **Version:** 5.0  
 **Status:** In Development  
@@ -24,7 +24,7 @@
 
 ## 1. Introduction & Core Principles
 
-This document is the single source of truth for the development of the Nutrition AI (NA) application. It provides a detailed, sequential roadmap from inception to deployment following a strict backend-first approach with security and best practices at its core.
+This document is the single source of truth for the development of the Bite Sight application. It provides a detailed, sequential roadmap from inception to deployment following a strict backend-first approach with security and best practices at its core.
 
 ### Core Development Principles
 

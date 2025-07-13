@@ -56,20 +56,24 @@ const defaultFilters: MealFilters = {
 
 const offlineManager = OfflineManager.getInstance();
 
-// Helper to calculate today's stats
+// Helper to calculate today's stats - optimized to use single pass
 const calculateTodayStats = (meals: Meal[]) => {
   const today = new Date();
-  const todaysMeals = meals.filter((meal) => {
-    const mealDate = new Date(meal.consumedAt || meal.createdAt);
-    return mealDate.toDateString() === today.toDateString();
-  });
-
-  return {
-    calories: todaysMeals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0),
-    protein: todaysMeals.reduce((sum, meal) => sum + (meal.totalProtein || 0), 0),
-    carbs: todaysMeals.reduce((sum, meal) => sum + (meal.totalCarbs || 0), 0),
-    fat: todaysMeals.reduce((sum, meal) => sum + (meal.totalFat || 0), 0),
-  };
+  const todayString = today.toDateString();
+  
+  return meals.reduce(
+    (stats, meal) => {
+      const mealDate = new Date(meal.consumedAt || meal.createdAt);
+      if (mealDate.toDateString() === todayString) {
+        stats.calories += meal.totalCalories || 0;
+        stats.protein += meal.totalProtein || 0;
+        stats.carbs += meal.totalCarbs || 0;
+        stats.fat += meal.totalFat || 0;
+      }
+      return stats;
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
 };
 
 export const useMealStore = create<MealState>()(

@@ -17,7 +17,7 @@ import {
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
-import { Container, Spacer, Row } from '@/components/layout';
+import { SafeAreaContainer, Container, Spacer, Row } from '@/components/layout';
 import { Card } from '@/components/base/Card';
 import { Button } from '@/components/base/Button';
 import { Modal } from '@/components/base/Modal';
@@ -28,8 +28,10 @@ import { useAuthStore } from '@/store/authStore';
 import { MainStackParamList } from '@/navigation/types';
 import { formatCalories, formatMacros } from '@/utils/formatting';
 import { LOADING_MESSAGES } from '@/constants';
+import { rs, rTouchTarget, scale, moderateScale, layout, dimensions, fontScale } from '@/utils/responsive';
 import { MealType, Meal } from '@/types/models';
 import { aiApi } from '@/services/api/endpoints/ai';
+import { getModernShadow } from '@/theme/shadows';
 
 type AnalysisResultsScreenNavigationProp = StackNavigationProp<
   MainStackParamList,
@@ -427,19 +429,28 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+    <SafeAreaContainer style={styles.container} scrollable scrollViewProps={{ showsVerticalScrollIndicator: false }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.navigate('HomeTabs')}>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('HomeTabs')}
+              accessible={true}
+              accessibilityLabel="Go back to home screen"
+              accessibilityRole="button"
+            >
               <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Home</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => setShowAddItemModal(true)}>
+            <TouchableOpacity 
+              onPress={() => setShowAddItemModal(true)}
+              accessible={true}
+              accessibilityLabel="Add new food item to meal"
+              accessibilityRole="button"
+            >
               <Text style={[styles.addButton, { color: theme.colors.primary[500] }]}>
                 + Add Item
               </Text>
@@ -482,7 +493,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           <Spacer size="lg" />
 
           {/* Total Calories with animated bubbles */}
-          <Card style={styles.caloriesCard}>
+          <Card style={[styles.caloriesCard, getModernShadow('card')]}>
             <Text style={[styles.caloriesTitle, { color: theme.colors.textSecondary }]}>
               Total Calories
             </Text>
@@ -498,7 +509,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
             {/* Confidence indicator */}
             <View style={styles.confidenceContainer}>
-              <View style={[styles.confidenceDot, { backgroundColor: '#4CAF50' }]} />
+              <View style={[styles.confidenceDot, { backgroundColor: theme.colors.success[500] }]} />
               <Text style={[styles.confidenceText, { color: theme.colors.textSecondary }]}>
                 High confidence analysis
               </Text>
@@ -508,34 +519,39 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           <Spacer size="lg" />
 
           {/* Interactive Macros Bubbles */}
-          <Card style={styles.macrosCard}>
+          <Card style={[styles.macrosCard, getModernShadow('card')]}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Macronutrients</Text>
 
             <Spacer size="md" />
 
-            <View style={styles.bubblesContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.bubblesScrollContainer}
+              style={styles.bubblesScroll}
+            >
               <MacroBubble
                 label="Protein"
                 value={analysisData.protein}
-                color="#4ECDC4"
+                color={theme.colors.success[500]}
                 theme={theme}
                 isAnimating={isRecalculating}
               />
               <MacroBubble
                 label="Carbs"
                 value={analysisData.carbs}
-                color="#45B7D1"
+                color={theme.colors.secondary[500]}
                 theme={theme}
                 isAnimating={isRecalculating}
               />
               <MacroBubble
                 label="Fat"
                 value={analysisData.fat}
-                color="#F7DC6F"
+                color={theme.colors.warning[500]}
                 theme={theme}
                 isAnimating={isRecalculating}
               />
-            </View>
+            </ScrollView>
 
             {/* Additional nutrients */}
             <View style={styles.additionalNutrients}>
@@ -548,7 +564,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           <Spacer size="lg" />
 
           {/* Interactive Food Items */}
-          <Card style={styles.itemsCard}>
+          <Card style={[styles.itemsCard, getModernShadow('card')]}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               Detected Items ({analysisData.items.length})
             </Text>
@@ -608,8 +624,6 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           </View>
 
           <Spacer size="xxl" />
-        </ScrollView>
-
         {/* Portion Edit Modal */}
         <Modal
           visible={showPortionModal}
@@ -688,8 +702,8 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
             <LoadingOverlay visible={true} message="Recalculating nutrition..." />
           </View>
         )}
-      </Container>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaContainer>
   );
 };
 
@@ -704,116 +718,39 @@ interface MacroBubbleProps {
 
 const MacroBubble: React.FC<MacroBubbleProps> = ({ label, value, color, theme, isAnimating }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-  const translateYAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
 
-  // Continuous floating animation
-  useEffect(() => {
-    const floatingAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(translateYAnim, {
-          toValue: -5,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateYAnim, {
-          toValue: 5,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateYAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    floatingAnimation.start();
-
-    return () => floatingAnimation.stop();
-  }, []);
-
-  // Bounce animation when recalculating
+  // Simple pulse animation when recalculating
   useEffect(() => {
     if (isAnimating) {
-      Animated.parallel([
-        Animated.sequence([
-          Animated.spring(scaleAnim, {
-            toValue: 1.3,
-            friction: 3,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            friction: 5,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(rotateAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(rotateAnim, {
-            toValue: 0,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(opacityAnim, {
-            toValue: 0.6,
-            duration: 250,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacityAnim, {
-            toValue: 1,
-            duration: 250,
-            useNativeDriver: true,
-          }),
-        ]),
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }, [isAnimating]);
-
-  const bubbleRotation = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
 
   return (
     <Animated.View 
       style={[
         styles.macroBubble, 
         { 
-          transform: [
-            { scale: scaleAnim },
-            { translateY: translateYAnim },
-            { rotate: bubbleRotation },
-          ],
-          opacity: opacityAnim,
+          transform: [{ scale: scaleAnim }],
         }
       ]}
     >
-      <View style={[styles.macroBubbleInner, { backgroundColor: color + '20' }]}>
+      <View style={[styles.macroBubbleInner, { backgroundColor: color + '15' }]}>
         <View style={[styles.macroIndicator, { backgroundColor: color }]} />
         <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>{formatMacros(value)}</Text>
         <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
       </View>
-      
-      {/* 3D Effect Shadow */}
-      <View 
-        style={[
-          styles.bubbleShadow,
-          {
-            backgroundColor: color + '10',
-          }
-        ]} 
-      />
     </Animated.View>
   );
 };
@@ -852,71 +789,58 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
   onRemove,
   isLast,
 }) => {
-  const translateX = useRef(new Animated.Value(0)).current;
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 5;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dx < 0) {
-          translateX.setValue(Math.max(gestureState.dx, -100));
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx < -50) {
-          Animated.spring(translateX, {
-            toValue: -80,
-            useNativeDriver: true,
-          }).start();
-        } else {
-          Animated.spring(translateX, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current;
-
   return (
     <View style={styles.foodItemContainer}>
-      <Animated.View
-        style={[styles.foodItem, { transform: [{ translateX }] }]}
-        {...panResponder.panHandlers}
+      <TouchableOpacity 
+        style={styles.foodItemTouchable} 
+        onPress={onEdit} 
+        activeOpacity={0.7}
+        accessible={true}
+        accessibilityLabel={`Edit ${item.name}, ${item.quantity} ${item.unit}, ${formatCalories(item.calories)}`}
+        accessibilityRole="button"
       >
-        <TouchableOpacity style={styles.foodItemTouchable} onPress={onEdit} activeOpacity={0.7}>
-          <View style={styles.foodItemContent}>
-            <View style={styles.foodItemHeader}>
-              <Text style={[styles.foodItemName, { color: theme.colors.text.primary }]}>{item.name}</Text>
-              {item.confidence && item.confidence > 0.8 && (
-                <View style={styles.confidenceBadge}>
-                  <Text style={styles.confidenceBadgeText}>✓</Text>
-                </View>
-              )}
-            </View>
-            <Text style={[styles.foodItemPortion, { color: theme.colors.textSecondary }]}>
-              {item.quantity} {item.unit}
-            </Text>
-            <Text style={[styles.foodItemMacros, { color: theme.colors.textSecondary }]}>
-              P: {formatMacros(item.protein)} • C: {formatMacros(item.carbs)} • F:{' '}
-              {formatMacros(item.fat)}
-            </Text>
+        <View style={styles.foodItemContent}>
+          <View style={styles.foodItemHeader}>
+            <Text style={[styles.foodItemName, { color: theme.colors.text.primary }]}>{item.name}</Text>
+            {item.confidence && item.confidence > 0.8 && (
+              <View style={[styles.confidenceBadge, { backgroundColor: theme.colors.success[500] }]}>
+                <Text style={styles.confidenceBadgeText}>✓</Text>
+              </View>
+            )}
           </View>
-          <View style={styles.foodItemRight}>
-            <Text style={[styles.foodItemCalories, { color: theme.colors.primary[500] }]}>
-              {formatCalories(item.calories)}
-            </Text>
-            <TouchableOpacity onPress={onEdit} style={styles.editButton}>
-              <Text style={styles.editIcon}>✏️</Text>
+          <Text style={[styles.foodItemPortion, { color: theme.colors.textSecondary }]}>
+            {item.quantity} {item.unit}
+          </Text>
+          <Text style={[styles.foodItemMacros, { color: theme.colors.textSecondary }]}>
+            P: {formatMacros(item.protein)} • C: {formatMacros(item.carbs)} • F:{' '}
+            {formatMacros(item.fat)}
+          </Text>
+        </View>
+        <View style={styles.foodItemRight}>
+          <Text style={[styles.foodItemCalories, { color: theme.colors.primary[500] }]}>
+            {formatCalories(item.calories)}
+          </Text>
+          <Row gap={8}>
+            <TouchableOpacity 
+              onPress={onEdit} 
+              style={styles.actionButton}
+              accessible={true}
+              accessibilityLabel={`Edit ${item.name} portion`}
+              accessibilityRole="button"
+            >
+              <Text style={styles.actionIcon}>✏️</Text>
             </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-
-      <TouchableOpacity style={styles.deleteButton} onPress={onRemove}>
-        <Text style={styles.deleteIcon}>🗑️</Text>
+            <TouchableOpacity 
+              onPress={onRemove} 
+              style={[styles.actionButton, { backgroundColor: theme.colors.error[100] }]}
+              accessible={true}
+              accessibilityLabel={`Remove ${item.name} from meal`}
+              accessibilityRole="button"
+            >
+              <Text style={styles.actionIcon}>🗑️</Text>
+            </TouchableOpacity>
+          </Row>
+        </View>
       </TouchableOpacity>
 
       {!isLast && (
@@ -929,7 +853,7 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: rs.large,
     paddingTop: 60,
   },
   loadingContainer: {
@@ -938,12 +862,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingImage: {
-    width: 200,
-    height: 200,
+    width: moderateScale(200),
+    height: moderateScale(200),
     borderRadius: 12,
   },
   loadingTip: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     textAlign: 'center',
   },
   header: {
@@ -952,11 +876,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   addButton: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   imageContainer: {
@@ -964,7 +888,7 @@ const styles = StyleSheet.create({
   },
   mealImage: {
     width: '100%',
-    height: 200,
+    height: moderateScale(200),
     borderRadius: 12,
   },
   cuisineTag: {
@@ -977,14 +901,14 @@ const styles = StyleSheet.create({
   },
   cuisineText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: fontScale(12),
     fontWeight: '600',
   },
   mealNameCard: {
     padding: 16,
   },
   mealNameInput: {
-    fontSize: 20,
+    fontSize: fontScale(20),
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -993,12 +917,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   caloriesTitle: {
-    fontSize: 16,
+    fontSize: fontScale(16),
   },
   caloriesValue: {
-    fontSize: 48,
+    fontSize: fontScale(48),
     fontWeight: 'bold',
-    marginTop: 8,
+    marginTop: rs.small,
   },
   recalculatingValue: {
     opacity: 0.5,
@@ -1006,58 +930,50 @@ const styles = StyleSheet.create({
   confidenceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: rs.medium,
   },
   confidenceDot: {
-    width: 8,
-    height: 8,
+    width: moderateScale(8),
+    height: moderateScale(8),
     borderRadius: 4,
-    marginRight: 6,
+    marginRight: rs.small,
   },
   confidenceText: {
-    fontSize: 12,
+    fontSize: fontScale(12),
   },
   macrosCard: {
-    padding: 20,
+    padding: rs.large,
+    marginHorizontal: layout.containerPadding,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: fontScale(18),
     fontWeight: '600',
   },
   bubblesContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 20,
+    marginBottom: rs.large,
   },
   macroBubble: {
     alignItems: 'center',
     position: 'relative',
   },
   macroBubbleInner: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: moderateScale(80),
+    height: moderateScale(80),
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  bubbleShadow: {
-    position: 'absolute',
-    width: 85,
-    height: 85,
-    borderRadius: 42.5,
-    top: 5,
-    left: 2.5,
-    zIndex: -1,
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   macroIndicator: {
     width: 12,
@@ -1066,7 +982,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   macroValue: {
-    fontSize: 20,
+    fontSize: fontScale(20),
     fontWeight: '600',
   },
   macroLabel: {
@@ -1094,12 +1010,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   foodItemContainer: {
-    position: 'relative',
     marginVertical: 4,
-  },
-  foodItem: {
-    backgroundColor: '#fff',
-    zIndex: 1,
   },
   foodItemTouchable: {
     flexDirection: 'row',
@@ -1114,7 +1025,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   foodItemName: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   confidenceBadge: {
@@ -1122,13 +1033,12 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#4CAF50',
     alignItems: 'center',
     justifyContent: 'center',
   },
   confidenceBadgeText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: fontScale(12),
     fontWeight: 'bold',
   },
   foodItemPortion: {
@@ -1143,38 +1053,29 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   foodItemCalories: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '600',
   },
-  editButton: {
-    marginTop: 4,
-    padding: 4,
-  },
-  editIcon: {
-    fontSize: 16,
-  },
-  deleteButton: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 80,
-    backgroundColor: '#FF3B30',
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  deleteIcon: {
-    fontSize: 20,
+  actionIcon: {
+    fontSize: fontScale(16),
   },
   itemDivider: {
     height: 1,
-    marginTop: 8,
+    marginTop: rs.small,
   },
   notesCard: {
     padding: 16,
   },
   notesLabel: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
     marginBottom: 8,
   },
@@ -1196,7 +1097,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalItemName: {
-    fontSize: 18,
+    fontSize: fontScale(18),
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -1210,7 +1111,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.1)',
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
+    fontSize: fontScale(16),
     textAlign: 'center',
   },
   unitInput: {
@@ -1219,7 +1120,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.1)',
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
+    fontSize: fontScale(16),
     textAlign: 'center',
   },
   addItemInput: {
@@ -1227,7 +1128,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.1)',
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
+    fontSize: fontScale(16),
   },
   recalculatingOverlay: {
     position: 'absolute',
@@ -1238,5 +1139,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  bubblesScrollContainer: {
+    paddingHorizontal: rs.medium,
+    gap: rs.small,
+  },
+  bubblesScroll: {
+    flexGrow: 0,
+    marginVertical: rs.medium,
   },
 });

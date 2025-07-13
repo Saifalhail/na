@@ -58,7 +58,7 @@ export const useAnalytics = () => {
     analytics.initialize(user.id);
     analytics.identify(user.id, {
       email: user.email,
-      createdAt: user.dateJoined,
+      createdAt: user.date_joined,
     });
   }
 

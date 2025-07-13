@@ -415,6 +415,14 @@ EOF
         log_info "Using enhanced WSL/OneDrive cache clearing..."
     fi
     
+    # Check if running in non-interactive mode
+    if [ -n "$CI" ] || [ -n "$EXPO_NO_INTERACTIVE" ] || [ ! -t 0 ]; then
+        log_info "Detected non-interactive environment"
+        export CI=1
+        export EXPO_NO_INTERACTIVE=1
+        EXPO_OPTS="$EXPO_OPTS --non-interactive --no-dev-client"
+    fi
+    
     # Start Expo with enhanced options
     log_info "Starting with options: $EXPO_OPTS"
     npx expo start $EXPO_OPTS &

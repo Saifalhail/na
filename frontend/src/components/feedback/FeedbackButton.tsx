@@ -3,6 +3,7 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { useFeedback } from '@/hooks/useFeedback';
+import { rs } from '@/utils/responsive';
 
 interface FeedbackButtonProps {
   style?: any;

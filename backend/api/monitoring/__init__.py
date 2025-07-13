@@ -1,7 +1,3 @@
 # Monitoring utilities
-from .sentry_config import (
-    init_sentry,
-    capture_message,
-    capture_exception,
-    SentryContextMiddleware
-)
+from .sentry_config import (SentryContextMiddleware, capture_exception,
+                            capture_message, init_sentry)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Container, Spacer } from '@/components/layout';
+import { SafeAreaContainer, Container, Spacer } from '@/components/layout';
 import { TextInput } from '@/components/base/TextInput';
 import { Button } from '@/components/base/Button';
 import { Card } from '@/components/base/Card';
@@ -13,6 +13,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useMealStore } from '@/store/mealStore';
 import { useDebounce, usePerformanceMonitor } from '@/utils/performance';
 import type { Meal } from '@/types/models';
+import { rs, rTouchTarget, scale, moderateScale, layout } from '@/utils/responsive';
 
 interface MealCardProps {
   meal: Meal;
@@ -239,7 +240,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
 
   if (error) {
     return (
-      <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaContainer style={styles.container}>
         <ErrorDisplay
           error={error}
           onRetry={() => {
@@ -247,26 +248,28 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
             loadMeals();
           }}
         />
-      </Container>
+      </SafeAreaContainer>
     );
   }
 
   return (
-    <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaContainer style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text.primary }]}>Meal History</Text>
 
         <Spacer size="md" />
 
         <View style={styles.searchContainer}>
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search meals..."
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-            style={styles.searchInput}
-          />
+          <View style={styles.searchInputWrapper}>
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search meals..."
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+              style={styles.searchInput}
+            />
+          </View>
           <Button onPress={handleSearch} variant="primary" style={styles.searchButton}>
             Search
           </Button>
@@ -309,7 +312,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
       />
 
       {isLoading && <LoadingOverlay visible={true} message="Loading meals..." />}
-    </Container>
+    </SafeAreaContainer>
   );
 });
 
@@ -318,41 +321,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingHorizontal: layout.containerPadding,
+    paddingTop: rs.medium,
+    paddingBottom: rs.medium,
   },
   title: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
     fontWeight: 'bold',
     textAlign: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+  },
+  searchInputWrapper: {
+    flex: 1,
+    marginRight: rs.small,
   },
   searchInput: {
-    flex: 1,
+    width: '100%',
   },
   searchButton: {
-    paddingHorizontal: 20,
+    paddingHorizontal: rs.large,
   },
   activeFilters: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: rs.medium,
   },
   activeFiltersText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
   },
   clearFiltersButton: {
     paddingHorizontal: 0,
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: layout.containerPadding,
+    paddingBottom: rs.xlarge,
   },
   emptyListContent: {
     flexGrow: 1,
@@ -378,8 +384,8 @@ const styles = StyleSheet.create({
   },
   // Meal Card Styles
   mealCard: {
-    marginVertical: 8,
-    padding: 16,
+    marginVertical: rs.small,
+    padding: rs.medium,
   },
   mealHeader: {
     flexDirection: 'row',
@@ -393,10 +399,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   favoriteButton: {
-    padding: 4,
+    padding: rs.small,
+    minWidth: rTouchTarget.minimum,
+    minHeight: rTouchTarget.minimum,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: rs.small,
   },
   favoriteIcon: {
-    fontSize: 20,
+    fontSize: moderateScale(24),
   },
   mealInfo: {
     flexDirection: 'row',
@@ -425,13 +436,16 @@ const styles = StyleSheet.create({
   },
   mealActions: {
     flexDirection: 'row',
-    gap: 8,
+    justifyContent: 'space-between',
   },
   actionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingHorizontal: rs.medium,
+    paddingVertical: rs.small,
+    borderRadius: rs.small,
     flex: 1,
+    marginHorizontal: rs.tiny,
+    minHeight: rTouchTarget.minimum,
+    justifyContent: 'center',
   },
   actionText: {
     fontSize: 14,

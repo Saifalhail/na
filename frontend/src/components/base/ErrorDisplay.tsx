@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-nativ
 import { useTheme } from '@theme/ThemeContext';
 import { Theme } from '@theme/index';
 import Card from './Card';
+import { borderRadius, rs } from '@/utils/responsive';
 
 interface ErrorDisplayProps {
   error?: string | Error | null;

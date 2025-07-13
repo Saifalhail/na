@@ -1,4 +1,5 @@
 import { CAMERA_CONFIG } from '@/constants';
+import { rs } from '@/utils/responsive';
 
 export const sleep = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));

@@ -28,10 +28,22 @@ const getApiUrl = (): string => {
     return EXPO_PUBLIC_API_URL_IOS;
   }
 
-  // Fallback to default URL
-  const defaultUrl = EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-  console.log('Using default API URL:', defaultUrl);
-  return defaultUrl;
+  // Improved fallback URLs for better network connectivity
+  let fallbackUrl = EXPO_PUBLIC_API_URL;
+  
+  if (!fallbackUrl) {
+    // Try different localhost variations based on platform
+    if (Platform.OS === 'android') {
+      fallbackUrl = 'http://10.0.2.2:8000'; // Android emulator host IP
+    } else if (Platform.OS === 'ios') {
+      fallbackUrl = 'http://localhost:8000'; // iOS simulator
+    } else {
+      fallbackUrl = 'http://127.0.0.1:8000'; // Default
+    }
+  }
+  
+  console.log('Using fallback API URL:', fallbackUrl);
+  return fallbackUrl;
 };
 
 export const API_URL = getApiUrl();

@@ -1,12 +1,12 @@
 import { enableDemoMode } from '@/config/env';
 
 export const APP_CONFIG = {
-  NAME: 'Nutrition AI',
+  NAME: 'Bite Sight',
   VERSION: '1.0.0',
-  DESCRIPTION: 'AI-powered nutritional analysis from food images',
-  SUPPORT_EMAIL: 'support@nutritionai.com',
-  PRIVACY_POLICY_URL: 'https://nutritionai.com/privacy',
-  TERMS_OF_SERVICE_URL: 'https://nutritionai.com/terms',
+  DESCRIPTION: 'AI-powered nutrition insights from food images',
+  SUPPORT_EMAIL: 'support@bitesight.app',
+  PRIVACY_POLICY_URL: 'https://bitesight.app/privacy',
+  TERMS_OF_SERVICE_URL: 'https://bitesight.app/terms',
   ENABLE_DEMO_MODE: enableDemoMode,
 };
 
@@ -17,11 +17,11 @@ export const API_CONFIG = {
 };
 
 export const CAMERA_CONFIG = {
-  QUALITY: 0.8,
+  QUALITY: 0.6, // Reduced from 0.8 to improve performance and reduce file size
   ASPECT_RATIO: [4, 3] as [number, number],
   ALLOW_EDITING: true,
   MEDIA_TYPES: 'Images' as const,
-  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_FILE_SIZE: 3 * 1024 * 1024, // Reduced from 5MB to 3MB
   SUPPORTED_FORMATS: ['jpg', 'jpeg', 'png', 'heic'],
 };
 

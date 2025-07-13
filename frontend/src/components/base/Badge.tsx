@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
+import { borderRadius, rs } from '@/utils/responsive';
 
 export type BadgeVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
 export type BadgeSize = 'small' | 'medium' | 'large';

@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useRef } from 'react';
+import { rs } from '@/utils/responsive';
 import {
   FlatList,
   FlatListProps,

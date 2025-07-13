@@ -9,6 +9,7 @@ import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useTwoFactorStore } from '@/store/twoFactorStore';
 import { AuthStackParamList } from '@/navigation/types';
+import { rs } from '@/utils/responsive';
 
 type TwoFactorSetupScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'TwoFactorSetup'>;
 

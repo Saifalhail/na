@@ -8,6 +8,7 @@ import {
   Platform,
   Dimensions,
   Animated,
+  Image,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { Camera, CameraView } from 'expo-camera';
 import type { CameraType, FlashMode } from 'expo-camera';
+import { SafeAreaContainer, SafeAreaHeader } from '@/components/layout';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
 import { LoadingOverlay } from '@/components/base/Loading';
@@ -28,6 +30,9 @@ import { CameraOptionsSheet, CameraOptions } from '@/components/camera/CameraOpt
 import { SmartCameraOverlay } from '@/components/camera/SmartCameraOverlay';
 import { toastManager } from '@/components/base/Toast';
 import { AnalysisRequest } from '@/types/api';
+import { rs, rTouchTarget, layout, zIndex, moderateScale, fontScale } from '@/utils/responsive';
+import { metadataCollectionService } from '@/services/metadata/MetadataCollectionService';
+import { smartPhotoGuidanceService, PhotoQualityAssessment, RealTimeGuidance } from '@/services/camera/SmartPhotoGuidanceService';
 
 type CameraScreenNavigationProp = StackNavigationProp<MainStackParamList, 'Camera'>;
 type CameraScreenRouteProp = RouteProp<MainStackParamList, 'Camera'>;
@@ -55,45 +60,15 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   const [angle, setAngle] = useState(45);
   const [isOptimalPosition, setIsOptimalPosition] = useState(false);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [photoQuality, setPhotoQuality] = useState<PhotoQualityAssessment | null>(null);
+  const [realTimeGuidance, setRealTimeGuidance] = useState<RealTimeGuidance | null>(null);
+  const [showQualityIndicator, setShowQualityIndicator] = useState(true);
 
   const cameraRef = useRef<any>(null);
-  const guideAnimation = useRef(new Animated.Value(0)).current;
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const captureTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Start guide animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(guideAnimation, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(guideAnimation, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Pulse animation for capture button
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnimation, {
-          toValue: 1.1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnimation, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
     // Get location permission and current location
     getLocationAsync();
 
@@ -103,6 +78,56 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
       }
     };
   }, []);
+
+  // Simplified photo guidance - removed heavy real-time analysis that was causing performance issues
+  useEffect(() => {
+    if (showCamera && showQualityIndicator) {
+      // Set basic optimal state after a short delay to allow camera to stabilize
+      const stabilizeTimeout = setTimeout(() => {
+        setIsOptimalPosition(true);
+        setRealTimeGuidance({
+          message: 'Camera ready - tap to capture',
+          isReady: true,
+          suggestions: []
+        });
+      }, 1000);
+
+      return () => {
+        clearTimeout(stabilizeTimeout);
+      };
+    }
+  }, [showCamera, showQualityIndicator]);
+
+  // Optimized pulse animation - reduced frequency and duration for better performance
+  useEffect(() => {
+    let pulseAnimationRef: any;
+    
+    if (showCamera && !isOptimalPosition && !isCapturing) {
+      pulseAnimationRef = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnimation, {
+            toValue: 1.03, // Reduced scale to minimize redraws
+            duration: 2000, // Increased duration to reduce frequency
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnimation, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulseAnimationRef.start();
+    } else {
+      pulseAnimation.setValue(1);
+    }
+
+    return () => {
+      if (pulseAnimationRef) {
+        pulseAnimationRef.stop();
+      }
+    };
+  }, [showCamera, isOptimalPosition, isCapturing]);
 
   const requestCameraPermissions = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -134,8 +159,29 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   const handleOpenCamera = async () => {
     const hasPermission = await requestCameraPermissions();
     if (hasPermission) {
-      // Show options sheet first
-      setShowOptionsSheet(true);
+      // Apply smart defaults based on time of day
+      const hour = new Date().getHours();
+      let defaultMealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' = 'snack';
+      
+      if (hour >= 6 && hour < 11) {
+        defaultMealType = 'breakfast';
+      } else if (hour >= 11 && hour < 15) {
+        defaultMealType = 'lunch';
+      } else if (hour >= 17 && hour < 21) {
+        defaultMealType = 'dinner';
+      }
+      
+      // Set smart defaults
+      setCameraOptions({
+        mealType: defaultMealType,
+        cuisines: [],
+        portionSize: 'medium',
+        diningContext: 'home', // Default to home dining
+      });
+      
+      // Go directly to camera for one-tap experience
+      setShowCamera(true);
+      toastManager.info(`Smart mode: ${defaultMealType} detected`);
     } else {
       Alert.alert('Permission Required', ERROR_MESSAGES.CAMERA_PERMISSION);
     }
@@ -165,23 +211,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
     }
   }, [isCapturing, isOptimalPosition]);
 
-  // Simulate brightness detection (in real app, would use camera exposure)
-  const updateCameraMetrics = useCallback(() => {
-    if (cameraRef.current) {
-      // Simulate metrics - in production, use actual camera data
-      setBrightness(0.6 + Math.random() * 0.2);
-      setDistance(Math.random() > 0.7 ? 'optimal' : Math.random() > 0.5 ? 'too_close' : 'too_far');
-      setAngle(35 + Math.random() * 20);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (showCamera) {
-      const interval = setInterval(updateCameraMetrics, 1000);
-      return () => clearInterval(interval);
-    }
-    return undefined;
-  }, [showCamera, updateCameraMetrics]);
+  // Removed updateCameraMetrics to improve performance - was running every 2 seconds unnecessarily
 
   const handleTakePicture = async () => {
     if (!cameraRef.current || isCapturing) return;
@@ -193,35 +223,64 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
       const photo = await cameraRef.current.takePictureAsync({
         quality: CAMERA_CONFIG.QUALITY,
         skipProcessing: false,
+        exif: false, // Disable EXIF to reduce file size
       });
 
-      // Prepare metadata for analysis
-      const metadata: AnalysisRequest['metadata'] = {
-        mealType: cameraOptions?.mealType,
-        cuisine: cameraOptions?.cuisines.join(', '),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      };
-
-      if (location) {
-        metadata.location = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        };
+      // Validate photo was captured successfully
+      if (!photo || !photo.uri) {
+        throw new Error('Failed to capture photo');
       }
 
+      // Collect comprehensive metadata for enhanced AI analysis
+      const userContext = {
+        mealType: cameraOptions?.mealType,
+        cuisine: cameraOptions?.cuisines.join(', '),
+        diningContext: cameraOptions?.diningContext,
+        notes: cameraOptions?.additionalNotes,
+        // Add camera options context
+        photoSequenceNumber: 1,
+        totalPhotosInSequence: 1,
+        photoAngle: 'top-down', // Could be detected from device orientation
+      };
+
+      // Collect comprehensive metadata
+      const metadata = await metadataCollectionService.collectComprehensiveMetadata(
+        photo.uri,
+        userContext
+      );
+
+      // Detect any photo quality issues
+      const qualityIssues = await metadataCollectionService.detectPhotoQualityIssues(photo.uri);
+      if (qualityIssues.length > 0) {
+        metadata.autoDetectedIssues = qualityIssues;
+      }
+
+      // Clear camera state before navigation
       setShowCamera(false);
-      navigation.navigate('AnalysisResults', { 
-        imageUri: photo.uri,
-        metadata,
-        context: cameraOptions,
+      setIsCapturing(false);
+      
+      // Navigate with proper error handling
+      requestAnimationFrame(() => {
+        navigation.navigate('AnalysisResults', { 
+          imageUri: photo.uri,
+          metadata,
+          context: cameraOptions,
+        });
       });
     } catch (error) {
       console.error('Error taking photo:', error);
-      Alert.alert('Error', ERROR_MESSAGES.GENERIC_ERROR);
-    } finally {
       setIsCapturing(false);
+      
+      // Show more specific error message
+      const errorMessage = error instanceof Error ? error.message : ERROR_MESSAGES.GENERIC_ERROR;
+      Alert.alert('Camera Error', `Failed to capture photo: ${errorMessage}`);
     }
   };
+
+  // Add alias for handleTakePhoto to fix the missing function error
+  const handleTakePhoto = useCallback(async () => {
+    return handleTakePicture();
+  }, []);
 
   const handleSelectFromGallery = async () => {
     const hasPermission = await requestGalleryPermissions();
@@ -241,7 +300,19 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
 
       if (!result.canceled && result.assets[0]) {
         const imageUri = result.assets[0].uri;
-        navigation.navigate('AnalysisResults', { imageUri });
+        
+        // Validate image URI before navigation
+        if (!imageUri) {
+          throw new Error('Invalid image selected');
+        }
+        
+        // Add slight delay to prevent white screen issues
+        setTimeout(() => {
+          navigation.navigate('AnalysisResults', { 
+            imageUri,
+            source: 'gallery' 
+          });
+        }, 100);
       }
     } catch (error) {
       console.error('Error selecting from gallery:', error);
@@ -303,62 +374,77 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
           facing={type}
           flash={flashMode}
         >
-          <View style={styles.cameraOverlay}>
-            {/* Header Controls */}
-            <View style={styles.cameraHeader}>
-              <TouchableOpacity onPress={handleGoBack} style={styles.cameraControl}>
-                <Text style={styles.controlIcon}>✕</Text>
+          {/* Smart Camera Overlay with guidance */}
+          <SmartCameraOverlay
+            brightness={brightness}
+            distance={distance}
+            angle={angle}
+            isCapturing={isCapturing}
+            showGuidance={showGuidance}
+            onOptimalPosition={handleOptimalPosition}
+          />
+
+          {/* Header Controls with SafeArea */}
+          <SafeAreaHeader transparent style={styles.cameraHeader}>
+            <View style={styles.cameraHeaderContent}>
+              <TouchableOpacity onPress={handleGoBack} style={styles.headerButton}>
+                <Text style={styles.headerButtonText}>✕</Text>
               </TouchableOpacity>
 
-              <View style={styles.cameraHeaderRight}>
-                <TouchableOpacity onPress={toggleFlash} style={styles.cameraControl}>
-                  <Text style={styles.controlIcon}>{getFlashIcon()}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={toggleCameraType}
-                  style={[styles.cameraControl, { marginLeft: 16 }]}
+              {/* Context Badge or Logo */}
+              {cameraOptions ? (
+                <Badge
+                  variant="primary"
+                  size="small"
+                  style={styles.contextBadgeHeader}
                 >
-                  <Text style={styles.controlIcon}>🔄</Text>
+                  {`${cameraOptions.mealType} • ${cameraOptions.cuisines[0] || 'All'}`}
+                </Badge>
+              ) : (
+                <Image 
+                  source={require('../../assets/logo_cropped.png')} 
+                  style={styles.cameraHeaderLogo}
+                  resizeMode="contain"
+                />
+              )}
+
+              <View style={styles.headerRightButtons}>
+                <TouchableOpacity onPress={toggleFlash} style={styles.headerButton}>
+                  <Text style={styles.headerButtonText}>{getFlashIcon()}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={toggleCameraType} style={styles.headerButton}>
+                  <Text style={styles.headerButtonText}>🔄</Text>
                 </TouchableOpacity>
               </View>
             </View>
+          </SafeAreaHeader>
 
-            {/* Smart Camera Overlay */}
-            <SmartCameraOverlay
-              brightness={brightness}
-              distance={distance}
-              angle={angle}
-              isCapturing={isCapturing}
-              showGuidance={showGuidance}
-              onOptimalPosition={handleOptimalPosition}
-            />
-            
-            {/* Context Badge */}
-            {cameraOptions && (
-              <View style={styles.contextBadge}>
-                <Badge
-                  variant="primary"
-                  size="medium"
+          {/* Simplified Bottom Controls */}
+          <View style={styles.cameraBottomContainer}>
+            <View style={styles.cameraBottomContent}>
+              {/* Secondary controls */}
+              <View style={styles.secondaryControls}>
+                <TouchableOpacity
+                  onPress={() => setShowOptionsSheet(true)}
+                  style={styles.secondaryButton}
+                  accessible={true}
+                  accessibilityLabel="Change meal context"
+                  accessibilityRole="button"
                 >
-                  {`${cameraOptions.mealType} • ${cameraOptions.cuisines.length > 0 ? cameraOptions.cuisines[0] : 'All cuisines'}`}
-                </Badge>
+                  <Text style={styles.secondaryButtonText}>⚙️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSelectFromGallery}
+                  style={styles.secondaryButton}
+                  accessible={true}
+                  accessibilityLabel="Select from gallery"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.secondaryButtonText}>🖼️</Text>
+                </TouchableOpacity>
               </View>
-            )}
 
-            {/* Bottom Controls */}
-            <View style={styles.cameraBottom}>
-              <TouchableOpacity
-                onPress={() => setShowOptionsSheet(true)}
-                style={styles.contextButton}
-                accessible={true}
-                accessibilityLabel="Change meal context"
-                accessibilityHint={getActionHint('open context options')}
-                accessibilityRole="button"
-              >
-                <Text style={styles.contextButtonText}>⚙️</Text>
-              </TouchableOpacity>
-
+              {/* Main capture button */}
               <Animated.View style={{ transform: [{ scale: pulseAnimation }] }}>
                 <TouchableOpacity
                   onPress={handleTakePicture}
@@ -370,9 +456,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
                   disabled={isCapturing}
                   accessible={true}
                   accessibilityLabel="Capture photo"
-                  accessibilityHint={getActionHint('capture')}
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: isCapturing }}
                 >
                   <View style={[
                     styles.captureButtonInner,
@@ -380,30 +464,19 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
                   ]} />
                 </TouchableOpacity>
               </Animated.View>
-              
+
+              {/* Toggle guidance */}
               <TouchableOpacity
                 onPress={() => {
                   setShowGuidance(!showGuidance);
-                  announce(showGuidance ? 'Guidance overlay hidden' : 'Guidance overlay shown');
+                  announce(showGuidance ? 'Guidance hidden' : 'Guidance shown');
                 }}
-                style={styles.guidanceToggle}
+                style={styles.toggleButton}
                 accessible={true}
-                accessibilityLabel="Toggle guidance overlay"
-                accessibilityHint={getActionHint('toggle guidance')}
+                accessibilityLabel="Toggle guidance"
                 accessibilityRole="button"
               >
-                <Text style={styles.guidanceToggleText}>{showGuidance ? '👁️' : '👁️‍🗨️'}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleSelectFromGallery}
-                style={styles.galleryButton}
-                accessible={true}
-                accessibilityLabel="Select from gallery"
-                accessibilityHint={getActionHint('open gallery')}
-                accessibilityRole="button"
-              >
-                <Text style={styles.galleryButtonText}>🖼️</Text>
+                <Text style={styles.toggleButtonText}>{showGuidance ? '👁️' : '👁️‍🗨️'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -421,10 +494,10 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaContainer style={styles.container} scrollable>
       <View style={styles.content}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleGoBack}>
+          <TouchableOpacity onPress={handleGoBack} style={styles.backButtonTouch}>
             <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Back</Text>
           </TouchableOpacity>
         </View>
@@ -432,8 +505,12 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
         <Spacer size="xl" />
 
         <View style={styles.centerContent}>
-          <View style={[styles.cameraIcon, { backgroundColor: theme.colors.surface }]}>
-            <Text style={styles.cameraIconText}>📷</Text>
+          <View style={styles.cameraIcon}>
+            <Image 
+              source={require('../../assets/logo.png')} 
+              style={styles.cameraIconImage}
+              resizeMode="contain"
+            />
           </View>
 
           <Spacer size="xl" />
@@ -522,7 +599,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
         onConfirm={handleOptionsConfirm}
         initialOptions={cameraOptions || undefined}
       />
-    </Container>
+    </SafeAreaContainer>
   );
 };
 
@@ -532,15 +609,19 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: rs.medium,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
+    marginBottom: rs.medium,
+  },
+  backButtonTouch: {
+    padding: rs.small,
+    marginLeft: -rs.small,
   },
   backButton: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '500',
   },
   centerContent: {
@@ -549,25 +630,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cameraIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: moderateScale(120),
+    height: moderateScale(120),
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: rs.large,
   },
-  cameraIconText: {
-    fontSize: 48,
+  cameraIconImage: {
+    width: moderateScale(120),
+    height: moderateScale(120),
   },
   title: {
-    fontSize: 28,
+    fontSize: fontScale(28),
     fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom: rs.medium,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     textAlign: 'center',
     lineHeight: 24,
-    paddingHorizontal: 20,
+    paddingHorizontal: rs.large,
+    marginBottom: rs.xlarge,
   },
   buttons: {
     width: '100%',
@@ -575,26 +659,29 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
+    marginBottom: rs.medium,
   },
   tips: {
-    paddingBottom: 40,
+    marginTop: rs.xlarge,
+    paddingBottom: rs.xlarge,
   },
   tipsTitle: {
-    fontSize: 16,
+    fontSize: fontScale(16),
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: rs.medium,
   },
   tipItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: rs.small,
   },
   tipIcon: {
-    fontSize: 16,
-    marginRight: 8,
+    fontSize: fontScale(16),
+    marginRight: rs.small,
+    marginTop: rs.tiny,
   },
   tipText: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     lineHeight: 20,
     flex: 1,
   },
@@ -606,99 +693,78 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  cameraOverlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
+  // Header styles
   cameraHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: zIndex.dropdown,
+  },
+  cameraHeaderContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingHorizontal: 20,
   },
-  cameraHeaderRight: {
+  headerButton: {
+    width: rTouchTarget.minimum,
+    height: rTouchTarget.minimum,
+    borderRadius: rTouchTarget.minimum / 2,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerButtonText: {
+    color: '#fff',
+    fontSize: fontScale(20),
+  },
+  headerRightButtons: {
     flexDirection: 'row',
+    gap: rs.small,
   },
-  cameraControl: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  controlIcon: {
-    color: '#fff',
-    fontSize: 20,
-  },
-  guidanceContainer: {
+  contextBadgeHeader: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginHorizontal: rs.small,
   },
-  plateGuide: {
-    width: screenWidth * 0.8,
-    height: screenWidth * 0.6,
-    borderWidth: 2,
-    borderRadius: 16,
-    position: 'relative',
+  cameraHeaderLogo: {
+    width: moderateScale(32),
+    height: moderateScale(32),
+    flex: 1,
   },
-  corner: {
+  // Bottom controls
+  cameraBottomContainer: {
     position: 'absolute',
-    width: 20,
-    height: 20,
-    borderColor: '#fff',
-    borderWidth: 3,
-  },
-  cornerTopLeft: {
-    top: -1,
-    left: -1,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-  },
-  cornerTopRight: {
-    top: -1,
-    right: -1,
-    borderLeftWidth: 0,
-    borderBottomWidth: 0,
-  },
-  cornerBottomLeft: {
-    bottom: -1,
-    left: -1,
-    borderRightWidth: 0,
-    borderTopWidth: 0,
-  },
-  cornerBottomRight: {
-    bottom: -1,
-    right: -1,
-    borderLeftWidth: 0,
-    borderTopWidth: 0,
-  },
-  guidanceText: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 20,
-    textAlign: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  cameraBottom: {
-    position: 'absolute',
-    bottom: 40,
+    bottom: 0,
     left: 0,
     right: 0,
+    paddingBottom: rs.xlarge,
+    zIndex: zIndex.dropdown,
+  },
+  cameraBottomContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 40,
+    justifyContent: 'space-between',
+    paddingHorizontal: layout.containerPadding,
+  },
+  secondaryControls: {
+    flexDirection: 'row',
+    gap: rs.small,
+  },
+  secondaryButton: {
+    width: rTouchTarget.small,
+    height: rTouchTarget.small,
+    borderRadius: rTouchTarget.small / 2,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: fontScale(24),
   },
   captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: rTouchTarget.large,
+    height: rTouchTarget.large,
+    borderRadius: rTouchTarget.large / 2,
     backgroundColor: '#fff',
     padding: 4,
   },
@@ -706,8 +772,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
   captureButtonOptimal: {
-    backgroundColor: '#4CAF50',
-    shadowColor: '#4CAF50',
+    backgroundColor: '#2196F3',
+    shadowColor: '#2196F3',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 10,
@@ -715,51 +781,27 @@ const styles = StyleSheet.create({
   },
   captureButtonInner: {
     flex: 1,
-    borderRadius: 36,
+    borderRadius: rTouchTarget.large / 2 - 6,
     backgroundColor: '#fff',
     borderWidth: 2,
     borderColor: '#000',
   },
   captureButtonInnerOptimal: {
     borderColor: '#fff',
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#2196F3',
   },
-  contextButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contextButtonText: {
-    fontSize: 24,
-  },
-  contextBadge: {
+  toggleButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 120 : 100,
-    left: 20,
-  },
-  guidanceToggle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    right: layout.containerPadding,
+    bottom: rs.small,
+    width: rTouchTarget.minimum,
+    height: rTouchTarget.minimum,
+    borderRadius: rTouchTarget.minimum / 2,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  guidanceToggleText: {
-    fontSize: 24,
-  },
-  galleryButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  galleryButtonText: {
-    fontSize: 24,
+  toggleButtonText: {
+    fontSize: fontScale(20),
   },
 });

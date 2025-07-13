@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "Bite Sight",
+    "slug": "bitesight",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "nutritionai",
+    "scheme": "bitesight",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",

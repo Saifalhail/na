@@ -39,23 +39,61 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
     {
       clientId: googleOAuthClientId || '',
       scopes: ['openid', 'profile', 'email'],
-      responseType: AuthSession.ResponseType.Token,
+      responseType: AuthSession.ResponseType.Code, // Use authorization code flow with PKCE
       redirectUri,
+      usePKCE: true, // Enable PKCE for security
+      additionalParameters: {},
+      extraParams: {},
     },
     discovery
   );
 
   useEffect(() => {
-    if (response?.type === 'success' && response.authentication) {
-      handleGoogleAuthResponse(response.authentication);
+    if (response?.type === 'success') {
+      if (response.params?.code) {
+        // Authorization code flow - we have an authorization code
+        handleGoogleCodeResponse(response.params);
+      } else if (response.authentication) {
+        // Fallback for implicit flow (shouldn't happen with our config)
+        handleGoogleAuthResponse(response.authentication);
+      }
     } else if (response?.type === 'error') {
-      const errorMessage = response.error?.message || 'Google login failed';
+      const errorMessage = response.error?.message || response.params?.error_description || 'Google login failed';
+      console.error('Google OAuth Error:', response.error, response.params);
       onError?.(errorMessage);
       Alert.alert('Login Failed', errorMessage);
     } else if (response?.type === 'cancel') {
       onError?.('Google sign-in was cancelled');
     }
   }, [response]);
+
+  const handleGoogleCodeResponse = async (params: any) => {
+    try {
+      if (!params.code) {
+        throw new Error('No authorization code received');
+      }
+
+      // Exchange authorization code for tokens via backend
+      // The backend should handle the code exchange securely
+      const result = await loginWithGoogle({
+        code: params.code,
+        state: params.state,
+        redirect_uri: redirectUri,
+      });
+
+      // Update user in auth store if login successful
+      if (result.user) {
+        updateUser(result.user);
+      }
+
+      onSuccess?.();
+    } catch (error: any) {
+      const errorMessage = error.message || 'Google login failed';
+      console.error('Google code exchange error:', error);
+      onError?.(errorMessage);
+      Alert.alert('Login Failed', errorMessage);
+    }
+  };
 
   const handleGoogleAuthResponse = async (authentication: AuthSession.TokenResponse) => {
     try {
@@ -79,13 +117,11 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
 
       const userInfo = await userInfoResponse.json();
 
-      // Call backend API with Google tokens
-      // Note: In a web-based flow, we typically use the access token
-      // Your backend should verify this token with Google
+      // Call backend API with Google tokens (fallback method)
       const result = await loginWithGoogle({
-        id_token: authentication.idToken || '', // May not be available in implicit flow
+        id_token: authentication.idToken || '',
         access_token: authentication.accessToken,
-        user_info: userInfo, // Send user info for backend processing
+        user_info: userInfo,
       });
 
       // Update user in auth store if login successful
@@ -96,6 +132,7 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
       onSuccess?.();
     } catch (error: any) {
       const errorMessage = error.message || 'Google login failed';
+      console.error('Google auth token error:', error);
       onError?.(errorMessage);
       Alert.alert('Login Failed', errorMessage);
     }
@@ -143,11 +180,13 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
 
   const getGoogleIcon = () => (
     <View style={styles.iconContainer}>
-      <View style={styles.googleIconWrapper}>
-        <View style={[styles.googleBar, { backgroundColor: '#4285F4' }]} />
-        <View style={[styles.googleBar, { backgroundColor: '#EA4335' }]} />
-        <View style={[styles.googleBar, { backgroundColor: '#FBBC04' }]} />
-        <View style={[styles.googleBar, { backgroundColor: '#34A853' }]} />
+      <View style={styles.googleIconBorder}>
+        <View style={styles.googleIconInner}>
+          <View style={[styles.googleSection, styles.googleBlue]} />
+          <View style={[styles.googleSection, styles.googleRed]} />
+          <View style={[styles.googleSection, styles.googleYellow]} />
+          <View style={[styles.googleSection, styles.googleGreen]} />
+        </View>
       </View>
     </View>
   );
@@ -192,14 +231,50 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  googleIconWrapper: {
-    width: 18,
-    height: 18,
-    position: 'relative',
+  googleIconBorder: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#dadce0',
   },
-  googleBar: {
+  googleIconInner: {
+    width: 16,
+    height: 16,
+    position: 'relative',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  googleSection: {
     position: 'absolute',
-    width: 9,
-    height: 9,
+    width: 8,
+    height: 8,
+  },
+  googleBlue: {
+    backgroundColor: '#4285F4',
+    top: 0,
+    right: 0,
+    borderTopRightRadius: 8,
+  },
+  googleRed: {
+    backgroundColor: '#EA4335',
+    top: 0,
+    left: 0,
+    borderTopLeftRadius: 8,
+  },
+  googleYellow: {
+    backgroundColor: '#FBBC04',
+    bottom: 0,
+    left: 0,
+    borderBottomLeftRadius: 8,
+  },
+  googleGreen: {
+    backgroundColor: '#34A853',
+    bottom: 0,
+    right: 0,
+    borderBottomRightRadius: 8,
   },
 });

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { rs } from '@/utils/responsive';
 import {
   View,
   Text,
@@ -51,13 +52,14 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   
   const animatedValue = useRef(new Animated.Value(0)).current;
   const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
+  // Fix precision error by rounding circumference calculation
+  const circumference = Math.round(radius * 2 * Math.PI * 100) / 100;
   
   const progressColor = color || theme.colors.primary[500];
   const bgColor = backgroundColor || theme.colors.neutral[200];
   
-  // Clamp progress between 0 and 100
-  const clampedProgress = Math.max(0, Math.min(100, progress));
+  // Clamp progress between 0 and 100 and round to prevent precision errors
+  const clampedProgress = Math.round(Math.max(0, Math.min(100, progress)) * 100) / 100;
   
   useEffect(() => {
     if (animated) {
@@ -73,12 +75,14 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
 
   const strokeDashoffset = animatedValue.interpolate({
     inputRange: [0, 100],
-    outputRange: [circumference, 0],
+    outputRange: [Math.round(circumference * 100) / 100, 0],
+    extrapolate: 'clamp',
   });
 
   const rotation = animatedValue.interpolate({
     inputRange: [0, 100],
     outputRange: ['0deg', '360deg'],
+    extrapolate: 'clamp',
   });
 
   const renderLabel = () => {
@@ -268,6 +272,9 @@ const createStyles = (theme: Theme) =>
     },
     multiLabelContainer: {
       position: 'absolute',
+      bottom: -40,
+      left: 0,
+      right: 0,
       alignItems: 'center',
       justifyContent: 'center',
       gap: theme.spacing.xs,

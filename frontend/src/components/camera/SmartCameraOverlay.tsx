@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { borderRadius, rs } from '@/utils/responsive';
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 import { ProgressRing } from '@/components/base/ProgressRing';
 import { Badge } from '@/components/base/Badge';
+import { Container, Row, Column, Spacer } from '@/components/layout';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -149,115 +151,101 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
     : theme.colors.neutral[300];
 
   return (
-    <View style={[styles.container, style]} pointerEvents="none">
-      {/* Animated Frame */}
-      <Animated.View
-        style={[
-          styles.frameContainer,
-          {
-            opacity: frameCornerAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.6, 1],
-            }),
-            transform: [{ scale: pulseAnim }],
-          },
-        ]}
-      >
-        <View style={[styles.frame, { borderColor: frameColor }]}>
-          {/* Corner indicators */}
-          <View style={[styles.corner, styles.cornerTopLeft, { borderColor: frameColor }]} />
-          <View style={[styles.corner, styles.cornerTopRight, { borderColor: frameColor }]} />
-          <View style={[styles.corner, styles.cornerBottomLeft, { borderColor: frameColor }]} />
-          <View style={[styles.corner, styles.cornerBottomRight, { borderColor: frameColor }]} />
-          
-          {/* Center crosshair */}
-          <View style={styles.crosshair}>
-            <View style={[styles.crosshairLine, styles.crosshairHorizontal, { backgroundColor: frameColor }]} />
-            <View style={[styles.crosshairLine, styles.crosshairVertical, { backgroundColor: frameColor }]} />
-          </View>
+    <Container safe={false} padding="none" style={[styles.container, style]} pointerEvents="none">
+      {/* Top Status Bar */}
+      <Row justify="center" style={styles.topSection}>
+        <View style={styles.readinessContainer}>
+          <ProgressRing
+            progress={captureReadiness}
+            size={60}
+            strokeWidth={4}
+            color={frameColor}
+            showLabel={false}
+            animated
+          >
+            {captureReadiness === 100 ? (
+              <Animated.View
+                style={{
+                  transform: [{ scale: checkmarkAnim }],
+                }}
+              >
+                <Text style={styles.checkmark}>✓</Text>
+              </Animated.View>
+            ) : (
+              <Text style={styles.readinessText}>{Math.round(captureReadiness)}%</Text>
+            )}
+          </ProgressRing>
         </View>
-      </Animated.View>
+      </Row>
+      
+      <Spacer size="small" />
 
-      {/* Readiness Indicator */}
-      <View style={styles.readinessContainer}>
-        <ProgressRing
-          progress={captureReadiness}
-          size={80}
-          strokeWidth={6}
-          color={frameColor}
-          showLabel={false}
-          animated
+      {/* Main Camera Frame Area */}
+      <Column align="center" justify="center" style={styles.mainSection}>
+        {/* Simplified Frame */}
+        <Animated.View
+          style={[
+            styles.frameContainer,
+            {
+              opacity: frameCornerAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.7, 1],
+              }),
+              transform: [{ scale: pulseAnim }],
+            },
+          ]}
         >
-          {captureReadiness === 100 ? (
-            <Animated.View
-              style={{
-                transform: [{ scale: checkmarkAnim }],
-              }}
-            >
-              <Text style={styles.checkmark}>✓</Text>
-            </Animated.View>
-          ) : (
-            <Text style={styles.readinessText}>{Math.round(captureReadiness)}%</Text>
-          )}
-        </ProgressRing>
-        <Text style={styles.readinessLabel}>Capture Ready</Text>
-      </View>
+          <View style={[styles.frame, { borderColor: frameColor }]}>
+            {/* Simple corner indicators */}
+            <View style={[styles.corner, styles.cornerTopLeft, { borderColor: frameColor }]} />
+            <View style={[styles.corner, styles.cornerTopRight, { borderColor: frameColor }]} />
+            <View style={[styles.corner, styles.cornerBottomLeft, { borderColor: frameColor }]} />
+            <View style={[styles.corner, styles.cornerBottomRight, { borderColor: frameColor }]} />
+          </View>
+        </Animated.View>
+        
+        {/* Subtle grid overlay */}
+        <View style={styles.gridContainer}>
+          <View style={[styles.gridLine, styles.gridVertical1]} />
+          <View style={[styles.gridLine, styles.gridVertical2]} />
+          <View style={[styles.gridLine, styles.gridHorizontal1]} />
+          <View style={[styles.gridLine, styles.gridHorizontal2]} />
+        </View>
+      </Column>
 
-      {/* Guidance Metrics */}
-      <View style={styles.metricsContainer}>
-        {metrics.map((metric, index) => (
-          <View key={metric.label} style={styles.metric}>
-            <View style={styles.metricHeader}>
-              <Text style={styles.metricLabel}>{metric.label}</Text>
+      <Spacer size="small" />
+
+      {/* Bottom Status Section */}
+      <Column align="center" style={styles.bottomSection}>
+        {/* Compact Metrics Row */}
+        <Row justify="center" gap={12} style={styles.metricsRow}>
+          {metrics.map((metric) => (
+            <View key={metric.label} style={styles.compactMetric}>
               <Badge
                 variant={metric.optimal ? 'success' : 'warning'}
                 size="small"
               >
                 {metric.optimal ? '✓' : '!'}
               </Badge>
+              <Text style={styles.compactMetricLabel}>{metric.label}</Text>
             </View>
-            <View style={styles.metricBar}>
-              <View
-                style={[
-                  styles.metricFill,
-                  {
-                    width: `${metric.value}%`,
-                    backgroundColor: metric.optimal 
-                      ? theme.colors.success[500] 
-                      : theme.colors.warning[500],
-                  },
-                ]}
-              />
-            </View>
-            <Text style={[
-              styles.metricMessage,
-              { color: metric.optimal ? theme.colors.success[600] : theme.colors.warning[600] }
-            ]}>
-              {metric.message}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Guidance Text */}
-      <View style={styles.guidanceTextContainer}>
-        <Text style={styles.guidanceText}>
-          {captureReadiness === 100
-            ? 'Perfect! Tap to capture'
-            : captureReadiness > 66
-            ? 'Almost there...'
-            : 'Adjust position for best results'}
-        </Text>
-      </View>
-
-      {/* Grid Lines (optional) */}
-      <View style={styles.gridContainer}>
-        <View style={[styles.gridLine, styles.gridVertical1]} />
-        <View style={[styles.gridLine, styles.gridVertical2]} />
-        <View style={[styles.gridLine, styles.gridHorizontal1]} />
-        <View style={[styles.gridLine, styles.gridHorizontal2]} />
-      </View>
-    </View>
+          ))}
+        </Row>
+        
+        <Spacer size="xs" />
+        
+        {/* Status Message */}
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>
+            {captureReadiness === 100
+              ? 'Perfect! Tap to capture'
+              : captureReadiness > 66
+              ? 'Almost there...'
+              : 'Adjust position for best results'}
+          </Text>
+        </View>
+      </Column>
+    </Container>
   );
 };
 
@@ -265,12 +253,23 @@ const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       ...StyleSheet.absoluteFillObject,
-      alignItems: 'center',
-      justifyContent: 'center',
+      paddingTop: 60,
+      paddingBottom: 120,
+      paddingHorizontal: theme.spacing.m,
+    },
+    topSection: {
+      height: 80,
+    },
+    mainSection: {
+      flex: 1,
+      position: 'relative',
+    },
+    bottomSection: {
+      height: 80,
     },
     frameContainer: {
-      width: screenWidth * 0.85,
-      height: screenWidth * 0.65,
+      width: screenWidth * 0.75,
+      height: screenWidth * 0.55,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -278,166 +277,113 @@ const createStyles = (theme: Theme) =>
       width: '100%',
       height: '100%',
       borderWidth: 2,
-      borderRadius: theme.borderRadius.xl,
+      borderRadius: theme.borderRadius.lg,
       position: 'relative',
     },
     corner: {
       position: 'absolute',
-      width: 30,
-      height: 30,
+      width: 24,
+      height: 24,
       borderWidth: 3,
     },
     cornerTopLeft: {
-      top: -1,
-      left: -1,
+      top: -2,
+      left: -2,
       borderRightWidth: 0,
       borderBottomWidth: 0,
-      borderTopLeftRadius: theme.borderRadius.xl,
+      borderTopLeftRadius: theme.borderRadius.lg,
     },
     cornerTopRight: {
-      top: -1,
-      right: -1,
+      top: -2,
+      right: -2,
       borderLeftWidth: 0,
       borderBottomWidth: 0,
-      borderTopRightRadius: theme.borderRadius.xl,
+      borderTopRightRadius: theme.borderRadius.lg,
     },
     cornerBottomLeft: {
-      bottom: -1,
-      left: -1,
+      bottom: -2,
+      left: -2,
       borderRightWidth: 0,
       borderTopWidth: 0,
-      borderBottomLeftRadius: theme.borderRadius.xl,
+      borderBottomLeftRadius: theme.borderRadius.lg,
     },
     cornerBottomRight: {
-      bottom: -1,
-      right: -1,
+      bottom: -2,
+      right: -2,
       borderLeftWidth: 0,
       borderTopWidth: 0,
-      borderBottomRightRadius: theme.borderRadius.xl,
-    },
-    crosshair: {
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      width: 40,
-      height: 40,
-      transform: [{ translateX: -20 }, { translateY: -20 }],
-    },
-    crosshairLine: {
-      position: 'absolute',
-      opacity: 0.3,
-    },
-    crosshairHorizontal: {
-      width: '100%',
-      height: 1,
-      top: '50%',
-    },
-    crosshairVertical: {
-      width: 1,
-      height: '100%',
-      left: '50%',
+      borderBottomRightRadius: theme.borderRadius.lg,
     },
     readinessContainer: {
-      position: 'absolute',
-      top: 60,
       alignItems: 'center',
     },
     readinessText: {
-      fontSize: 20,
+      fontSize: 16,
       fontFamily: theme.typography.fontFamily.bold,
       fontWeight: '700',
       color: theme.colors.text.primary,
     },
     checkmark: {
-      fontSize: 32,
+      fontSize: 24,
       color: theme.colors.success[500],
       fontWeight: 'bold',
     },
-    readinessLabel: {
-      marginTop: theme.spacing.s,
-      fontSize: theme.typography.fontSize.sm,
-      fontFamily: theme.typography.fontFamily.medium,
-      color: theme.colors.textSecondary,
-    },
-    metricsContainer: {
-      position: 'absolute',
-      right: 20,
-      top: '50%',
-      transform: [{ translateY: -80 }],
-      gap: theme.spacing.m,
-    },
-    metric: {
-      marginBottom: theme.spacing.m,
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-      padding: theme.spacing.s,
-      borderRadius: theme.borderRadius.md,
-      minWidth: 120,
-    },
-    metricHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: theme.spacing.xs,
-    },
-    metricLabel: {
-      fontSize: theme.typography.fontSize.xs,
-      fontFamily: theme.typography.fontFamily.medium,
-      color: theme.colors.neutral[700],
-    },
-    metricBar: {
-      height: 4,
-      backgroundColor: theme.colors.neutral[200],
-      borderRadius: 2,
-      overflow: 'hidden',
-      marginBottom: theme.spacing.xs,
-    },
-    metricFill: {
-      height: '100%',
-      borderRadius: 2,
-    },
-    metricMessage: {
-      fontSize: theme.typography.fontSize.xs,
-      fontFamily: theme.typography.fontFamily.regular,
-    },
-    guidanceTextContainer: {
-      position: 'absolute',
-      bottom: 100,
-      paddingHorizontal: theme.spacing.xl,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      paddingVertical: theme.spacing.m,
+    metricsRow: {
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      paddingHorizontal: theme.spacing.m,
+      paddingVertical: theme.spacing.s,
       borderRadius: theme.borderRadius.full,
     },
-    guidanceText: {
+    compactMetric: {
+      alignItems: 'center',
+      gap: 4,
+    },
+    compactMetricLabel: {
+      fontSize: theme.typography.fontSize.xs,
+      fontFamily: theme.typography.fontFamily.medium,
+      color: theme.colors.neutral[600],
+    },
+    statusContainer: {
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      paddingHorizontal: theme.spacing.l,
+      paddingVertical: theme.spacing.s,
+      borderRadius: theme.borderRadius.full,
+    },
+    statusText: {
       color: '#fff',
-      fontSize: theme.typography.fontSize.base,
+      fontSize: theme.typography.fontSize.sm,
       fontFamily: theme.typography.fontFamily.medium,
       textAlign: 'center',
     },
     gridContainer: {
-      ...StyleSheet.absoluteFillObject,
-      opacity: 0.1,
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      opacity: 0.15,
     },
     gridLine: {
       position: 'absolute',
       backgroundColor: '#fff',
     },
     gridVertical1: {
-      left: '33.33%',
+      left: '33.3%',
       width: 1,
       height: '100%',
     },
     gridVertical2: {
-      left: '66.66%',
+      left: '66.7%',
       width: 1,
       height: '100%',
     },
     gridHorizontal1: {
-      top: '33.33%',
+      top: '33.3%',
       width: '100%',
       height: 1,
     },
     gridHorizontal2: {
-      top: '66.66%',
+      top: '66.7%',
       width: '100%',
       height: 1,
     },

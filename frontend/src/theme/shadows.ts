@@ -38,11 +38,43 @@ const createShadow = (
 
 export const shadows: ShadowScale = {
   none: createShadow(0, 0, 0, 0),
-  sm: createShadow(1, 2, 0.05, 1),
-  base: createShadow(1, 3, 0.1, 2),
-  md: createShadow(4, 6, 0.1, 4),
-  lg: createShadow(10, 15, 0.1, 6),
-  xl: createShadow(20, 25, 0.1, 8),
+  sm: createShadow(1, 2, 0.08, 2),
+  base: createShadow(2, 4, 0.12, 4),
+  md: createShadow(4, 8, 0.15, 8),
+  lg: createShadow(8, 16, 0.18, 12),
+  xl: createShadow(16, 24, 0.2, 16),
+};
+
+// Modern shadow utilities for enhanced design
+export const modernShadows = {
+  button: {
+    shadowColor: '#2196F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  modal: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  floating: {
+    shadowColor: '#2196F3',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
 };
 
 // Platform-specific shadow utilities
@@ -57,6 +89,23 @@ export const getShadow = (level: keyof ShadowScale): Shadow => {
       shadowRadius: shadow.shadowRadius,
       elevation: 0,
     };
+  } else {
+    return {
+      shadowColor: 'transparent',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      elevation: shadow.elevation,
+    };
+  }
+};
+
+// Get modern shadow utility
+export const getModernShadow = (type: keyof typeof modernShadows): Shadow => {
+  const shadow = modernShadows[type];
+  
+  if (Platform.OS === 'ios') {
+    return shadow;
   } else {
     return {
       shadowColor: 'transparent',

@@ -1,4 +1,5 @@
 import React, { ReactNode, ReactElement } from 'react';
+import { rs } from '@/utils/responsive';
 import {
   View,
   Text,

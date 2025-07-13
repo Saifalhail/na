@@ -1,29 +1,9 @@
 # Import all views for easy access
-from .health import (
-    HealthCheckView,
-    ReadinessCheckView,
-    LivenessCheckView,
-    MetricsView
-)
-
-from .auth import (
-    RegisterView,
-    EmailVerifyView,
-    LoginView,
-    RefreshTokenView,
-    LogoutView,
-    PasswordResetRequestView,
-    PasswordResetConfirmView,
-    PasswordChangeView,
-    ProfileView,
-    TokenVerifyView
-)
-
-from .ai import (
-    AnalyzeImageView,
-    RecalculateNutritionView
-)
-
-from .meals import (
-    MealViewSet
-)
+from .ai import AnalyzeImageView, RecalculateNutritionView
+from .auth import (EmailVerifyView, LoginView, LogoutView, PasswordChangeView,
+                   PasswordResetConfirmView, PasswordResetRequestView,
+                   ProfileView, RefreshTokenView, RegisterView,
+                   TokenVerifyView)
+from .health import (HealthCheckView, LivenessCheckView, MetricsView,
+                     ReadinessCheckView, ServiceHealthCheckView)
+from .meals import MealViewSet

@@ -3,6 +3,7 @@ import { View, Image, Text, StyleSheet, TouchableOpacity, Alert } from 'react-na
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import { rs } from '@/utils/responsive';
 
 interface ProfileAvatarProps {
   size?: 'small' | 'medium' | 'large';
@@ -33,8 +34,8 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
       return { uri: user.avatar };
     }
 
-    if (user?.socialAvatarUrl) {
-      return { uri: user.socialAvatarUrl };
+    if (user?.social_avatar_url) {
+      return { uri: user.social_avatar_url };
     }
 
     // Return null for default avatar (will show initials)
@@ -44,8 +45,8 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   const getInitials = () => {
     if (!user) return '?';
 
-    const firstName = user.firstName || '';
-    const lastName = user.lastName || '';
+    const firstName = user.first_name || '';
+    const lastName = user.last_name || '';
 
     if (firstName && lastName) {
       return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -76,7 +77,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
         {
           text: 'Use Social Avatar',
           onPress: () => useSocialAvatar(),
-          style: user?.socialAvatarUrl ? 'default' : 'cancel',
+          style: user?.social_avatar_url ? 'default' : 'cancel',
         },
         {
           text: 'Cancel',
@@ -139,9 +140,9 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   };
 
   const useSocialAvatar = () => {
-    if (user?.socialAvatarUrl) {
-      onImageSelect?.(user.socialAvatarUrl);
-      // updateUser({ avatar: user.socialAvatarUrl });
+    if (user?.social_avatar_url) {
+      onImageSelect?.(user.social_avatar_url);
+      // updateUser({ avatar: user.social_avatar_url });
     }
   };
 

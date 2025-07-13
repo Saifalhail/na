@@ -7,6 +7,7 @@ import { Button } from '@/components/base/Button';
 import { useTheme } from '@/hooks/useTheme';
 import { AuthStackParamList } from '@/navigation/types';
 import { APP_CONFIG } from '@/constants';
+import { rs } from '@/utils/responsive';
 
 type WelcomeScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Welcome'>;
 
@@ -28,9 +29,13 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
-        {/* Logo/Icon placeholder */}
-        <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary[500] }]}>
-          <Text style={[styles.logoText, { color: theme.colors.background }]}>🍽️</Text>
+        {/* Bite Sight Logo */}
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('../../assets/logo.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <Spacer size="xl" />
@@ -128,12 +133,12 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 120,
     height: 120,
-    borderRadius: 60,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoText: {
-    fontSize: 48,
+  logo: {
+    width: 120,
+    height: 120,
   },
   title: {
     fontSize: 32,

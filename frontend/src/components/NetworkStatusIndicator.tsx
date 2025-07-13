@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useOffline } from '@/hooks/useOffline';
+import { rs } from '@/utils/responsive';
 
 export const NetworkStatusIndicator: React.FC = () => {
   const { theme } = useTheme();
