@@ -31,13 +31,15 @@ services:
 
   web:
     build:
-      context: .
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile
       target: development
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
+      - ../backend:/app
       - static_volume:/app/static
       - media_volume:/app/media
+      - logs_volume:/app/logs
     ports:
       - "8000:8000"
     environment:
@@ -55,14 +57,23 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   celery:
     build:
-      context: .
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile
       target: development
     command: celery -A core worker -l info
     volumes:
-      - .:/app
+      - ../backend:/app
     environment:
       - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/nutritiondb
       - REDIS_URL=redis://redis:6379/0
@@ -77,11 +88,12 @@ services:
 
   celery-beat:
     build:
-      context: .
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile
       target: development
     command: celery -A core beat -l info
     volumes:
-      - .:/app
+      - ../backend:/app
     environment:
       - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/nutritiondb
       - REDIS_URL=redis://redis:6379/0
@@ -95,7 +107,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - static_volume:/static:ro
       - media_volume:/media:ro
       - ./ssl:/etc/ssl/certs
@@ -107,3 +119,4 @@ volumes:
   redis_data:
   static_volume:
   media_volume:
+  logs_volume:

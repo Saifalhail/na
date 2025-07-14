@@ -33,7 +33,8 @@ services:
 
   web:
     build:
-      context: .
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile
       target: production
     environment:
       - DEBUG=False
@@ -67,7 +68,8 @@ services:
 
   celery:
     build:
-      context: .
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile
       target: production
     command: celery -A core worker -l info --concurrency=4
     environment:
@@ -94,7 +96,8 @@ services:
 
   celery-beat:
     build:
-      context: .
+      context: ../backend
+      dockerfile: ../docker/backend/Dockerfile
       target: production
     command: celery -A core beat -l info
     environment:
@@ -118,7 +121,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
       - static_volume:/static:ro
       - media_volume:/media:ro
       - ./ssl:/etc/ssl/certs:ro
