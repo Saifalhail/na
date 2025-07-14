@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
     refresh: '/auth/refresh/',
     verify: '/auth/verify/',
     verifyEmail: '/auth/verify-email/',
+    emailCode: '/auth/email-code/',  // Simple email verification codes
     passwordReset: '/auth/password/reset/',
     passwordResetConfirm: '/auth/password/reset/confirm/',
     passwordChange: '/auth/password/change/',
@@ -31,14 +32,15 @@ export const API_ENDPOINTS = {
 
   // Two-Factor Authentication
   twoFactor: {
-    setup: '/auth/2fa/enable/',
+    setup: '/auth/2fa/setup/',
     verify: '/auth/2fa/verify/',
-    complete: '/auth/2fa/complete/',
     disable: '/auth/2fa/disable/',
     status: '/auth/2fa/status/',
-    qrCode: '/auth/2fa/qr-code/',
+    complete: '/auth/2fa/complete/',
+    qrCode: (deviceId: number) => `/auth/2fa/qr-code/${deviceId}/`,
     backupCodes: '/auth/2fa/backup-codes/',
-    generateBackupCodes: '/auth/2fa/backup-codes/',
+    verifyBackup: '/auth/2fa/verify-backup/',
+    generateBackupCodes: '/auth/2fa/generate-backup/',
   },
 
   // AI Analysis

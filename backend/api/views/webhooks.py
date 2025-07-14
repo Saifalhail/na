@@ -16,7 +16,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from twilio.request_validator import RequestValidator
 
-from api.tasks.sms_tasks import check_sms_delivery_status
+# SMS tasks removed - functionality deprecated
+# from api.tasks.sms_tasks import check_sms_delivery_status
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,8 @@ class TwilioStatusWebhookView(View):
         )
 
         # Process the status update asynchronously
-        check_sms_delivery_status.delay(message_sid)
+        # SMS delivery status checking disabled - functionality deprecated
+        # check_sms_delivery_status.delay(message_sid)
 
         # Return 200 OK to Twilio
         return HttpResponse(status=200)

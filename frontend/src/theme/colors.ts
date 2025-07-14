@@ -169,7 +169,7 @@ export const lightColors: Colors = {
   shadow: '#18181B',
   border: '#E4E4E7',
   borderLight: '#F4F4F5',
-  // New gradient system
+  // Blue/White focused gradient system
   gradients: {
     primary: {
       colors: ['#60A5FA', '#3B82F6', '#2563EB'],
@@ -177,7 +177,7 @@ export const lightColors: Colors = {
       end: { x: 1, y: 1 },
     },
     secondary: {
-      colors: ['#4ADE80', '#22C55E', '#16A34A'],
+      colors: ['#93C5FD', '#60A5FA', '#3B82F6'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
@@ -187,7 +187,7 @@ export const lightColors: Colors = {
       end: { x: 1, y: 1 },
     },
     warning: {
-      colors: ['#FBBF24', '#F59E0B', '#D97706'],
+      colors: ['#60A5FA', '#3B82F6', '#2563EB'], // Changed to blue theme
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
@@ -197,48 +197,51 @@ export const lightColors: Colors = {
       end: { x: 1, y: 1 },
     },
     info: {
-      colors: ['#60A5FA', '#3B82F6', '#2563EB'],
+      colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
-    sunset: {
-      colors: ['#FBBF24', '#F97316', '#EA580C'],
+    // Unified blue-based gradients (removed purple/pink themes)
+    blueLight: {
+      colors: ['#F0F4FF', '#E6EDFF', '#DBEAFE'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 0.8 },
     },
-    ocean: {
-      colors: ['#06B6D4', '#0891B2', '#0E7490'],
+    blueToWhite: {
+      colors: ['#3B82F6', '#60A5FA', '#FFFFFF'],
       start: { x: 0, y: 0 },
       end: { x: 0.8, y: 1 },
     },
-    forest: {
-      colors: ['#4ADE80', '#22C55E', '#15803D'],
+    whiteToBlue: {
+      colors: ['#FFFFFF', '#F0F4FF', '#E6EDFF'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
-    aurora: {
-      colors: ['#A855F7', '#9333EA', '#7C3AED'],
+    // Keep success for health-related items only
+    healthGreen: {
+      colors: ['#4ADE80', '#22C55E', '#15803D'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 0.5 },
     },
-    candy: {
-      colors: ['#F472B6', '#EC4899', '#DB2777'],
+    // Remove purple/pink themes entirely
+    ocean: {
+      colors: ['#93C5FD', '#60A5FA', '#3B82F6'], // Changed to blue
       start: { x: 0, y: 0 },
-      end: { x: 1, y: 1 },
+      end: { x: 0.8, y: 1 },
     },
-    midnight: {
-      colors: ['#6366F1', '#4F46E5', '#4338CA'],
+    aurora: {
+      colors: ['#DBEAFE', '#93C5FD', '#60A5FA'], // Changed to blue
       start: { x: 0, y: 0 },
-      end: { x: 0.5, y: 1 },
+      end: { x: 1, y: 0.5 },
     },
   },
-  // Accent colors for visual pop
+  // Blue-focused accent colors
   accent: {
-    purple: '#A855F7',
-    pink: '#EC4899',
-    cyan: '#06B6D4',
-    lime: '#84CC16',
-    amber: '#F59E0B',
+    lightBlue: '#93C5FD',
+    darkBlue: '#1D4ED8',
+    green: '#22C55E', // Only for health/success indicators
+    neutral: '#71717A',
+    white: '#FFFFFF',
   },
 };
 
@@ -342,7 +345,7 @@ export const darkColors: Colors = {
   shadow: '#000000',
   border: '#2D2D2D', // Softer border color
   borderLight: '#3D3D3D',
-  // New gradient system
+  // Blue/White focused gradient system (dark theme)
   gradients: {
     primary: {
       colors: ['#93C5FD', '#60A5FA', '#3B82F6'],
@@ -350,7 +353,7 @@ export const darkColors: Colors = {
       end: { x: 1, y: 1 },
     },
     secondary: {
-      colors: ['#86EFAC', '#4ADE80', '#22C55E'],
+      colors: ['#BFDBFE', '#93C5FD', '#60A5FA'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
@@ -360,7 +363,7 @@ export const darkColors: Colors = {
       end: { x: 1, y: 1 },
     },
     warning: {
-      colors: ['#FCD34D', '#FBBF24', '#F59E0B'],
+      colors: ['#93C5FD', '#60A5FA', '#3B82F6'], // Changed to blue theme
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
@@ -370,47 +373,50 @@ export const darkColors: Colors = {
       end: { x: 1, y: 1 },
     },
     info: {
-      colors: ['#93C5FD', '#60A5FA', '#3B82F6'],
+      colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
-    sunset: {
-      colors: ['#FCD34D', '#FB923C', '#F97316'],
+    // Unified blue-based gradients (dark theme)
+    blueLight: {
+      colors: ['#1E3A8A', '#1E40AF', '#1D4ED8'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 0.8 },
     },
-    ocean: {
-      colors: ['#67E8F9', '#22D3EE', '#06B6D4'],
+    blueToWhite: {
+      colors: ['#1E3A8A', '#3B82F6', '#93C5FD'],
       start: { x: 0, y: 0 },
       end: { x: 0.8, y: 1 },
     },
-    forest: {
-      colors: ['#86EFAC', '#4ADE80', '#22C55E'],
+    whiteToBlue: {
+      colors: ['#FFFFFF', '#DBEAFE', '#93C5FD'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
-    aurora: {
-      colors: ['#C4B5FD', '#A78BFA', '#8B5CF6'],
+    // Keep success for health-related items only
+    healthGreen: {
+      colors: ['#86EFAC', '#4ADE80', '#22C55E'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 0.5 },
     },
-    candy: {
-      colors: ['#F9A8D4', '#F472B6', '#EC4899'],
+    // Remove purple/pink themes entirely
+    ocean: {
+      colors: ['#BFDBFE', '#93C5FD', '#60A5FA'], // Changed to blue
       start: { x: 0, y: 0 },
-      end: { x: 1, y: 1 },
+      end: { x: 0.8, y: 1 },
     },
-    midnight: {
-      colors: ['#A5B4FC', '#818CF8', '#6366F1'],
+    aurora: {
+      colors: ['#EFF6FF', '#DBEAFE', '#93C5FD'], // Changed to blue
       start: { x: 0, y: 0 },
-      end: { x: 0.5, y: 1 },
+      end: { x: 1, y: 0.5 },
     },
   },
-  // Accent colors for visual pop
+  // Blue-focused accent colors (dark theme)
   accent: {
-    purple: '#C4B5FD',
-    pink: '#F9A8D4',
-    cyan: '#67E8F9',
-    lime: '#BEF264',
-    amber: '#FCD34D',
+    lightBlue: '#BFDBFE',
+    darkBlue: '#1E40AF',
+    green: '#4ADE80', // Only for health/success indicators
+    neutral: '#8D8D8D',
+    white: '#FFFFFF',
   },
 };

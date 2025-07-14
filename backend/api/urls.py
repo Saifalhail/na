@@ -21,8 +21,6 @@ v1_patterns = [
     path("auth/", include("api.auth.urls")),
     # Social authentication endpoints
     path("auth/social/", include("api.social.urls")),
-    # Firebase authentication endpoints
-    path("auth/firebase/", include("api.firebase.urls")),
     # AI Analysis endpoints (new)
     path("ai/", include("api.ai.urls")),
     # Meal endpoints

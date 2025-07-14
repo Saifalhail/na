@@ -7,6 +7,10 @@ export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+  EmailVerification: { 
+    email: string;
+    registrationData: any;
+  };
   TwoFactorSetup: undefined;
   TwoFactorVerify: { secret: string };
 };
@@ -32,6 +36,7 @@ export type MainStackParamList = {
 export type HomeTabParamList = {
   Home: undefined;
   History: undefined;
+  Camera: undefined;
   Favorites: undefined;
   Settings: undefined;
 };

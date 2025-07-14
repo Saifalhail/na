@@ -98,10 +98,37 @@ export const authApi = {
   },
 
   /**
-   * Verify email address
+   * Verify email address (link-based)
    */
   async verifyEmail(data: EmailVerification): Promise<void> {
     await api.post(API_ENDPOINTS.auth.verifyEmail, data);
+  },
+
+  /**
+   * Send email verification code
+   */
+  async sendEmailCode(email: string): Promise<void> {
+    if (__DEV__) {
+      console.log('📧 [AUTH] Sending email verification code to:', email);
+    }
+    await api.post(API_ENDPOINTS.auth.emailCode, {
+      email,
+      action: 'send'
+    });
+  },
+
+  /**
+   * Verify email code
+   */
+  async verifyEmailCode(email: string, code: string): Promise<void> {
+    if (__DEV__) {
+      console.log('✅ [AUTH] Verifying email code for:', email);
+    }
+    await api.post(API_ENDPOINTS.auth.emailCode, {
+      email,
+      action: 'verify',
+      code
+    });
   },
 
   /**

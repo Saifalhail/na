@@ -10,6 +10,15 @@ if (__DEV__) {
   debugApiConfig();
 }
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // Start with 1 second
+
+// Helper function for exponential backoff
+const getRetryDelay = (retryAttempt: number): number => {
+  return RETRY_DELAY * Math.pow(2, retryAttempt - 1); // 1s, 2s, 4s
+};
+
 // Create axios instance with unified configuration
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL, // API_URL already includes /api/v1
@@ -27,16 +36,50 @@ if (__DEV__) {
 // Track refresh token promise to prevent multiple simultaneous refreshes
 let refreshTokenPromise: Promise<TokenPair> | null = null;
 
-// Request interceptor
+// Request interceptor with performance tracking
 apiClient.interceptors.request.use(
   async (config) => {
+    // Initialize retry metadata
+    if (!config.metadata) {
+      config.metadata = {};
+    }
+    if (!config.metadata.retryCount) {
+      config.metadata.retryCount = 0;
+    }
+    
+    // Add request start time for measuring duration
+    config.metadata.startTime = performance.now();
+    
     if (__DEV__) {
-      console.log('📤 Making API request:', {
-        method: config.method?.toUpperCase(),
-        url: config.url,
-        baseURL: config.baseURL,
-        fullURL: `${config.baseURL}${config.url}`,
-      });
+      const timestamp = new Date().toISOString();
+      console.log(`\n📤 [API REQUEST] ${timestamp}`);
+      console.log('🎯 [API REQUEST] Endpoint:', config.url);
+      console.log('🔧 [API REQUEST] Method:', config.method?.toUpperCase());
+      console.log('🌐 [API REQUEST] Full URL:', `${config.baseURL}${config.url}`);
+      console.log('⏱️ [API REQUEST] Timeout:', config.timeout, 'ms');
+      
+      if (config.metadata.retryCount > 0) {
+        console.log('🔄 [API REQUEST] Retry attempt:', config.metadata.retryCount, 'of', MAX_RETRIES);
+        console.log('⏱️ [API REQUEST] Retry delay:', getRetryDelay(config.metadata.retryCount), 'ms');
+      }
+      
+      if (config.data) {
+        // Don't log sensitive data
+        const safeData = { ...config.data };
+        if (safeData.password) safeData.password = '***';
+        if (safeData.token) safeData.token = '***';
+        if (safeData.refresh) safeData.refresh = '***';
+        if (safeData.image) safeData.image = '<base64_image>';
+        console.log('📦 [API REQUEST] Payload:', safeData);
+        
+        // Log payload size for performance monitoring
+        const payloadSize = JSON.stringify(config.data).length;
+        console.log('📈 [API REQUEST] Payload size:', (payloadSize / 1024).toFixed(2), 'KB');
+      }
+      
+      if (config.params) {
+        console.log('🔍 [API REQUEST] Query Params:', config.params);
+      }
     }
 
     // Add auth token to requests
@@ -44,17 +87,22 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       if (__DEV__) {
-        console.log('🔐 Added auth token to request');
+        console.log('🔐 [API REQUEST] Auth token added (length:', token.length, 'chars)');
       }
     } else {
       if (__DEV__) {
-        console.log('⚠️ No auth token available for request');
+        console.log('⚠️ [API REQUEST] No auth token available - request will be unauthenticated');
       }
     }
 
     // Add platform info
     config.headers['X-Platform'] = 'mobile';
     config.headers['X-App-Version'] = process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0';
+    config.headers['X-Request-ID'] = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    if (__DEV__) {
+      console.log('🆔 [API REQUEST] Request ID:', config.headers['X-Request-ID']);
+    }
 
     return config;
   },
@@ -66,15 +114,44 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor with enhanced performance tracking
 apiClient.interceptors.response.use(
   (response) => {
     if (__DEV__) {
-      console.log('✅ API request successful:', {
-        status: response.status,
-        url: response.config?.url,
-        method: response.config?.method?.toUpperCase(),
-      });
+      const timestamp = new Date().toISOString();
+      const duration = response.config?.metadata?.startTime 
+        ? performance.now() - response.config.metadata.startTime 
+        : null;
+      
+      console.log(`\n✅ [API RESPONSE] ${timestamp}`);
+      console.log('🎯 [API RESPONSE] Endpoint:', response.config?.url);
+      console.log('🎉 [API RESPONSE] Status:', response.status, response.statusText);
+      console.log('⏱️ [API RESPONSE] Duration:', duration ? `${duration.toFixed(2)}ms` : 'N/A');
+      
+      // Performance metrics
+      if (duration) {
+        const perfLevel = duration < 200 ? '🟢' : duration < 500 ? '🟡' : '🔴';
+        console.log(`${perfLevel} [API PERFORMANCE] Response time: ${duration.toFixed(2)}ms`);
+      }
+      
+      // Response size analysis
+      const responseSize = response.data ? JSON.stringify(response.data).length : 0;
+      console.log('📦 [API RESPONSE] Data size:', 
+        responseSize ? `${(responseSize / 1024).toFixed(2)} KB (${responseSize} chars)` : 'No data');
+      
+      // If response has array data, log count
+      if (Array.isArray(response.data)) {
+        console.log('📊 [API RESPONSE] Array count:', response.data.length, 'items');
+      } else if (response.data?.results && Array.isArray(response.data.results)) {
+        console.log('📊 [API RESPONSE] Results count:', response.data.results.length, 'items');
+        console.log('📄 [API RESPONSE] Total count:', response.data.count || 'N/A');
+      }
+      
+      // Log response headers if useful
+      const requestId = response.config?.headers?.['X-Request-ID'];
+      if (requestId) {
+        console.log('🆔 [API RESPONSE] Request ID:', requestId);
+      }
     }
     // Clear any pending refresh promise on successful response
     refreshTokenPromise = null;
@@ -84,27 +161,57 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
     if (__DEV__) {
-      console.error('❌ API request failed:', {
-        url: error.config?.url,
-        method: error.config?.method?.toUpperCase(),
-        status: error.response?.status,
-        message: error.message,
-        hasResponse: !!error.response,
-      });
+      const timestamp = new Date().toISOString();
+      console.error(`\n❌ [API ERROR] ${timestamp}`);
+      console.error('🎯 [API ERROR] Endpoint:', error.config?.url);
+      console.error('🔧 [API ERROR] Method:', error.config?.method?.toUpperCase());
+      console.error('🛑 [API ERROR] Status:', error.response?.status || 'No response');
+      console.error('💬 [API ERROR] Message:', error.message);
+      
+      if (error.response?.data) {
+        console.error('📦 [API ERROR] Response data:', error.response.data);
+      }
     }
 
-    // Handle network errors with user-friendly messages
+    // Handle network errors with retry logic
     if (!error.response) {
+      const config = error.config as AxiosRequestConfig & { metadata?: any };
+      const retryCount = config?.metadata?.retryCount || 0;
+      const duration = config?.metadata?.startTime 
+        ? performance.now() - config.metadata.startTime 
+        : null;
+      
       if (__DEV__) {
-        console.error('🚫 Network error - no response received:', {
-          message: error.message,
-          code: error.code,
-          config: {
-            url: error.config?.url,
-            baseURL: error.config?.baseURL,
-            timeout: error.config?.timeout,
-          }
-        });
+        console.error('\n🚫 [NETWORK ERROR] No response from server');
+        console.error('🎯 [NETWORK ERROR] Target URL:', error.config?.baseURL + error.config?.url);
+        console.error('🚀 [NETWORK ERROR] Error code:', error.code || 'Unknown');
+        console.error('💬 [NETWORK ERROR] Message:', error.message);
+        console.error('⏱️ [NETWORK ERROR] Timeout setting:', error.config?.timeout, 'ms');
+        console.error('⏱️ [NETWORK ERROR] Failed after:', duration ? `${duration.toFixed(2)}ms` : 'N/A');
+        console.error('🔄 [NETWORK ERROR] Current retry count:', retryCount);
+        
+        // Log possible causes
+        if (error.code === 'ECONNABORTED') {
+          console.error('🕐 [NETWORK ERROR] Request timed out - server took too long to respond');
+        } else if (error.code === 'ERR_NETWORK') {
+          console.error('🌐 [NETWORK ERROR] Network connectivity issue - check internet connection');
+        }
+      }
+      
+      // Retry logic for network errors
+      if (retryCount < MAX_RETRIES && config) {
+        config.metadata.retryCount = retryCount + 1;
+        const delay = getRetryDelay(config.metadata.retryCount);
+        
+        if (__DEV__) {
+          console.log(`🔄 [RETRY] Will retry in ${delay}ms (attempt ${config.metadata.retryCount}/${MAX_RETRIES})`);
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        // Retry the request
+        return apiClient(config);
       }
       
       // Enhanced diagnostics for development environments
@@ -125,6 +232,8 @@ apiClient.interceptors.response.use(
           console.error('   ❌ Environment variables not loaded - .env file may not be read properly');
           console.error('   💡 Solution: Restart Metro bundler and check .env file location');
         }
+        
+        console.error('   🔥 All retry attempts exhausted after', retryCount, 'retries');
       }
       
       // Provide more specific error messages based on error type

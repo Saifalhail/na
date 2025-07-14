@@ -71,24 +71,9 @@ CONFIDENCE_ROUTING_CACHE_TTL = int(
     os.getenv("CONFIDENCE_ROUTING_CACHE_TTL", "3600")
 )  # 1 hour default
 
-# Firebase Configuration
-# SECURITY: All Firebase credentials must be set via environment variables
-FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
-FIREBASE_PROJECT_NUMBER = os.getenv("FIREBASE_PROJECT_NUMBER")
-FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
-FIREBASE_ANDROID_CLIENT_ID = os.getenv("FIREBASE_ANDROID_CLIENT_ID")
-FIREBASE_WEB_CLIENT_ID = os.getenv("FIREBASE_WEB_CLIENT_ID")
-FIREBASE_SERVICE_ACCOUNT_PATH = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
-FIREBASE_AUTH_ENABLED = os.getenv("FIREBASE_AUTH_ENABLED", "False") == "True"
-
-# Validate critical Firebase configuration
-if FIREBASE_AUTH_ENABLED:
-    if not FIREBASE_PROJECT_ID:
-        raise ValueError("FIREBASE_PROJECT_ID environment variable is required when Firebase auth is enabled")
-    if not FIREBASE_API_KEY:
-        raise ValueError("FIREBASE_API_KEY environment variable is required when Firebase auth is enabled")
-    if not FIREBASE_SERVICE_ACCOUNT_PATH:
-        raise ValueError("FIREBASE_SERVICE_ACCOUNT_PATH environment variable is required when Firebase auth is enabled")
+# Firebase Configuration (REMOVED - Using Django allauth only)
+# All Firebase authentication has been removed in favor of Django allauth
+# for simplified Google OAuth integration
 
 
 # Application definition
@@ -505,7 +490,6 @@ CELERY_ENABLE_UTC = True
 # Celery task routing
 CELERY_TASK_ROUTES = {
     "api.tasks.email_tasks.*": {"queue": "emails"},
-    "api.tasks.sms_tasks.*": {"queue": "sms"},
     "api.tasks.notification_tasks.*": {"queue": "notifications"},
     "api.tasks.malware_tasks.*": {"queue": "security"},
     "api.tasks.ai_tasks.*": {"queue": "ai_processing"},
@@ -525,11 +509,8 @@ PAYMENT_CURRENCY = "USD"
 PAYMENT_SUCCESS_URL = os.getenv("PAYMENT_SUCCESS_URL", "https://yourapp.com/success")
 PAYMENT_CANCEL_URL = os.getenv("PAYMENT_CANCEL_URL", "https://yourapp.com/cancel")
 
-# Twilio SMS Configuration
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
-TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
-TWILIO_STATUS_CALLBACK_URL = os.getenv("TWILIO_STATUS_CALLBACK_URL", "")
+# Twilio SMS Configuration (REMOVED - No longer using SMS authentication)
+# SMS authentication has been removed in favor of email-only authentication
 
 # Malware Scanning Configuration
 CLAMAV_SOCKET_PATH = os.getenv("CLAMAV_SOCKET_PATH", "/tmp/clamd.socket")

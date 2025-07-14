@@ -14,10 +14,7 @@ export const AppNavigator: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { theme } = useTheme();
 
-  console.log('🧭 [Navigation] AppNavigator render - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
-
   if (isLoading) {
-    console.log('🧭 [Navigation] Showing loading overlay');
     return <LoadingOverlay visible={true} />;
   }
 

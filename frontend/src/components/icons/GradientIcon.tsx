@@ -14,7 +14,7 @@ try {
 }
 
 interface GradientIconProps {
-  name: string;
+  name: any; // Use any to avoid strict Ionicons type checking
   size?: number;
   colors?: string[];
   style?: ViewStyle;
@@ -37,6 +37,11 @@ export const GradientIcon: React.FC<GradientIconProps> = ({
   const gradientColors = colors || defaultColors;
   const fallback = fallbackColor || theme.colors.primary[500];
 
+  // Ensure we have at least 2 colors for the gradient
+  const safeGradientColors = Array.isArray(gradientColors) && gradientColors.length >= 2 
+    ? gradientColors as [string, string, ...string[]]
+    : [theme.colors.primary[400], theme.colors.primary[600]] as [string, string];
+
   // Use MaskedView for gradient effect if available, otherwise fallback
   if (MaskedView) {
     try {
@@ -54,7 +59,7 @@ export const GradientIcon: React.FC<GradientIconProps> = ({
             }
           >
             <LinearGradient
-              colors={gradientColors}
+              colors={safeGradientColors}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{ width: size, height: size }}
@@ -71,7 +76,7 @@ export const GradientIcon: React.FC<GradientIconProps> = ({
   return (
     <View style={[{ width: size, height: size }, style]}>
       <LinearGradient
-        colors={gradientColors}
+        colors={safeGradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{

@@ -12,7 +12,8 @@ import { useAppOptimization } from '@/hooks/useAppOptimization';
 import LoadingComponents from '@/components/base/Loading';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { SplashScreen } from '@/components/SplashScreen';
-import { debugApiConfig, testApiConnectivity } from '@/config/api';
+import { debugApiConfig, testApiConnectivityAsync } from '@/config/api';
+import { getStorageInfo, cleanupStorage } from '@/utils/storageCleanup';
 
 
 function ThemedAppContent() {
@@ -30,16 +31,44 @@ function ThemedAppContent() {
     async function prepare() {
       try {
         // Debug API configuration at startup
-        console.log('🚀 [STARTUP] Initializing app...');
-        debugApiConfig();
-        
-        // Test API connectivity before proceeding
-        const isConnected = await testApiConnectivity();
-        if (!isConnected) {
-          console.warn('⚠️ [STARTUP] API connectivity test failed - authentication may not work');
+        if (__DEV__) {
+          console.log('🚀 [STARTUP] Initializing app...');
+          debugApiConfig();
         }
         
-        // Check auth status
+        // Check storage health and cleanup if needed
+        try {
+          const storageInfo = await getStorageInfo();
+          if (__DEV__) {
+            console.log('📊 [STARTUP] Storage info:', storageInfo);
+          }
+          
+          // If storage has too many keys, perform cleanup
+          if (storageInfo.totalKeys > 10000 || storageInfo.totalSize > 50 * 1024 * 1024) { // 50MB
+            console.log('🧹 [STARTUP] Storage cleanup needed...');
+            await cleanupStorage({ 
+              clearCache: true, 
+              clearPersistedStores: false, // Keep user data
+              verbose: __DEV__ 
+            });
+          }
+        } catch (storageError) {
+          console.error('🚨 [STARTUP] Storage error, performing emergency cleanup:', storageError);
+          try {
+            await cleanupStorage({ clearCache: true, verbose: __DEV__ });
+          } catch (cleanupError) {
+            console.error('❌ [STARTUP] Emergency cleanup failed:', cleanupError);
+          }
+        }
+        
+        // Test API connectivity in background (non-blocking)
+        testApiConnectivityAsync().then((isConnected) => {
+          if (__DEV__ && !isConnected) {
+            console.log('⚠️ [STARTUP] API not reachable - app will work in offline mode');
+          }
+        });
+        
+        // Check auth status (this is still important to wait for)
         await checkAuthStatus();
       } catch (e) {
         console.error('App initialization error:', e);

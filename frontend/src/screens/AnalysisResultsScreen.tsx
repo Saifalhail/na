@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Alert,
   Animated,
-  PanResponder,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -16,12 +15,15 @@ import {
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaContainer, Container, Spacer, Row } from '@/components/layout';
 import { Card } from '@/components/base/Card';
 import { Button } from '@/components/base/Button';
 import { Modal } from '@/components/base/Modal';
 import { LoadingOverlay, Spinner } from '@/components/base/Loading';
+import { Ionicons } from '@/components/IconFallback';
+import { GradientIcon } from '@/components/icons/GradientIcon';
 import { useTheme } from '@/hooks/useTheme';
 import { useMealStore } from '@/store/mealStore';
 import { useAuthStore } from '@/store/authStore';
@@ -82,6 +84,234 @@ interface AnalysisData {
 
 const { width: screenWidth } = Dimensions.get('window');
 
+// Generate realistic mock analysis data for demo/offline mode
+const generateMockAnalysisData = (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack'): AnalysisData => {
+  const mockData = {
+    breakfast: {
+      total_calories: 380,
+      protein: 15,
+      carbs: 45,
+      fat: 12,
+      fiber: 6,
+      sugar: 18,
+      sodium: 320,
+      items: [
+        {
+          id: 'item-0',
+          name: 'Scrambled Eggs',
+          calories: 180,
+          protein: 12,
+          carbs: 2,
+          fat: 12,
+          fiber: 0,
+          sugar: 1,
+          sodium: 180,
+          quantity: 2,
+          unit: 'large eggs',
+          confidence: 0.85,
+        },
+        {
+          id: 'item-1', 
+          name: 'Whole Wheat Toast',
+          calories: 140,
+          protein: 4,
+          carbs: 28,
+          fat: 2,
+          fiber: 4,
+          sugar: 2,
+          sodium: 170,
+          quantity: 2,
+          unit: 'slices',
+          confidence: 0.90,
+        },
+        {
+          id: 'item-2',
+          name: 'Orange Juice',
+          calories: 60,
+          protein: 1,
+          carbs: 15,
+          fat: 0,
+          fiber: 0,
+          sugar: 12,
+          sodium: 2,
+          quantity: 4,
+          unit: 'fl oz',
+          confidence: 0.75,
+        },
+      ],
+      cuisine_type: 'American',
+    },
+    lunch: {
+      total_calories: 520,
+      protein: 28,
+      carbs: 58,
+      fat: 18,
+      fiber: 8,
+      sugar: 12,
+      sodium: 680,
+      items: [
+        {
+          id: 'item-0',
+          name: 'Grilled Chicken Breast',
+          calories: 185,
+          protein: 35,
+          carbs: 0,
+          fat: 4,
+          fiber: 0,
+          sugar: 0,
+          sodium: 74,
+          quantity: 3,
+          unit: 'oz',
+          confidence: 0.88,
+        },
+        {
+          id: 'item-1',
+          name: 'Brown Rice',
+          calories: 110,
+          protein: 3,
+          carbs: 23,
+          fat: 1,
+          fiber: 2,
+          sugar: 0,
+          sodium: 5,
+          quantity: 0.5,
+          unit: 'cup',
+          confidence: 0.82,
+        },
+        {
+          id: 'item-2',
+          name: 'Mixed Vegetables',
+          calories: 80,
+          protein: 3,
+          carbs: 18,
+          fat: 0,
+          fiber: 6,
+          sugar: 8,
+          sodium: 45,
+          quantity: 1,
+          unit: 'cup',
+          confidence: 0.75,
+        },
+      ],
+      cuisine_type: 'Mediterranean',
+    },
+    dinner: {
+      total_calories: 650,
+      protein: 35,
+      carbs: 65,
+      fat: 22,
+      fiber: 9,
+      sugar: 15,
+      sodium: 890,
+      items: [
+        {
+          id: 'item-0',
+          name: 'Salmon Fillet',
+          calories: 280,
+          protein: 25,
+          carbs: 0,
+          fat: 20,
+          fiber: 0,
+          sugar: 0,
+          sodium: 50,
+          quantity: 4,
+          unit: 'oz',
+          confidence: 0.90,
+        },
+        {
+          id: 'item-1',
+          name: 'Quinoa',
+          calories: 160,
+          protein: 6,
+          carbs: 30,
+          fat: 2,
+          fiber: 5,
+          sugar: 1,
+          sodium: 13,
+          quantity: 0.75,
+          unit: 'cup',
+          confidence: 0.80,
+        },
+        {
+          id: 'item-2',
+          name: 'Roasted Asparagus',
+          calories: 40,
+          protein: 4,
+          carbs: 8,
+          fat: 0,
+          fiber: 4,
+          sugar: 4,
+          sodium: 13,
+          quantity: 6,
+          unit: 'spears',
+          confidence: 0.85,
+        },
+      ],
+      cuisine_type: 'Modern American',
+    },
+    snack: {
+      total_calories: 250,
+      protein: 8,
+      carbs: 32,
+      fat: 9,
+      fiber: 7,
+      sugar: 16,
+      sodium: 140,
+      items: [
+        {
+          id: 'item-0',
+          name: 'Greek Yogurt',
+          calories: 130,
+          protein: 15,
+          carbs: 9,
+          fat: 0,
+          fiber: 0,
+          sugar: 9,
+          sodium: 65,
+          quantity: 1,
+          unit: 'cup',
+          confidence: 0.88,
+        },
+        {
+          id: 'item-1',
+          name: 'Mixed Berries',
+          calories: 80,
+          protein: 1,
+          carbs: 20,
+          fat: 0,
+          fiber: 7,
+          sugar: 12,
+          sodium: 2,
+          quantity: 0.75,
+          unit: 'cup',
+          confidence: 0.75,
+        },
+        {
+          id: 'item-2',
+          name: 'Granola',
+          calories: 40,
+          protein: 1,
+          carbs: 8,
+          fat: 1,
+          fiber: 1,
+          sugar: 3,
+          sodium: 15,
+          quantity: 2,
+          unit: 'tbsp',
+          confidence: 0.70,
+        },
+      ],
+      cuisine_type: 'Healthy',
+    },
+  };
+
+  const data = mockData[mealType];
+  return {
+    ...data,
+    meal_type: mealType,
+  };
+};
+
 export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) => {
   const { theme } = useTheme();
   const { imageUri } = route.params;
@@ -95,6 +325,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
   const [isSaving, setIsSaving] = useState(false);
   const [mealName, setMealName] = useState('');
   const [notes, setNotes] = useState('');
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const { addMeal } = useMealStore();
   const { user } = useAuthStore();
@@ -109,91 +340,17 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
   const analyzeImage = async () => {
     setIsAnalyzing(true);
+    setAnalysisError(null);
 
     try {
-      // Check if in demo mode or API is unreachable
-      const isDemoUser = user?.id === 'demo-user';
-      
-      if (isDemoUser) {
-        // Use mock data for demo mode
-        const mockData: AnalysisData = {
-          total_calories: 450,
-          protein: 25,
-          carbs: 45,
-          fat: 18,
-          fiber: 8,
-          sugar: 12,
-          sodium: 680,
-          items: [
-            {
-              id: 'item-0',
-              name: 'Mixed Salad',
-              calories: 180,
-              protein: 12,
-              carbs: 15,
-              fat: 8,
-              fiber: 5,
-              sugar: 4,
-              sodium: 320,
-              quantity: 1,
-              unit: 'serving',
-              confidence: 0.92,
-            },
-            {
-              id: 'item-1',
-              name: 'Grilled Chicken',
-              calories: 150,
-              protein: 10,
-              carbs: 5,
-              fat: 6,
-              fiber: 0,
-              sugar: 1,
-              sodium: 180,
-              quantity: 1,
-              unit: 'piece',
-              confidence: 0.88,
-            },
-            {
-              id: 'item-2',
-              name: 'Whole Wheat Bread',
-              calories: 120,
-              protein: 3,
-              carbs: 25,
-              fat: 4,
-              fiber: 3,
-              sugar: 7,
-              sodium: 180,
-              quantity: 1,
-              unit: 'slice',
-              confidence: 0.85,
-            },
-          ],
-          meal_type: getMealType(),
-          cuisine_type: 'Mixed',
-        };
-
-        setAnalysisData(mockData);
-        setMealName(generateMealName(mockData));
-
-        // Animate in results
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        
-        return;
+      // Log analysis start
+      if (__DEV__) {
+        console.log('🔍 [AI ANALYSIS] Starting image analysis...');
+        console.log('📸 [AI ANALYSIS] Image URI:', imageUri);
+        console.log('👤 [AI ANALYSIS] User type:', user?.id === 'demo-user' ? 'Demo' : 'Regular');
       }
 
-      // Try actual API call for non-demo users
+      // Always try actual API call first, even for demo users
       try {
         // Convert image URI to base64
         const response = await fetch(imageUri);
@@ -204,6 +361,11 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           const base64 = reader.result?.toString().split(',')[1];
 
           if (base64) {
+            if (__DEV__) {
+              console.log('🎯 [AI ANALYSIS] Calling AI API...');
+              console.log('📊 [AI ANALYSIS] Image size:', base64.length, 'chars');
+            }
+            
             // Call AI analysis API
             const result = await aiApi.analyzeImage({
               image: base64,
@@ -212,6 +374,10 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
                 mealType: getMealType(),
               },
             });
+            
+            if (__DEV__) {
+              console.log('✅ [AI ANALYSIS] API Response received:', result);
+            }
 
             // Transform API response to our format
             const transformedData: AnalysisData = {
@@ -264,44 +430,30 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
       } catch (apiError: any) {
         console.error('API Error:', apiError);
         
-        // If network error, use offline mode with generic data
+        // If network error, use enhanced demo/offline mode with realistic data
         if (apiError.message?.includes('Network') || apiError.message?.includes('Failed to fetch')) {
-          const offlineData: AnalysisData = {
-            total_calories: 350,
-            protein: 20,
-            carbs: 40,
-            fat: 15,
-            fiber: 5,
-            sugar: 8,
-            sodium: 500,
-            items: [
-              {
-                id: 'item-0',
-                name: 'Meal (Unable to analyze - offline mode)',
-                calories: 350,
-                protein: 20,
-                carbs: 40,
-                fat: 15,
-                fiber: 5,
-                sugar: 8,
-                sodium: 500,
-                quantity: 1,
-                unit: 'serving',
-                confidence: 0.5,
-              },
-            ],
-            meal_type: getMealType(),
-            cuisine_type: 'Unknown',
-          };
-
-          setAnalysisData(offlineData);
-          setMealName('Offline Meal Entry');
+          const mockAnalysisData = generateMockAnalysisData(getMealType());
           
-          Alert.alert(
-            'Offline Mode',
-            'Unable to connect to the server. Using estimated nutritional values. You can edit them manually.',
-            [{ text: 'OK' }]
-          );
+          setAnalysisData(mockAnalysisData);
+          setMealName(mockAnalysisData.meal_type === 'breakfast' ? 'Morning Meal' 
+                      : mockAnalysisData.meal_type === 'lunch' ? 'Lunch Bowl'
+                      : mockAnalysisData.meal_type === 'dinner' ? 'Dinner Plate'
+                      : 'Healthy Snack');
+          
+          if (user?.id === 'demo-user') {
+            // For demo users, show a more positive message
+            Alert.alert(
+              'Demo Analysis Complete!',
+              'This is a sample analysis result. In the full version, our AI would analyze your actual food photo.',
+              [{ text: 'Got it!' }]
+            );
+          } else {
+            Alert.alert(
+              'Offline Mode',
+              'Unable to connect to the server. Using estimated nutritional values based on common foods. You can edit them manually.',
+              [{ text: 'OK' }]
+            );
+          }
           
           // Animate in results
           Animated.parallel([
@@ -323,10 +475,8 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
       }
     } catch (error) {
       console.error('Error analyzing image:', error);
-      Alert.alert('Analysis Failed', 'Unable to analyze the image. Please try again.', [
-        { text: 'Retry', onPress: analyzeImage },
-        { text: 'Go Back', onPress: () => navigation.goBack() },
-      ]);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setAnalysisError(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
@@ -576,209 +726,323 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
     );
   }
 
+  // Show error state if analysis failed
+  if (analysisError && !analysisData) {
+    return (
+      <SafeAreaContainer style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.errorContainer}>
+          <Image source={{ uri: imageUri }} style={styles.errorImage} />
+          <Spacer size="xl" />
+          
+          <View style={styles.errorContent}>
+            <GradientIcon 
+              name="alert-circle" 
+              size={64} 
+              colors={[theme.colors.error[400], theme.colors.error[600]]} 
+            />
+            <Spacer size="lg" />
+            
+            <Text style={[styles.errorTitle, { color: theme.colors.text.primary }]}>
+              Analysis Failed
+            </Text>
+            <Text style={[styles.errorMessage, { color: theme.colors.text.secondary }]}>
+              {analysisError.includes('Network') || analysisError.includes('Failed to fetch')
+                ? 'Unable to connect to the server. Please check your internet connection and try again.'
+                : 'Something went wrong while analyzing your image. Please try again.'}
+            </Text>
+            
+            <Spacer size="xl" />
+            
+            <View style={styles.errorActions}>
+              <Button
+                title="Try Again"
+                onPress={() => {
+                  setAnalysisError(null);
+                  analyzeImage();
+                }}
+                variant="primary"
+                style={styles.errorButton}
+              />
+              <Spacer size="md" />
+              <Button
+                title="Go Back"
+                onPress={() => navigation.goBack()}
+                variant="outline"
+                style={styles.errorButton}
+              />
+            </View>
+          </View>
+        </View>
+      </SafeAreaContainer>
+    );
+  }
+
+  // If still loading or no data, return null (this should be rare)
   if (!analysisData) {
-    return null;
+    return (
+      <SafeAreaContainer style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: theme.colors.text.primary }]}>
+            Preparing analysis...
+          </Text>
+        </View>
+      </SafeAreaContainer>
+    );
   }
 
   return (
-    <SafeAreaContainer
-      style={styles.container}
-      scrollable
-      scrollViewProps={{ showsVerticalScrollIndicator: false }}
-    >
+    <SafeAreaContainer style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('HomeTabs')}
-            accessible={true}
-            accessibilityLabel="Go back to home screen"
-            accessibilityRole="button"
-          >
-            <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Home</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => setShowAddItemModal(true)}
-            accessible={true}
-            accessibilityLabel="Add new food item to meal"
-            accessibilityRole="button"
-          >
-            <Text style={[styles.addButton, { color: theme.colors.primary[500] }]}>+ Add Item</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Spacer size="lg" />
-
-        {/* Image with overlay */}
-        <Animated.View
-          style={[
-            styles.imageContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}
+        {/* Modern Header with Gradient */}
+        <LinearGradient
+          colors={[theme.colors.primary[500], theme.colors.primary[600]]}
+          style={styles.header}
         >
-          <Image source={{ uri: imageUri }} style={styles.mealImage} />
-          {analysisData.cuisine_type && (
-            <View style={[styles.cuisineTag, { backgroundColor: theme.colors.primary[500] }]}>
-              <Text style={styles.cuisineText}>{analysisData.cuisine_type}</Text>
-            </View>
-          )}
-        </Animated.View>
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('HomeTabs')}
+              style={styles.headerButton}
+              accessible={true}
+              accessibilityLabel="Go back to home screen"
+              accessibilityRole="button"
+            >
+              <GradientIcon name="arrow-back" size={24} colors={['white', 'rgba(255,255,255,0.9)']} />
+              <Text style={styles.headerButtonText}>Home</Text>
+            </TouchableOpacity>
 
-        <Spacer size="xl" />
+            <Text style={styles.headerTitle}>Analysis Results</Text>
 
-        {/* Meal Name Input */}
-        <Card style={styles.mealNameCard}>
-          <TextInput
-            style={[styles.mealNameInput, { color: theme.colors.text.primary }]}
-            value={mealName}
-            onChangeText={setMealName}
-            placeholder="Name your meal"
-            placeholderTextColor={theme.colors.textSecondary}
-          />
-        </Card>
+            <TouchableOpacity
+              onPress={() => setShowAddItemModal(true)}
+              style={styles.headerButton}
+              accessible={true}
+              accessibilityLabel="Add new food item to meal"
+              accessibilityRole="button"
+            >
+              <GradientIcon name="add" size={24} colors={['white', 'rgba(255,255,255,0.9)']} />
+              <Text style={styles.headerButtonText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
 
-        <Spacer size="lg" />
-
-        {/* Total Calories with animated bubbles */}
-        <Card style={[styles.caloriesCard, getModernShadow('card')]}>
-          <Text style={[styles.caloriesTitle, { color: theme.colors.textSecondary }]}>
-            Total Calories
-          </Text>
-          <Animated.Text
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Hero Section with Image and Quick Stats */}
+          <Animated.View
             style={[
-              styles.caloriesValue,
-              { color: theme.colors.primary[500] },
-              isRecalculating && styles.recalculatingValue,
+              styles.heroSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }],
+              },
             ]}
           >
-            {formatCalories(analysisData.total_calories)}
-          </Animated.Text>
+            <View style={styles.imageContainer}>
+              <Image source={{ uri: imageUri }} style={styles.mealImage} />
+              {analysisData.cuisine_type && (
+                <View style={[styles.cuisineTag, { backgroundColor: theme.colors.primary[500] }]}>
+                  <Text style={styles.cuisineText}>{analysisData.cuisine_type}</Text>
+                </View>
+              )}
+              <View style={styles.confidenceOverlay}>
+                <View style={[styles.confidenceBadge, { backgroundColor: theme.colors.success[500] }]}>
+                  <GradientIcon name="checkmark" size={16} colors={['white', 'rgba(255,255,255,0.8)']} />
+                  <Text style={styles.confidenceBadgeText}>High Confidence</Text>
+                </View>
+              </View>
+            </View>
 
-          {/* Confidence indicator */}
-          <View style={styles.confidenceContainer}>
-            <View style={[styles.confidenceDot, { backgroundColor: theme.colors.success[500] }]} />
-            <Text style={[styles.confidenceText, { color: theme.colors.textSecondary }]}>
-              High confidence analysis
+            {/* Quick Stats Cards */}
+            <View style={styles.quickStatsContainer}>
+              <View style={[styles.quickStatCard, { backgroundColor: theme.colors.primary[50] }]}>
+                <Text style={[styles.quickStatValue, { color: theme.colors.primary[600] }]}>
+                  {formatCalories(analysisData.total_calories)}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: theme.colors.primary[500] }]}>
+                  Calories
+                </Text>
+              </View>
+              <View style={[styles.quickStatCard, { backgroundColor: theme.colors.primary[50] }]}>
+                <Text style={[styles.quickStatValue, { color: theme.colors.primary[600] }]}>
+                  {analysisData.items.length}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: theme.colors.primary[500] }]}>
+                  Items
+                </Text>
+              </View>
+              <View style={[styles.quickStatCard, { backgroundColor: theme.colors.primary[50] }]}>
+                <Text style={[styles.quickStatValue, { color: theme.colors.primary[600] }]}>
+                  {formatMacros(analysisData.protein)}g
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: theme.colors.primary[500] }]}>
+                  Protein
+                </Text>
+              </View>
+            </View>
+          </Animated.View>
+
+          <Spacer size="lg" />
+
+          {/* Meal Name Section */}
+          <Card style={styles.mealNameCard}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+              Meal Name
             </Text>
+            <TextInput
+              style={[styles.mealNameInput, { color: theme.colors.text.primary, borderColor: theme.colors.border }]}
+              value={mealName}
+              onChangeText={setMealName}
+              placeholder="Name your meal"
+              placeholderTextColor={theme.colors.textSecondary}
+            />
+          </Card>
+
+          <Spacer size="lg" />
+
+          {/* Enhanced Macronutrients Section */}
+          <Card style={styles.macrosCard}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+              Macronutrients
+            </Text>
+            <Spacer size="md" />
+            
+            <View style={styles.macrosGrid}>
+              <MacroCard
+                label="Protein"
+                value={analysisData.protein}
+                color={theme.colors.primary[500]}
+                icon="💪"
+                theme={theme}
+                isAnimating={isRecalculating}
+              />
+              <MacroCard
+                label="Carbs"
+                value={analysisData.carbs}
+                color={theme.colors.primary[400]}
+                icon="🌾"
+                theme={theme}
+                isAnimating={isRecalculating}
+              />
+              <MacroCard
+                label="Fat"
+                value={analysisData.fat}
+                color={theme.colors.primary[600]}
+                icon="🥑"
+                theme={theme}
+                isAnimating={isRecalculating}
+              />
+            </View>
+
+            <Spacer size="lg" />
+            
+            {/* Additional Nutrients */}
+            <View style={[styles.additionalNutrients, { borderTopColor: theme.colors.border }]}>
+              <NutrientRow label="Fiber" value={analysisData.fiber} unit="g" theme={theme} />
+              <NutrientRow label="Sugar" value={analysisData.sugar} unit="g" theme={theme} />
+              <NutrientRow label="Sodium" value={analysisData.sodium} unit="mg" theme={theme} />
+            </View>
+          </Card>
+
+          <Spacer size="lg" />
+
+          {/* Enhanced Food Items Section */}
+          <Card style={styles.itemsCard}>
+            <View style={styles.itemsHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+                Detected Items
+              </Text>
+              <View style={[styles.itemsCountBadge, { backgroundColor: theme.colors.primary[100] }]}>
+                <Text style={[styles.itemsCountText, { color: theme.colors.primary[600] }]}>
+                  {analysisData.items.length}
+                </Text>
+              </View>
+            </View>
+
+            <Spacer size="md" />
+
+            {analysisData.items.map((item, index) => (
+              <ModernFoodItem
+                key={item.id}
+                item={item}
+                theme={theme}
+                onEdit={() => handlePortionEdit(item)}
+                onRemove={() => handleItemRemove(item.id)}
+                isLast={index === analysisData.items.length - 1}
+              />
+            ))}
+          </Card>
+
+          <Spacer size="lg" />
+
+          {/* Notes Section */}
+          <Card style={styles.notesCard}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+              Notes (Optional)
+            </Text>
+            <Spacer size="sm" />
+            <TextInput
+              style={[styles.notesInput, { color: theme.colors.text.primary, borderColor: theme.colors.border }]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Add any notes about this meal..."
+              placeholderTextColor={theme.colors.textSecondary}
+              multiline
+              numberOfLines={3}
+            />
+          </Card>
+
+          <Spacer size="xl" />
+
+          {/* Enhanced Action Buttons */}
+          <View style={styles.actionsContainer}>
+            <Button
+              onPress={handleSaveMeal}
+              variant="primary"
+              size="large"
+              fullWidth
+              disabled={isSaving || isRecalculating}
+              loading={isSaving}
+              style={styles.saveButton}
+              leftIcon={<GradientIcon name="checkmark" size={20} colors={['white', 'rgba(255,255,255,0.9)']} />}
+            >
+              {isSaving ? 'Saving Meal...' : 'Save Meal'}
+            </Button>
+
+            <Spacer size="md" />
+
+            <View style={styles.secondaryActions}>
+              <Button
+                onPress={handleRetakePhoto}
+                variant="outline"
+                size="large"
+                style={styles.secondaryButton}
+                leftIcon={<Ionicons name="camera" size={18} color={theme.colors.primary[500]} />}
+              >
+                Retake Photo
+              </Button>
+              
+              <Button
+                onPress={() => setShowAddItemModal(true)}
+                variant="ghost"
+                size="large"
+                style={styles.secondaryButton}
+                leftIcon={<Ionicons name="add" size={18} color={theme.colors.primary[500]} />}
+              >
+                Add Item
+              </Button>
+            </View>
           </View>
-        </Card>
 
-        <Spacer size="lg" />
+          <Spacer size="xxl" />
+        </ScrollView>
 
-        {/* Interactive Macros Bubbles */}
-        <Card style={[styles.macrosCard, getModernShadow('card')]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-            Macronutrients
-          </Text>
-
-          <Spacer size="md" />
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.bubblesScrollContainer}
-            style={styles.bubblesScroll}
-          >
-            <MacroBubble
-              label="Protein"
-              value={analysisData.protein}
-              color={theme.colors.success[500]}
-              theme={theme}
-              isAnimating={isRecalculating}
-            />
-            <MacroBubble
-              label="Carbs"
-              value={analysisData.carbs}
-              color={theme.colors.secondary[500]}
-              theme={theme}
-              isAnimating={isRecalculating}
-            />
-            <MacroBubble
-              label="Fat"
-              value={analysisData.fat}
-              color={theme.colors.warning[500]}
-              theme={theme}
-              isAnimating={isRecalculating}
-            />
-          </ScrollView>
-
-          {/* Additional nutrients */}
-          <View style={styles.additionalNutrients}>
-            <NutrientRow label="Fiber" value={analysisData.fiber} unit="g" theme={theme} />
-            <NutrientRow label="Sugar" value={analysisData.sugar} unit="g" theme={theme} />
-            <NutrientRow label="Sodium" value={analysisData.sodium} unit="mg" theme={theme} />
-          </View>
-        </Card>
-
-        <Spacer size="lg" />
-
-        {/* Interactive Food Items */}
-        <Card style={[styles.itemsCard, getModernShadow('card')]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-            Detected Items ({analysisData.items.length})
-          </Text>
-
-          <Spacer size="md" />
-
-          {analysisData.items.map((item, index) => (
-            <InteractiveFoodItem
-              key={item.id}
-              item={item}
-              theme={theme}
-              onEdit={() => handlePortionEdit(item)}
-              onRemove={() => handleItemRemove(item.id)}
-              isLast={index === analysisData.items.length - 1}
-            />
-          ))}
-        </Card>
-
-        <Spacer size="lg" />
-
-        {/* Notes */}
-        <Card style={styles.notesCard}>
-          <Text style={[styles.notesLabel, { color: theme.colors.text.primary }]}>
-            Notes (optional)
-          </Text>
-          <TextInput
-            style={[styles.notesInput, { color: theme.colors.text.primary }]}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Add notes about this meal..."
-            placeholderTextColor={theme.colors.textSecondary}
-            multiline
-            numberOfLines={3}
-          />
-        </Card>
-
-        <Spacer size="xl" />
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <Button
-            onPress={handleSaveMeal}
-            variant="primary"
-            disabled={isSaving || isRecalculating}
-            style={styles.saveButton}
-          >
-            {isSaving ? 'Saving...' : 'Save Meal'}
-          </Button>
-
-          <Spacer size="md" />
-
-          <Button onPress={handleRetakePhoto} variant="outline" style={styles.retakeButton}>
-            Retake Photo
-          </Button>
-        </View>
-
-        <Spacer size="xxl" />
-        {/* Portion Edit Modal */}
+        {/* Modals and Overlays */}
         <Modal
           visible={showPortionModal}
           onClose={() => setShowPortionModal(false)}
@@ -789,65 +1053,66 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
               <Text style={[styles.modalItemName, { color: theme.colors.text.primary }]}>
                 {editingItem.name}
               </Text>
-
               <Spacer size="lg" />
-
               <View style={styles.portionInputContainer}>
-                <TextInput
-                  style={[styles.portionInput, { color: theme.colors.text.primary }]}
-                  value={editingItem.quantity.toString()}
-                  onChangeText={(text) => {
-                    const num = parseFloat(text) || 0;
-                    setEditingItem({ ...editingItem, quantity: num });
-                  }}
-                  keyboardType="numeric"
-                  placeholder="1"
-                />
-                <TextInput
-                  style={[styles.unitInput, { color: theme.colors.text.primary }]}
-                  value={editingItem.unit}
-                  onChangeText={(text) => setEditingItem({ ...editingItem, unit: text })}
-                  placeholder="serving"
-                />
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>Quantity</Text>
+                  <TextInput
+                    style={[styles.portionInput, { color: theme.colors.text.primary, borderColor: theme.colors.border }]}
+                    value={editingItem.quantity.toString()}
+                    onChangeText={(text) => {
+                      const num = parseFloat(text) || 0;
+                      setEditingItem({ ...editingItem, quantity: num });
+                    }}
+                    keyboardType="numeric"
+                    placeholder="1"
+                  />
+                </View>
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>Unit</Text>
+                  <TextInput
+                    style={[styles.portionInput, { color: theme.colors.text.primary, borderColor: theme.colors.border }]}
+                    value={editingItem.unit}
+                    onChangeText={(text) => setEditingItem({ ...editingItem, unit: text })}
+                    placeholder="serving"
+                  />
+                </View>
               </View>
-
               <Spacer size="lg" />
-
-              <Button onPress={handlePortionUpdate} variant="primary" fullWidth>
-                Update
+              <Button onPress={handlePortionUpdate} variant="primary" fullWidth size="large">
+                Update Portion
               </Button>
             </View>
           )}
         </Modal>
 
-        {/* Add Item Modal */}
         <Modal
           visible={showAddItemModal}
           onClose={() => {
             setShowAddItemModal(false);
             setNewItemName('');
           }}
-          title="Add Item"
+          title="Add New Item"
         >
           <View style={styles.modalContent}>
+            <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>Item Name</Text>
             <TextInput
-              style={[styles.addItemInput, { color: theme.colors.text.primary }]}
+              style={[styles.addItemInput, { color: theme.colors.text.primary, borderColor: theme.colors.border }]}
               value={newItemName}
               onChangeText={setNewItemName}
               placeholder="Enter food item name"
               placeholderTextColor={theme.colors.textSecondary}
               autoFocus
             />
-
             <Spacer size="lg" />
-
             <Button
               onPress={handleAddItem}
               variant="primary"
               fullWidth
+              size="large"
               disabled={!newItemName.trim()}
             >
-              Add
+              Add Item
             </Button>
           </View>
         </Modal>
@@ -863,24 +1128,24 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
   );
 };
 
-// Interactive Macro Bubble Component
-interface MacroBubbleProps {
+// Enhanced Macro Card Component
+interface MacroCardProps {
   label: string;
   value: number;
   color: string;
+  icon: string;
   theme: any;
   isAnimating: boolean;
 }
 
-const MacroBubble: React.FC<MacroBubbleProps> = ({ label, value, color, theme, isAnimating }) => {
+const MacroCard: React.FC<MacroCardProps> = ({ label, value, color, icon, theme, isAnimating }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  // Simple pulse animation when recalculating
   useEffect(() => {
     if (isAnimating) {
       Animated.sequence([
         Animated.timing(scaleAnim, {
-          toValue: 1.1,
+          toValue: 1.05,
           duration: 300,
           useNativeDriver: true,
         }),
@@ -896,24 +1161,21 @@ const MacroBubble: React.FC<MacroBubbleProps> = ({ label, value, color, theme, i
   return (
     <Animated.View
       style={[
-        styles.macroBubble,
-        {
-          transform: [{ scale: scaleAnim }],
-        },
+        styles.macroCard,
+        { backgroundColor: color + '10', transform: [{ scale: scaleAnim }] },
       ]}
     >
-      <View style={[styles.macroBubbleInner, { backgroundColor: color + '15' }]}>
-        <View style={[styles.macroIndicator, { backgroundColor: color }]} />
-        <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
-          {formatMacros(value)}
-        </Text>
-        <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
-      </View>
+      <Text style={styles.macroIcon}>{icon}</Text>
+      <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
+        {formatMacros(value)}g
+      </Text>
+      <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
+      <View style={[styles.macroIndicator, { backgroundColor: color }]} />
     </Animated.View>
   );
 };
 
-// Nutrient Row Component
+// Enhanced Nutrient Row Component
 interface NutrientRowProps {
   label: string;
   value: number;
@@ -925,14 +1187,13 @@ const NutrientRow: React.FC<NutrientRowProps> = ({ label, value, unit, theme }) 
   <View style={styles.nutrientRow}>
     <Text style={[styles.nutrientLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
     <Text style={[styles.nutrientValue, { color: theme.colors.text.primary }]}>
-      {value}
-      {unit}
+      {value}{unit}
     </Text>
   </View>
 );
 
-// Interactive Food Item Component
-interface InteractiveFoodItemProps {
+// Modern Food Item Component
+interface ModernFoodItemProps {
   item: FoodItem;
   theme: any;
   onEdit: () => void;
@@ -940,7 +1201,7 @@ interface InteractiveFoodItemProps {
   isLast: boolean;
 }
 
-const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
+const ModernFoodItem: React.FC<ModernFoodItemProps> = ({
   item,
   theme,
   onEdit,
@@ -949,61 +1210,70 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
 }) => {
   return (
     <View style={styles.foodItemContainer}>
-      <TouchableOpacity
-        style={styles.foodItemTouchable}
-        onPress={onEdit}
-        activeOpacity={0.7}
-        accessible={true}
-        accessibilityLabel={`Edit ${item.name}, ${item.quantity} ${item.unit}, ${formatCalories(item.calories)}`}
-        accessibilityRole="button"
-      >
-        <View style={styles.foodItemContent}>
-          <View style={styles.foodItemHeader}>
+      <View style={[styles.foodItemCard, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.foodItemHeader}>
+          <View style={styles.foodItemInfo}>
             <Text style={[styles.foodItemName, { color: theme.colors.text.primary }]}>
               {item.name}
             </Text>
+            <Text style={[styles.foodItemPortion, { color: theme.colors.textSecondary }]}>
+              {item.quantity} {item.unit}
+            </Text>
+          </View>
+          <View style={styles.foodItemCaloriesContainer}>
+            <Text style={[styles.foodItemCalories, { color: theme.colors.primary[600] }]}>
+              {formatCalories(item.calories)}
+            </Text>
             {item.confidence && item.confidence > 0.8 && (
-              <View
-                style={[styles.confidenceBadge, { backgroundColor: theme.colors.success[500] }]}
-              >
-                <Text style={styles.confidenceBadgeText}>✓</Text>
+              <View style={[styles.confidenceIndicator, { backgroundColor: theme.colors.success[500] }]}>
+                <Ionicons name="checkmark" size={12} color="white" />
               </View>
             )}
           </View>
-          <Text style={[styles.foodItemPortion, { color: theme.colors.textSecondary }]}>
-            {item.quantity} {item.unit}
-          </Text>
-          <Text style={[styles.foodItemMacros, { color: theme.colors.textSecondary }]}>
-            P: {formatMacros(item.protein)} • C: {formatMacros(item.carbs)} • F:{' '}
-            {formatMacros(item.fat)}
-          </Text>
         </View>
-        <View style={styles.foodItemRight}>
-          <Text style={[styles.foodItemCalories, { color: theme.colors.primary[500] }]}>
-            {formatCalories(item.calories)}
-          </Text>
-          <Row gap={8}>
-            <TouchableOpacity
-              onPress={onEdit}
-              style={styles.actionButton}
-              accessible={true}
-              accessibilityLabel={`Edit ${item.name} portion`}
-              accessibilityRole="button"
-            >
-              <Text style={styles.actionIcon}>✏️</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onRemove}
-              style={[styles.actionButton, { backgroundColor: theme.colors.error[100] }]}
-              accessible={true}
-              accessibilityLabel={`Remove ${item.name} from meal`}
-              accessibilityRole="button"
-            >
-              <Text style={styles.actionIcon}>🗑️</Text>
-            </TouchableOpacity>
-          </Row>
+
+        <View style={styles.foodItemMacros}>
+          <View style={styles.macroChip}>
+            <Text style={[styles.macroChipText, { color: theme.colors.textSecondary }]}>
+              P: {formatMacros(item.protein)}g
+            </Text>
+          </View>
+          <View style={styles.macroChip}>
+            <Text style={[styles.macroChipText, { color: theme.colors.textSecondary }]}>
+              C: {formatMacros(item.carbs)}g
+            </Text>
+          </View>
+          <View style={styles.macroChip}>
+            <Text style={[styles.macroChipText, { color: theme.colors.textSecondary }]}>
+              F: {formatMacros(item.fat)}g
+            </Text>
+          </View>
         </View>
-      </TouchableOpacity>
+
+        <View style={styles.foodItemActions}>
+          <TouchableOpacity
+            onPress={onEdit}
+            style={[styles.modernActionButton, { backgroundColor: theme.colors.primary[100] }]}
+            accessible={true}
+            accessibilityLabel={`Edit ${item.name} portion`}
+            accessibilityRole="button"
+          >
+            <Ionicons name="pencil" size={16} color={theme.colors.primary[600]} />
+            <Text style={[styles.actionButtonText, { color: theme.colors.primary[600] }]}>Edit</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={onRemove}
+            style={[styles.modernActionButton, { backgroundColor: theme.colors.error[100] }]}
+            accessible={true}
+            accessibilityLabel={`Remove ${item.name} from meal`}
+            accessibilityRole="button"
+          >
+            <Ionicons name="trash" size={16} color={theme.colors.error[600]} />
+            <Text style={[styles.actionButtonText, { color: theme.colors.error[600] }]}>Remove</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {!isLast && (
         <View style={[styles.itemDivider, { backgroundColor: theme.colors.borderLight }]} />
@@ -1015,251 +1285,311 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: rs.large,
-    paddingTop: 60,
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   loadingImage: {
     width: moderateScale(200),
     height: moderateScale(200),
-    borderRadius: 12,
+    borderRadius: 16,
   },
   loadingTip: {
     fontSize: fontScale(14),
     textAlign: 'center',
+    lineHeight: 20,
   },
   header: {
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  backButton: {
-    fontSize: fontScale(16),
-    fontWeight: '500',
+  headerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  addButton: {
-    fontSize: fontScale(16),
-    fontWeight: '500',
+  headerButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  heroSection: {
+    marginTop: 20,
   },
   imageContainer: {
     position: 'relative',
+    marginBottom: 20,
   },
   mealImage: {
     width: '100%',
-    height: moderateScale(200),
-    borderRadius: 12,
+    height: moderateScale(220),
+    borderRadius: 20,
   },
   cuisineTag: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 16,
+    right: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   cuisineText: {
-    color: '#fff',
-    fontSize: fontScale(12),
+    color: 'white',
+    fontSize: 12,
     fontWeight: '600',
+  },
+  confidenceOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+  },
+  confidenceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  confidenceBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  quickStatsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  quickStatCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  quickStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  quickStatLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 4,
   },
   mealNameCard: {
-    padding: 16,
+    padding: 20,
   },
   mealNameInput: {
-    fontSize: fontScale(20),
+    fontSize: 18,
     fontWeight: '600',
-    textAlign: 'center',
-  },
-  caloriesCard: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  caloriesTitle: {
-    fontSize: fontScale(16),
-  },
-  caloriesValue: {
-    fontSize: fontScale(48),
-    fontWeight: 'bold',
-    marginTop: rs.small,
-  },
-  recalculatingValue: {
-    opacity: 0.5,
-  },
-  confidenceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: rs.medium,
-  },
-  confidenceDot: {
-    width: moderateScale(8),
-    height: moderateScale(8),
-    borderRadius: 4,
-    marginRight: rs.small,
-  },
-  confidenceText: {
-    fontSize: fontScale(12),
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
   },
   macrosCard: {
-    padding: rs.large,
-    marginHorizontal: layout.containerPadding,
+    padding: 20,
   },
-  sectionTitle: {
-    fontSize: fontScale(18),
-    fontWeight: '600',
-  },
-  bubblesContainer: {
+  macrosGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: rs.large,
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  macroBubble: {
+  macroCard: {
+    flex: 1,
     alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
     position: 'relative',
   },
-  macroBubbleInner: {
-    width: moderateScale(80),
-    height: moderateScale(80),
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  macroIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  macroIcon: {
+    fontSize: 24,
     marginBottom: 8,
   },
   macroValue: {
-    fontSize: fontScale(20),
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   macroLabel: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '500',
     marginTop: 4,
   },
+  macroIndicator: {
+    position: 'absolute',
+    bottom: 8,
+    left: '50%',
+    marginLeft: -12,
+    width: 24,
+    height: 3,
+    borderRadius: 2,
+  },
   additionalNutrients: {
-    paddingTop: 12,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
   },
   nutrientRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   nutrientLabel: {
     fontSize: 14,
+    fontWeight: '500',
   },
   nutrientValue: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   itemsCard: {
     padding: 20,
   },
-  foodItemContainer: {
-    marginVertical: 4,
-  },
-  foodItemTouchable: {
+  itemsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'space-between',
   },
-  foodItemContent: {
-    flex: 1,
+  itemsCountBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  itemsCountText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  foodItemContainer: {
+    marginVertical: 6,
+  },
+  foodItemCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   foodItemHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  foodItemInfo: {
+    flex: 1,
   },
   foodItemName: {
-    fontSize: fontScale(16),
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  foodItemPortion: {
+    fontSize: 14,
     fontWeight: '500',
   },
-  confidenceBadge: {
-    marginLeft: 8,
+  foodItemCaloriesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  foodItemCalories: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  confidenceIndicator: {
     width: 20,
     height: 20,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  confidenceBadgeText: {
-    color: '#fff',
-    fontSize: fontScale(12),
-    fontWeight: 'bold',
-  },
-  foodItemPortion: {
-    fontSize: 14,
-    marginTop: 2,
+    marginLeft: 8,
   },
   foodItemMacros: {
-    fontSize: 14,
-    marginTop: 2,
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
   },
-  foodItemRight: {
-    alignItems: 'flex-end',
+  macroChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    borderRadius: 8,
   },
-  foodItemCalories: {
-    fontSize: fontScale(16),
-    fontWeight: '600',
+  macroChipText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
-  actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+  foodItemActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  modernActionButton: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
-  actionIcon: {
-    fontSize: fontScale(16),
+  actionButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
   },
   itemDivider: {
     height: 1,
-    marginTop: rs.small,
+    marginTop: 12,
   },
   notesCard: {
-    padding: 16,
-  },
-  notesLabel: {
-    fontSize: fontScale(16),
-    fontWeight: '500',
-    marginBottom: 8,
+    padding: 20,
   },
   notesInput: {
-    fontSize: 14,
-    minHeight: 60,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    minHeight: 80,
     textAlignVertical: 'top',
+    fontSize: 14,
   },
-  actions: {
+  actionsContainer: {
     width: '100%',
   },
   saveButton: {
-    width: '100%',
+    borderRadius: 16,
   },
-  retakeButton: {
-    width: '100%',
+  secondaryActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  secondaryButton: {
+    flex: 1,
+    borderRadius: 12,
   },
   modalContent: {
     padding: 20,
   },
   modalItemName: {
-    fontSize: fontScale(18),
+    fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -1267,30 +1597,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  portionInput: {
+  inputGroup: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: fontScale(16),
-    textAlign: 'center',
   },
-  unitInput: {
-    flex: 1,
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  portionInput: {
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
     borderRadius: 8,
     padding: 12,
-    fontSize: fontScale(16),
+    fontSize: 16,
     textAlign: 'center',
   },
   addItemInput: {
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
     borderRadius: 8,
     padding: 12,
-    fontSize: fontScale(16),
+    fontSize: 16,
+    marginTop: 6,
   },
   recalculatingOverlay: {
     position: 'absolute',
@@ -1302,12 +1629,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bubblesScrollContainer: {
-    paddingHorizontal: rs.medium,
-    gap: rs.small,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
-  bubblesScroll: {
-    flexGrow: 0,
-    marginVertical: rs.medium,
+  // Error state styles
+  errorContainer: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorImage: {
+    width: screenWidth * 0.6,
+    height: screenWidth * 0.4,
+    borderRadius: 16,
+    resizeMode: 'cover',
+  },
+  errorContent: {
+    alignItems: 'center',
+    maxWidth: 300,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  errorActions: {
+    width: '100%',
+  },
+  errorButton: {
+    borderRadius: 12,
+  },
+  loadingText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
 });

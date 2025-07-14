@@ -2,6 +2,9 @@
 global.__DEV__ = true;
 global.__TEST__ = true;
 
+// Set Expo environment variables
+process.env.EXPO_OS = 'ios';
+
 // Mock React Native with proper React components
 jest.mock('react-native', () => {
   const React = require('react');
@@ -34,7 +37,9 @@ jest.mock('react-native', () => {
     },
     StyleSheet: {
       create: jest.fn((styles) => {
-        // Ensure StyleSheet.create always returns the input styles object
+        // Simply return the styles object as-is
+        // React Native's StyleSheet.create is mainly for optimization
+        // In tests, we just need the style objects
         return styles || {};
       }),
       compose: jest.fn((style1, style2) => [style1, style2].filter(Boolean)),
@@ -641,6 +646,77 @@ jest.mock('./src/components/base/NutritionGauge', () => {
 });
 
 // Additional testing utilities can be added here
+
+// Mock expo-image-picker
+jest.mock('expo-image-picker', () => ({
+  launchImageLibraryAsync: jest.fn().mockResolvedValue({
+    canceled: false,
+    assets: [{ uri: 'test-image-uri' }],
+  }),
+  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({
+    status: 'granted',
+  }),
+  requestCameraPermissionsAsync: jest.fn().mockResolvedValue({
+    status: 'granted',
+  }),
+  launchCameraAsync: jest.fn().mockResolvedValue({
+    canceled: false,
+    assets: [{ uri: 'test-camera-uri' }],
+  }),
+  MediaTypeOptions: {
+    Images: 'Images',
+    Videos: 'Videos',
+    All: 'All',
+  },
+  ImagePickerOptions: {},
+  PermissionStatus: {
+    DENIED: 'denied',
+    GRANTED: 'granted',
+    UNDETERMINED: 'undetermined',
+  },
+}));
+
+// Mock expo-modules-core
+jest.mock('expo-modules-core', () => ({
+  PermissionStatus: {
+    DENIED: 'denied',
+    GRANTED: 'granted',
+    UNDETERMINED: 'undetermined',
+  },
+  Platform: {
+    OS: 'ios',
+  },
+  NativeModule: {},
+  NativeModulesProxy: {},
+  EventEmitter: jest.fn(),
+  CodedError: Error,
+}));
+
+// Mock expo-camera
+jest.mock('expo-camera', () => {
+  const React = require('react');
+  const CameraView = React.forwardRef((props, ref) => {
+    return React.createElement('div', {
+      ...props,
+      ref,
+      'data-testid': 'CameraView',
+      'data-component': 'CameraView',
+    });
+  });
+  CameraView.displayName = 'CameraView';
+  
+  return {
+    CameraView,
+    CameraType: {
+      back: 'back',
+      front: 'front',
+    },
+    useCameraPermissions: jest.fn(() => [
+      { granted: true },
+      jest.fn(),
+    ]),
+  };
+});
 
 // Clear all mocks before each test
 beforeEach(() => {

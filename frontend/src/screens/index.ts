@@ -3,6 +3,7 @@ export { WelcomeScreen } from './WelcomeScreen';
 export { LoginScreen } from './LoginScreen';
 export { RegisterScreen } from './RegisterScreen';
 export { ForgotPasswordScreen } from './ForgotPasswordScreen';
+export { EmailVerificationScreen } from './EmailVerificationScreen';
 export { TwoFactorSetupScreen } from './TwoFactorSetupScreen';
 export { TwoFactorVerifyScreen } from './TwoFactorVerifyScreen';
 

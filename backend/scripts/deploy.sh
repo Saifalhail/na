@@ -60,12 +60,67 @@ check_prerequisites() {
     
     # Validate critical environment variables
     source .env.prod
-    local required_vars=("SECRET_KEY" "DB_PASSWORD" "GEMINI_API_KEY")
+    
+    # Define all required environment variables
+    local required_vars=(
+        "SECRET_KEY"
+        "DB_NAME"
+        "DB_USER"
+        "DB_PASSWORD"
+        "DB_HOST"
+        "DOMAIN"
+        "API_DOMAIN"
+        "SSL_EMAIL"
+        "GEMINI_API_KEY"
+        "REDIS_URL"
+        "ALLOWED_HOSTS"
+        "CORS_ALLOWED_ORIGINS"
+    )
+    
+    # Additional production-specific variables
+    local production_vars=(
+        "AWS_ACCESS_KEY_ID"
+        "AWS_SECRET_ACCESS_KEY"
+        "AWS_STORAGE_BUCKET_NAME"
+        "STRIPE_SECRET_KEY"
+        "SENTRY_DSN"
+        "TWILIO_ACCOUNT_SID"
+        "TWILIO_AUTH_TOKEN"
+    )
+    
+    # Check required variables
+    log "Validating required environment variables..."
     for var in "${required_vars[@]}"; do
         if [[ -z "${!var:-}" ]]; then
             error "Required environment variable not set: $var"
         fi
+        
+        # Check for placeholder values
+        if [[ "${!var}" == *"your-"* ]] || [[ "${!var}" == *"CHANGE"* ]] || [[ "${!var}" == *"example.com"* ]]; then
+            error "Environment variable contains placeholder value: $var=${!var}"
+        fi
     done
+    
+    # Check production variables (warn if missing)
+    for var in "${production_vars[@]}"; do
+        if [[ -z "${!var:-}" ]]; then
+            warning "Production environment variable not set: $var"
+        fi
+    done
+    
+    # Validate specific formats
+    if [[ ! "$SSL_EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+        error "Invalid email format for SSL_EMAIL: $SSL_EMAIL"
+    fi
+    
+    if [[ ! "$DOMAIN" =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
+        error "Invalid domain format: $DOMAIN"
+    fi
+    
+    # Ensure SECRET_KEY is sufficiently complex
+    if [[ ${#SECRET_KEY} -lt 50 ]]; then
+        error "SECRET_KEY must be at least 50 characters long"
+    fi
     
     success "Prerequisites check passed"
 }

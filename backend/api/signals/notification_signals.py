@@ -9,7 +9,6 @@ from django.dispatch import receiver
 
 from api.models import Notification
 from api.tasks.email_tasks import send_email_notification
-from api.tasks.sms_tasks import send_sms_notification
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +41,12 @@ def handle_notification_created(sender, instance, created, **kwargs):
             )
 
         elif instance.channel == "sms":
-            # Send SMS notification asynchronously
-            send_sms_notification.delay(instance.id)
-            logger.info(
-                f"Queued SMS notification {instance.id} for {instance.user.email}"
+            # SMS notifications have been removed - mark as failed
+            instance.status = "failed"
+            instance.error_message = "SMS notifications are no longer supported"
+            instance.save()
+            logger.warning(
+                f"SMS notification {instance.id} failed: SMS support removed"
             )
 
         elif instance.channel == "push":

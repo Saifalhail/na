@@ -43,7 +43,7 @@ interface NutritionDashboardProps {
   onExport?: () => void;
 }
 
-export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
+const NutritionDashboardComponent: React.FC<NutritionDashboardProps> = ({
   nutritionData,
   goals,
   mealTiming,
@@ -126,7 +126,7 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
               value={nutritionData.protein}
               goal={goals.protein}
               percentage={percentages.protein}
-              color="#10b981"
+              color={theme.colors.success[500]}
               unit="g"
             />
             <MacroProgress
@@ -134,7 +134,7 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
               value={nutritionData.carbs}
               goal={goals.carbs}
               percentage={percentages.carbs}
-              color="#f59e0b"
+              color={theme.colors.warning[500]}
               unit="g"
             />
             <MacroProgress
@@ -142,7 +142,7 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
               value={nutritionData.fat}
               goal={goals.fat}
               percentage={percentages.fat}
-              color="#ef4444"
+              color={theme.colors.secondary[500]}
               unit="g"
             />
           </View>
@@ -161,9 +161,9 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
           </View>
 
           <View style={styles.legendContainer}>
-            <LegendItem label="Protein" percentage={macroDistribution.protein} color="#10b981" />
-            <LegendItem label="Carbs" percentage={macroDistribution.carbs} color="#f59e0b" />
-            <LegendItem label="Fat" percentage={macroDistribution.fat} color="#ef4444" />
+            <LegendItem label="Protein" percentage={macroDistribution.protein} color={theme.colors.success[500]} />
+            <LegendItem label="Carbs" percentage={macroDistribution.carbs} color={theme.colors.warning[500]} />
+            <LegendItem label="Fat" percentage={macroDistribution.fat} color={theme.colors.secondary[500]} />
           </View>
         </View>
       </AnimatedCard>
@@ -288,14 +288,14 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
 };
 
 // Sub-components
-const MacroProgress: React.FC<{
+const MacroProgress = React.memo<{
   label: string;
   value: number;
   goal: number;
   percentage: number;
   color: string;
   unit: string;
-}> = ({ label, value, goal, percentage, color, unit }) => {
+}>(({ label, value, goal, percentage, color, unit }) => {
   const { theme } = useTheme();
 
   return (
@@ -312,23 +312,25 @@ const MacroProgress: React.FC<{
       </Text>
     </View>
   );
-};
+});
 
-const MacroPieChart: React.FC<{ distribution: any }> = ({ distribution }) => {
+const MacroPieChart = React.memo<{ distribution: any }>(({ distribution }) => {
+  const { theme } = useTheme();
+  
   // Simple visual representation - in production, use a proper chart library
   return (
     <View style={styles.pieChartVisual}>
       <LinearGradient
-        colors={['#10b981', '#f59e0b', '#ef4444']}
+        colors={[theme.colors.success[500], theme.colors.warning[500], theme.colors.secondary[500]]}
         style={styles.pieGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       />
     </View>
   );
-};
+});
 
-const LegendItem: React.FC<{ label: string; percentage: number; color: string }> = ({
+const LegendItem = React.memo<{ label: string; percentage: number; color: string }>(({
   label,
   percentage,
   color,
@@ -344,15 +346,15 @@ const LegendItem: React.FC<{ label: string; percentage: number; color: string }>
       </Text>
     </View>
   );
-};
+});
 
-const MealTimingBar: React.FC<{
+const MealTimingBar = React.memo<{
   label: string;
   value: number;
   total: number;
   icon: string;
   theme: any;
-}> = ({ label, value, total, icon, theme }) => {
+}>(({ label, value, total, icon, theme }) => {
   const percentage = total > 0 ? (value / total) * 100 : 0;
 
   return (
@@ -372,16 +374,16 @@ const MealTimingBar: React.FC<{
       </View>
     </View>
   );
-};
+});
 
-const MicronutrientItem: React.FC<{
+const MicronutrientItem = React.memo<{
   label: string;
   value: number;
   goal: number;
   unit: string;
   icon: string;
   theme: any;
-}> = ({ label, value, goal, unit, icon, theme }) => {
+}>(({ label, value, goal, unit, icon, theme }) => {
   const percentage = Math.min((value / goal) * 100, 100);
   const isOverGoal = value > goal;
 
@@ -411,7 +413,7 @@ const MicronutrientItem: React.FC<{
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -628,4 +630,46 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
+});
+
+// Memoize the component with custom comparison
+export const NutritionDashboard = React.memo(NutritionDashboardComponent, (prevProps, nextProps) => {
+  // Deep comparison for nutrition data
+  const nutritionDataEqual = 
+    prevProps.nutritionData.calories === nextProps.nutritionData.calories &&
+    prevProps.nutritionData.protein === nextProps.nutritionData.protein &&
+    prevProps.nutritionData.carbs === nextProps.nutritionData.carbs &&
+    prevProps.nutritionData.fat === nextProps.nutritionData.fat &&
+    prevProps.nutritionData.fiber === nextProps.nutritionData.fiber &&
+    prevProps.nutritionData.sugar === nextProps.nutritionData.sugar &&
+    prevProps.nutritionData.sodium === nextProps.nutritionData.sodium;
+
+  // Deep comparison for goals
+  const goalsEqual =
+    prevProps.goals.calories === nextProps.goals.calories &&
+    prevProps.goals.protein === nextProps.goals.protein &&
+    prevProps.goals.carbs === nextProps.goals.carbs &&
+    prevProps.goals.fat === nextProps.goals.fat &&
+    prevProps.goals.fiber === nextProps.goals.fiber &&
+    prevProps.goals.water === nextProps.goals.water;
+
+  // Deep comparison for meal timing
+  const mealTimingEqual =
+    prevProps.mealTiming.breakfast === nextProps.mealTiming.breakfast &&
+    prevProps.mealTiming.lunch === nextProps.mealTiming.lunch &&
+    prevProps.mealTiming.dinner === nextProps.mealTiming.dinner &&
+    prevProps.mealTiming.snacks === nextProps.mealTiming.snacks;
+
+  // Compare weekly data arrays
+  const weeklyDataEqual =
+    prevProps.weeklyData?.length === nextProps.weeklyData?.length &&
+    (prevProps.weeklyData || []).every((item, index) => {
+      const nextItem = nextProps.weeklyData?.[index];
+      return item.day === nextItem?.day && item.calories === nextItem?.calories;
+    });
+
+  // Compare callback function reference
+  const callbackEqual = prevProps.onExport === nextProps.onExport;
+
+  return nutritionDataEqual && goalsEqual && mealTimingEqual && weeklyDataEqual && callbackEqual;
 });

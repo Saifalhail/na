@@ -4,7 +4,7 @@ URL patterns for authentication endpoints.
 
 from django.urls import include, path
 
-from api.views.auth import (EmailVerifyView, LoginView, LogoutView,
+from api.views.auth import (EmailVerificationCodeView, EmailVerifyView, LoginView, LogoutView,
                             PasswordChangeView, PasswordResetConfirmView,
                             PasswordResetRequestView, ProfileView,
                             RefreshTokenView, RegisterView, TokenVerifyView)
@@ -30,6 +30,6 @@ urlpatterns = [
     path("password/change/", PasswordChangeView.as_view(), name="password-change"),
     # Profile
     path("profile/", ProfileView.as_view(), name="profile"),
-    # Two-factor authentication
-    path("2fa/", include("api.auth.two_factor_urls")),
+    # Email verification (simplified 2FA)
+    path("email-code/", EmailVerificationCodeView.as_view(), name="email-code"),
 ]

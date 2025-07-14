@@ -25,17 +25,17 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
 
     def process_response(self, request, response):
         """Add security headers to response."""
-        # Content Security Policy - Secure configuration without unsafe directives
+        # Content Security Policy - Secure configuration with Google OAuth support
         response["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' https://cdn.jsdelivr.net; "
             "style-src 'self' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: https:; "
-            "connect-src 'self' https://api.sentry.io https://api.openai.com https://generativelanguage.googleapis.com; "
+            "connect-src 'self' https://api.sentry.io https://api.openai.com https://generativelanguage.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "
-            "form-action 'self';"
+            "form-action 'self' https://accounts.google.com;"
         )
 
         # Other security headers
@@ -148,8 +148,9 @@ class RateLimitMiddleware(MiddlewareMixin):
 
     # Rate limits per endpoint (requests per minute) - Free tier
     RATE_LIMITS_FREE = {
-        "/api/v1/auth/login/": 5,
-        "/api/v1/auth/register/": 3,
+        "/api/v1/auth/login/": 15,  # Increased from 5 to 15
+        "/api/v1/auth/register/": 10,  # Increased from 3 to 10
+        "/api/v1/auth/social/google/": 10,  # Added for Google OAuth
         "/api/v1/ai/analyze/": 8,  # Lower for free users
         "/api/v1/ai/recalculate/": 15,
         "/api/v1/mobile/batch/": 5,  # Batch operations limited for free
@@ -159,8 +160,9 @@ class RateLimitMiddleware(MiddlewareMixin):
 
     # Rate limits per endpoint (requests per minute) - Premium tier
     RATE_LIMITS_PREMIUM = {
-        "/api/v1/auth/login/": 10,
-        "/api/v1/auth/register/": 5,
+        "/api/v1/auth/login/": 30,  # Increased from 10 to 30
+        "/api/v1/auth/register/": 20,  # Increased from 5 to 20
+        "/api/v1/auth/social/google/": 20,  # Added for Google OAuth
         "/api/v1/ai/analyze/": 30,  # Higher for premium
         "/api/v1/ai/recalculate/": 50,
         "/api/v1/mobile/batch/": 20,  # More batch operations

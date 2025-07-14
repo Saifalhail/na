@@ -93,10 +93,13 @@ export function usePerformanceMonitor(componentName: string) {
   // Track component mount time
   React.useEffect(() => {
     mountTime.current = performance.now();
-    console.log(`🚀 [Performance] ${componentName} mounting...`);
+    // Only log mount for critical components
+    if (__DEV__ && ['HomeScreen', 'CameraScreen', 'AnalysisResultsScreen'].includes(componentName)) {
+      console.log(`🚀 [Performance] ${componentName} mounting...`);
+    }
     
     return () => {
-      if (mountTime.current) {
+      if (mountTime.current && __DEV__ && ['HomeScreen', 'CameraScreen', 'AnalysisResultsScreen'].includes(componentName)) {
         const totalLifetime = performance.now() - mountTime.current;
         console.log(`🏁 [Performance] ${componentName} unmounted after ${totalLifetime.toFixed(2)}ms`);
       }
@@ -108,27 +111,17 @@ export function usePerformanceMonitor(componentName: string) {
     const startTime = performance.now();
     renderCount.current++;
     
-    // Log render start only in dev and on first few renders
-    if (__DEV__ && renderCount.current <= 3) {
+    // Log render start only for critical components and first render
+    if (__DEV__ && renderCount.current === 1 && ['HomeScreen', 'CameraScreen', 'AnalysisResultsScreen'].includes(componentName)) {
       console.log(`🔄 [Performance] ${componentName} render #${renderCount.current} started`);
     }
 
     return () => {
       const renderTime = performance.now() - startTime;
       
-      // Only log slow renders or first few renders
-      if (__DEV__ && (renderTime > 16.67 || renderCount.current <= 3)) {
-        console.log(`⏱️ [Performance] ${componentName} render #${renderCount.current} took ${renderTime.toFixed(2)}ms`);
-        
-        if (renderTime > 16.67) {
-          // More than one frame (60fps) - this is bad
-          console.warn(`🐌 [Performance] ${componentName} SLOW RENDER: ${renderTime.toFixed(2)}ms (${Math.round(renderTime/16.67)}x frame budget)`);
-        }
-        
-        if (renderTime > 100) {
-          // Extremely slow render
-          console.error(`🔥 [Performance] ${componentName} CRITICAL SLOW RENDER: ${renderTime.toFixed(2)}ms`);
-        }
+      // Only log extremely slow renders (over 100ms) to reduce log spam
+      if (__DEV__ && renderTime > 100) {
+        console.error(`🔥 [Performance] ${componentName} CRITICAL SLOW RENDER: ${renderTime.toFixed(2)}ms (render #${renderCount.current})`);
       }
     };
   }); // No dependency array needed for performance measurement

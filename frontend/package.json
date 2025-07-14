@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "npm run validate:quick && npx expo start --clear",
+    "start": "npx expo start --clear",
+    "start:validate": "npm run validate:quick && npx expo start --clear",
     "start:force": "npx expo start --clear --reset-cache",
     "start:wsl": "npx expo start --clear --localhost --no-dev --minify",
     "android": "npx expo start --android",

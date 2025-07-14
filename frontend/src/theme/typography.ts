@@ -187,17 +187,17 @@ export const textPresets = {
   buttonLarge: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
-    lineHeight: typography.fontSize.lg * typography.lineHeight.tight,
+    lineHeight: typography.fontSize.lg * typography.lineHeight.normal,
   },
   button: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    lineHeight: typography.fontSize.base * typography.lineHeight.tight,
+    lineHeight: typography.fontSize.base * typography.lineHeight.normal,
   },
   buttonSmall: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
-    lineHeight: typography.fontSize.sm * typography.lineHeight.tight,
+    lineHeight: typography.fontSize.sm * typography.lineHeight.normal,
   },
   // Link text
   link: {

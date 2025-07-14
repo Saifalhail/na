@@ -12,6 +12,34 @@ export const aiApi = {
    * Analyze food image with AI
    */
   async analyzeImage(data: AnalysisRequest): Promise<AnalysisResult> {
+    if (__DEV__) {
+      console.log('🤖 [AI API] Preparing image analysis request...');
+      console.log('🤖 [AI API] Request data:', {
+        hasImage: !!data.image,
+        hasImageUri: !!data.imageUri,
+        metadata: data.metadata
+      });
+    }
+    
+    // If we have base64 image data, send it directly
+    if (data.image) {
+      const jsonPayload = {
+        image: data.image,
+        metadata: data.metadata,
+      };
+      
+      if (__DEV__) {
+        console.log('🤖 [AI API] Sending base64 image data');
+        console.log('🤖 [AI API] Payload size:', JSON.stringify(jsonPayload).length, 'chars');
+      }
+      
+      return await api.post<AnalysisResult>(API_ENDPOINTS.ai.analyze, jsonPayload, {
+        // Longer timeout for AI processing
+        timeout: 60000, // 60 seconds
+      });
+    }
+    
+    // Otherwise use FormData for file upload
     const formData = createFormData({
       image: {
         uri: data.imageUri,

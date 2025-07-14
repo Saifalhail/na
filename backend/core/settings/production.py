@@ -56,6 +56,29 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = "DENY"
 
+# Additional security headers
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+
+# Content Security Policy
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com")
+CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
+CSP_IMG_SRC = ("'self'", "data:", "https:")
+CSP_CONNECT_SRC = ("'self'", "https://api.gemini.com", "wss:")
+CSP_FRAME_ANCESTORS = ("'none'",)
+CSP_BASE_URI = ("'self'",)
+CSP_FORM_ACTION = ("'self'",)
+
+# Session security
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Strict"
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Strict"
+
 # CORS settings for production - strict origin checking
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 CORS_ALLOW_ALL_ORIGINS = False
@@ -63,6 +86,28 @@ CORS_ALLOW_ALL_ORIGINS = False
 # Static files - use whitenoise for static file serving
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Add WhiteNoise middleware for production static file serving
+# Insert after SecurityMiddleware
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
+# Add custom compression middleware for API responses
+# These provide better compression than Django's GZipMiddleware alone
+MIDDLEWARE.insert(2, "api.middleware.compression.ResponseCompressionMiddleware")
+MIDDLEWARE.insert(3, "api.middleware.compression.APIResponseOptimizationMiddleware")
+MIDDLEWARE.insert(4, "api.middleware.compression.RequestTimingMiddleware")
+
+# WhiteNoise configuration
+WHITENOISE_COMPRESS_OFFLINE = True
+WHITENOISE_COMPRESSION_QUALITY = 80  # Brotli/gzip compression quality
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp", "zip", "gz", "tgz", "bz2", "tbz", "xz", "br"]
+WHITENOISE_AUTOREFRESH = False  # Disable in production for better performance
+WHITENOISE_USE_FINDERS = False  # Disable in production
+WHITENOISE_MANIFEST_STRICT = False  # Allow missing files in manifest
+
+# Enable compression for responses
+COMPRESS_ENABLED = True
+COMPRESS_OFFLINE = True
 
 # Media files - use cloud storage in production
 # AWS S3 configuration (example)
@@ -167,9 +212,20 @@ REST_FRAMEWORK.update(
             "rest_framework.throttling.AnonRateThrottle",
             "rest_framework.throttling.UserRateThrottle",
         ],
-        "DEFAULT_THROTTLE_RATES": {"anon": "100/hour", "user": "1000/hour"},
+        "DEFAULT_THROTTLE_RATES": {
+            "anon": "100/hour",
+            "user": "1000/hour",
+            "ai_analysis": "50/hour",  # Limit AI analysis requests
+            "registration": "5/hour",  # Limit registration attempts
+            "password_reset": "5/hour",  # Limit password reset requests
+        },
     }
 )
+
+# django-ratelimit configuration
+RATELIMIT_USE_CACHE = "default"
+RATELIMIT_ENABLE = True
+RATELIMIT_VIEW = "api.views.ratelimit_exceeded"  # Custom rate limit exceeded view
 
 # Admin settings
 ADMINS = [

@@ -14,6 +14,7 @@ import { Theme } from '@/theme';
 import { spacing, layout } from '@/theme/spacing';
 import { getModernShadow } from '@/theme/shadows';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface TabIconProps {
   route: any;
@@ -22,7 +23,7 @@ interface TabIconProps {
   size: number;
 }
 
-const TabIcon: React.FC<TabIconProps> = ({ route, focused, color, size }) => {
+const TabIcon = React.memo<TabIconProps>(({ route, focused, color, size }) => {
   let iconName: keyof typeof Ionicons.glyphMap;
 
   switch (route.name) {
@@ -46,9 +47,17 @@ const TabIcon: React.FC<TabIconProps> = ({ route, focused, color, size }) => {
   }
 
   return <Ionicons name={iconName} size={size} color={color} />;
-};
+}, (prevProps, nextProps) => {
+  // Only re-render if route name, focused state, or color changes
+  return (
+    prevProps.route.name === nextProps.route.name &&
+    prevProps.focused === nextProps.focused &&
+    prevProps.color === nextProps.color &&
+    prevProps.size === nextProps.size
+  );
+});
 
-export const CustomTabBar: React.FC<BottomTabBarProps> = ({
+const CustomTabBarComponent: React.FC<BottomTabBarProps> = ({
   state,
   descriptors,
   navigation,
@@ -86,15 +95,22 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({
                 <TouchableOpacity
                   style={styles.cameraButton}
                   onPress={() => handlePress(route, isFocused)}
-                  activeOpacity={0.8}
+                  activeOpacity={0.85}
                 >
-                  <View style={styles.cameraIconWrapper}>
-                    <Ionicons 
-                      name="camera" 
-                      size={28} 
-                      color={theme.colors.white} 
-                    />
-                  </View>
+                  <LinearGradient
+                    colors={[theme.colors.primary[400], theme.colors.primary[600]]}
+                    style={styles.cameraButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.cameraIconWrapper}>
+                      <Ionicons 
+                        name="camera" 
+                        size={26} 
+                        color={theme.colors.white} 
+                      />
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             );
@@ -152,24 +168,53 @@ const createStyles = (theme: Theme, insets: any) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: -spacing['6'], // -24px to float above
+      marginTop: -spacing['8'], // -32px to float above
     },
     cameraButton: {
-      width: spacing['14'], // 56px
-      height: spacing['14'], // 56px
-      borderRadius: spacing['7'], // 28px (half of width)
-      backgroundColor: theme.colors.primary[500],
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...getModernShadow('button'),
-      elevation: 8,
+      width: 64, // Larger button
+      height: 64,
+      borderRadius: 32,
+      overflow: 'hidden',
+      ...getModernShadow('floating'),
+      elevation: 12,
+      borderWidth: 3,
+      borderColor: theme.colors.surface,
     },
-    cameraIconWrapper: {
+    cameraButtonGradient: {
       width: '100%',
       height: '100%',
       alignItems: 'center',
       justifyContent: 'center',
+      borderRadius: 29,
+    },
+    cameraIconWrapper: {
+      width: 48,
+      height: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderRadius: 24,
     },
   });
+
+// Memoize the CustomTabBar component
+export const CustomTabBar = React.memo(CustomTabBarComponent, (prevProps, nextProps) => {
+  // Deep comparison of navigation state
+  const stateEqual =
+    prevProps.state.index === nextProps.state.index &&
+    prevProps.state.routes.length === nextProps.state.routes.length &&
+    prevProps.state.routes.every(
+      (route, index) => route.key === nextProps.state.routes[index]?.key
+    );
+
+  // Compare descriptors (only check keys, as the actual descriptors are reference-equal)
+  const descriptorsEqual =
+    Object.keys(prevProps.descriptors).length === Object.keys(nextProps.descriptors).length;
+
+  // Navigation object is stable, so reference equality is fine
+  const navigationEqual = prevProps.navigation === nextProps.navigation;
+
+  return stateEqual && descriptorsEqual && navigationEqual;
+});
 
 export default CustomTabBar;

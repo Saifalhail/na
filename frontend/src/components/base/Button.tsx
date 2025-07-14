@@ -37,7 +37,7 @@ interface ButtonProps extends TouchableOpacityProps {
   testID?: string;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps> = React.memo(({
   variant = 'primary',
   size = 'medium',
   loading = false,
@@ -105,7 +105,7 @@ export const Button: React.FC<ButtonProps> = ({
       ) : (
         <View style={styles.content}>
           {icon && iconPosition === 'left' && <View style={styles.iconLeft}>{icon}</View>}
-          <Text style={textStyle} numberOfLines={1}>
+          <Text style={textStyle} numberOfLines={2} adjustsFontSizeToFit={true} minimumFontScale={0.9}>
             {children}
           </Text>
           {icon && iconPosition === 'right' && <View style={styles.iconRight}>{icon}</View>}
@@ -113,7 +113,7 @@ export const Button: React.FC<ButtonProps> = ({
       )}
     </TouchableOpacity>
   );
-};
+});
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({

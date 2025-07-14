@@ -14,6 +14,7 @@ from api.serializers.social_serializers import GoogleLoginSerializer
 class GoogleLogin(SocialLoginView):
     """
     Social login view for Google OAuth2.
+    Handles both authorization code and access token flows.
     """
 
     adapter_class = GoogleOAuth2Adapter

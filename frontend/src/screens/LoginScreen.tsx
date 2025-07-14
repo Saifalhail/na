@@ -217,7 +217,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               {APP_CONFIG.ENABLE_DEMO_MODE && (
                 <Button
                   onPress={handleDemoLogin}
-                  variant="secondary"
+                  variant="primary"
                   size="large"
                   fullWidth
                   style={styles.demoButton}

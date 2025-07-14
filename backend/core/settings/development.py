@@ -39,9 +39,17 @@ DATABASES = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:8081",  # Expo Metro bundler
+    "http://127.0.0.1:8081",
+    "http://172.18.223.214:8081",  # WSL IP for Expo
     "http://localhost:19006",  # Expo development server
-    "http://127.0.0.1:19006",
-    "http://172.25.29.233:19006",  # Current IP for development
+    "http://127.0.0.1:19006", 
+    "http://172.18.223.214:19006",  # WSL IP for Expo dev server
+    "http://172.25.29.233:19006",  # Previous IP for development
+    # Add secure variants
+    "https://localhost:8081",
+    "https://127.0.0.1:8081", 
+    "https://172.18.223.214:8081",
 ]
 
 # Allow all origins in development for mobile testing

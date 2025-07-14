@@ -71,6 +71,10 @@ class UserAdmin(BaseUserAdmin):
     )
     search_fields = ("email", "username", "first_name", "last_name")
     ordering = ("-created_at",)
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related('profile')
 
     fieldsets = (
         (None, {"fields": ("email", "username", "password")}),
@@ -152,6 +156,10 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_filter = ("gender", "activity_level", "measurement_system")
     search_fields = ("user__email", "user__first_name", "user__last_name")
     readonly_fields = ("bmi", "bmr", "tdee", "created_at", "updated_at")
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related('user')
 
     fieldsets = (
         (_("User"), {"fields": ("user",)}),
@@ -217,6 +225,10 @@ class DietaryRestrictionAdmin(admin.ModelAdmin):
     list_filter = ("restriction_type", "severity", "is_active")
     search_fields = ("user__email", "name")
     ordering = ("-created_at",)
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related('user')
 
     fieldsets = (
         (_("User"), {"fields": ("user",)}),
@@ -252,6 +264,10 @@ class APIUsageLogAdmin(admin.ModelAdmin):
     search_fields = ("user__email", "endpoint", "ip_address")
     ordering = ("-created_at",)
     date_hierarchy = "created_at"
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related('user')
 
     fieldsets = (
         (
@@ -368,6 +384,10 @@ class FoodItemAdmin(admin.ModelAdmin):
     list_filter = ["source", "is_verified", "is_public", "created_at"]
     search_fields = ["name", "brand", "barcode", "external_id"]
     readonly_fields = ["id", "created_at", "updated_at"]
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related('created_by')
 
     fieldsets = [
         (_("Basic Information"), {"fields": ["id", "name", "brand", "barcode"]}),
@@ -413,6 +433,14 @@ class MealAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     ]
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related and prefetch_related."""
+        return super().get_queryset(request).select_related(
+            'user', 'user__profile'
+        ).prefetch_related(
+            'meal_items__food_item'
+        )
 
     fieldsets = [
         (_("Basic Information"), {"fields": ["id", "user", "name", "meal_type"]}),
@@ -476,6 +504,12 @@ class MealItemAdmin(admin.ModelAdmin):
         "updated_at",
     ]
     autocomplete_fields = ["food_item", "meal"]
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related(
+            'meal', 'meal__user', 'food_item'
+        )
 
 
 @admin.register(MealAnalysis)
@@ -494,6 +528,10 @@ class MealAnalysisAdmin(admin.ModelAdmin):
     list_filter = ["ai_service", "is_accurate", "created_at"]
     search_fields = ["meal__name", "user_notes"]
     readonly_fields = ["created_at", "updated_at", "ai_response"]
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related('meal', 'meal__user')
 
     fieldsets = [
         (_("Meal"), {"fields": ["meal"]}),
@@ -530,6 +568,12 @@ class FavoriteMealAdmin(admin.ModelAdmin):
     list_filter = ["is_template", "created_at", "last_used"]
     search_fields = ["name", "user__email", "meal__name"]
     readonly_fields = ["times_used", "last_used", "created_at", "updated_at"]
+    
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related(
+            'user', 'meal', 'meal__user'
+        )
 
     fieldsets = [
         (_("Basic Information"), {"fields": ["user", "meal", "name"]}),

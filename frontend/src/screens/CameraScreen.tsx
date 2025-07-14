@@ -9,6 +9,7 @@ import {
   Dimensions,
   Animated,
   Image,
+  ScrollView,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -17,14 +18,17 @@ import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { Camera, CameraView } from 'expo-camera';
 import type { CameraType, FlashMode } from 'expo-camera';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { SafeAreaContainer, SafeAreaHeader } from '@/components/layout';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
 import { Ionicons } from '@/components/IconFallback';
+import { GradientIcon } from '@/components/icons/GradientIcon';
 import { LoadingOverlay } from '@/components/base/Loading';
 import { Badge } from '@/components/base/Badge';
 import { useTheme } from '@/hooks/useTheme';
-import { MainStackParamList } from '@/navigation/types';
+import { MainStackParamList } from '@/navigation/MainNavigator';
 import { CAMERA_CONFIG, ERROR_MESSAGES, LOADING_MESSAGES } from '@/constants';
 import { announce, getActionHint } from '@/utils/accessibility';
 import { CameraOptionsSheet, CameraOptions } from '@/components/camera/CameraOptionsSheet';
@@ -33,6 +37,8 @@ import { toastManager } from '@/components/base/Toast';
 import { AnalysisRequest } from '@/types/api';
 import { rTouchTarget, layout, zIndex, moderateScale, fontScale, spacing } from '@/utils/responsive';
 import { metadataCollectionService } from '@/services/metadata/MetadataCollectionService';
+import { getModernShadow } from '@/theme/shadows';
+import { textPresets } from '@/theme/typography';
 import {
   smartPhotoGuidanceService,
   PhotoQualityAssessment,
@@ -51,6 +57,9 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const featureItemsAnim = useRef(new Animated.Value(0)).current;
   const [isLoading, setIsLoading] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [showCamera, setShowCamera] = useState(false);
@@ -76,6 +85,27 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   useEffect(() => {
     // Get location permission and current location
     getLocationAsync();
+    
+    // Entrance animations
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 20,
+        friction: 5,
+        useNativeDriver: true,
+      }),
+      Animated.timing(featureItemsAnim, {
+        toValue: 1,
+        duration: 1000,
+        delay: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     return () => {
       if (captureTimeoutRef.current) {
@@ -356,7 +386,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         allowsEditing: CAMERA_CONFIG.ALLOW_EDITING,
         aspect: CAMERA_CONFIG.ASPECT_RATIO,
         quality: CAMERA_CONFIG.QUALITY,
@@ -386,8 +416,8 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
       }
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      // Provide specific error message for MediaTypeOptions issue
-      if (errorMessage.includes('MediaTypeOptions') || errorMessage.includes('undefined')) {
+      // Provide specific error message for image picker issues
+      if (errorMessage.includes('MediaType') || errorMessage.includes('undefined')) {
         if (__DEV__) {
           console.error('📸 [Gallery] ImagePicker API issue detected');
         }
@@ -458,105 +488,70 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
           onOptimalPosition={handleOptimalPosition}
         />
 
-        {/* Header Controls with SafeArea */}
-        <SafeAreaHeader transparent style={styles.cameraHeader}>
-          <View style={styles.cameraHeaderContent}>
-            <TouchableOpacity onPress={handleGoBack} style={styles.headerButton}>
-              <Ionicons name="close" size={24} color="#fff" />
+        {/* Minimal Header Controls */}
+        <View style={styles.minimalHeader}>
+          <TouchableOpacity 
+            onPress={handleGoBack} 
+            style={styles.minimalButton}
+            activeOpacity={0.8}
+          >
+            <GradientIcon name="close" size={24} colors={['white', 'rgba(255,255,255,0.9)']} />
+          </TouchableOpacity>
+
+          {/* Simple Flash Toggle */}
+          <TouchableOpacity 
+            onPress={toggleFlash} 
+            style={styles.minimalButton}
+            activeOpacity={0.8}
+          >
+            <GradientIcon 
+              name={flashMode === 'on' ? 'flash' : flashMode === 'auto' ? 'flash-outline' : 'flash-off'} 
+              size={20} 
+              colors={flashMode === 'on' ? [theme.colors.warning[400], theme.colors.warning[600]] : ['white', 'rgba(255,255,255,0.9)']} 
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Minimal Bottom Controls */}
+        <View style={styles.minimalBottomContainer}>
+          <View style={styles.minimalBottomContent}>
+            {/* Gallery Button */}
+            <TouchableOpacity
+              onPress={handleSelectFromGallery}
+              style={styles.minimalSecondaryButton}
+              activeOpacity={0.8}
+            >
+              <GradientIcon name="images-outline" size={24} colors={['white', 'rgba(255,255,255,0.9)']} />
             </TouchableOpacity>
 
-            {/* Context Badge or Logo */}
-            {cameraOptions ? (
-              <Badge variant="primary" size="small" style={styles.contextBadgeHeader}>
-                {`${cameraOptions.mealType} • ${cameraOptions.cuisines[0] || 'All'}`}
-              </Badge>
-            ) : (
-              <Image
-                source={require('../../assets/logo_cropped.png')}
-                style={styles.cameraHeaderLogo}
-                resizeMode="contain"
-              />
-            )}
-
-            <View style={styles.headerRightButtons}>
-              <TouchableOpacity onPress={toggleFlash} style={styles.headerButton}>
-                <Ionicons 
-                  name={flashMode === 'on' ? 'flash' : flashMode === 'auto' ? 'flash-outline' : 'flash-off'} 
-                  size={20} 
-                  color="#fff" 
-                />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={toggleCameraType} style={styles.headerButton}>
-                <Ionicons name="camera-reverse" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </SafeAreaHeader>
-
-        {/* Simplified Bottom Controls */}
-        <View style={styles.cameraBottomContainer}>
-          <View style={styles.cameraBottomContent}>
-            {/* Secondary controls */}
-            <View style={styles.secondaryControls}>
-              <TouchableOpacity
-                onPress={() => setShowOptionsSheet(true)}
-                style={styles.secondaryButton}
-                accessible={true}
-                accessibilityLabel="Change meal context"
-                accessibilityRole="button"
-              >
-                <Ionicons name="settings" size={22} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleSelectFromGallery}
-                style={styles.secondaryButton}
-                accessible={true}
-                accessibilityLabel="Select from gallery"
-                accessibilityRole="button"
-              >
-                <Ionicons name="images" size={22} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Main capture button */}
+            {/* Clean Capture Button */}
             <Animated.View style={{ transform: [{ scale: pulseAnimation }] }}>
               <TouchableOpacity
                 onPress={handleTakePicture}
                 style={[
-                  styles.captureButton,
-                  isCapturing && styles.captureButtonActive,
-                  isOptimalPosition && styles.captureButtonOptimal,
+                  styles.cleanCaptureButton,
+                  isOptimalPosition && styles.optimalCapture
                 ]}
                 disabled={isCapturing}
-                accessible={true}
-                accessibilityLabel="Capture photo"
-                accessibilityRole="button"
+                activeOpacity={0.9}
               >
-                <View
-                  style={[
-                    styles.captureButtonInner,
-                    isOptimalPosition && styles.captureButtonInnerOptimal,
-                  ]}
-                />
+                <View style={styles.captureButtonRing}>
+                  {isCapturing ? (
+                    <GradientIcon name="checkmark" size={32} colors={['white', 'rgba(255,255,255,0.9)']} />
+                  ) : (
+                    <GradientIcon name="camera" size={36} colors={['white', 'rgba(255,255,255,0.9)']} />
+                  )}
+                </View>
               </TouchableOpacity>
             </Animated.View>
 
-            {/* Toggle guidance */}
-            <TouchableOpacity
-              onPress={() => {
-                setShowGuidance(!showGuidance);
-                announce(showGuidance ? 'Guidance hidden' : 'Guidance shown');
-              }}
-              style={styles.toggleButton}
-              accessible={true}
-              accessibilityLabel="Toggle guidance"
-              accessibilityRole="button"
+            {/* Camera Type Toggle */}
+            <TouchableOpacity 
+              onPress={toggleCameraType} 
+              style={styles.minimalSecondaryButton}
+              activeOpacity={0.8}
             >
-              <Ionicons 
-                name={showGuidance ? 'eye' : 'eye-off'} 
-                size={20} 
-                color="rgba(255,255,255,0.8)" 
-              />
+              <GradientIcon name="camera-reverse" size={24} colors={['white', 'rgba(255,255,255,0.9)']} />
             </TouchableOpacity>
           </View>
         </View>
@@ -573,107 +568,238 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaContainer style={styles.container} scrollable>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.backButtonTouch}>
-            <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Back</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Background Gradient */}
+      <LinearGradient
+        colors={theme.isDark
+          ? ['#1e3a8a', '#1e40af', '#1d4ed8']
+          : ['#dbeafe', '#93c5fd', '#ffffff']
+        }
+        style={styles.backgroundGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      
+      {/* Modern Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={handleGoBack}
+          style={styles.backButtonContainer}
+          activeOpacity={0.8}
+        >
+          <BlurView intensity={30} style={styles.backButtonBlur}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.1)']}
+              style={styles.backButtonGradient}
+            >
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                color="white"
+              />
+            </LinearGradient>
+          </BlurView>
+        </TouchableOpacity>
+        
+        <Animated.View style={[
+          styles.headerTitleContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{
+              translateY: fadeAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-10, 0],
+              }),
+            }],
+          },
+        ]}>
+          <Text style={styles.headerTitle}>Capture Meal</Text>
+          <Text style={styles.headerSubtitle}>AI-Powered Food Analysis</Text>
+        </Animated.View>
+        
+        <View style={styles.headerSpacer} />
+      </View>
+      
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+
+        {/* Hero Section */}
+        <Animated.View style={[
+          styles.heroSection,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}>
+          <View style={styles.logoContainer}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']
+              }
+              style={styles.logoGradient}
+            >
+              <View style={styles.logoContainer}>
+                <Image
+                  source={require('../../assets/logo.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
+            </LinearGradient>
+          </View>
+          
+          <Text style={styles.title}>
+            AI-Powered Food Analysis
+          </Text>
+          
+          <Text style={styles.subtitle}>
+            Capture your meal for instant nutritional insights
+          </Text>
+        </Animated.View>
+
+        {/* Action Buttons */}
+        <Animated.View style={[
+          styles.buttonsContainer,
+          {
+            opacity: featureItemsAnim,
+            transform: [{
+              translateY: featureItemsAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [20, 0],
+              }),
+            }],
+          },
+        ]}>
+          <TouchableOpacity
+            onPress={handleOpenCamera}
+            style={[styles.primaryButton, styles.primaryButtonCamera]}
+            activeOpacity={0.85}
+            disabled={isLoading}
+          >
+            <LinearGradient
+              colors={[theme.colors.primary[400], theme.colors.primary[600]]}
+              style={styles.primaryButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.primaryButtonContent}>
+                <Ionicons name="camera" size={32} color="white" />
+                <View style={styles.primaryButtonTextContainer}>
+                  <Text style={styles.primaryButtonText}>Take Photo</Text>
+                  <Text style={styles.primaryButtonSubtext}>Use camera for best results</Text>
+                </View>
+              </View>
+            </LinearGradient>
           </TouchableOpacity>
-        </View>
+          
+          <TouchableOpacity
+            onPress={handleSelectFromGallery}
+            style={[styles.primaryButton, styles.primaryButtonGallery]}
+            activeOpacity={0.85}
+            disabled={isLoading}
+          >
+            <LinearGradient
+              colors={[theme.colors.secondary[400], theme.colors.secondary[600]]}
+              style={styles.primaryButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.primaryButtonContent}>
+                <Ionicons name="images" size={32} color="white" />
+                <View style={styles.primaryButtonTextContainer}>
+                  <Text style={styles.primaryButtonText}>Upload Photo</Text>
+                  <Text style={styles.primaryButtonSubtext}>Choose from your gallery</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
 
-        <Spacer size="xl" />
-
-        <View style={styles.centerContent}>
-          <View style={styles.cameraIcon}>
-            <Image
-              source={require('../../assets/logo.png')}
-              style={styles.cameraIconImage}
-              resizeMode="contain"
+        {/* Features Section */}
+        <Animated.View style={[
+          styles.featuresSection,
+          {
+            opacity: featureItemsAnim,
+            transform: [{
+              translateY: featureItemsAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [30, 0],
+              }),
+            }],
+          },
+        ]}>
+          <Text style={styles.featuresTitle}>Smart Features</Text>
+          
+          <View style={styles.featureGrid}>
+            <FeatureCard
+              icon="nutrition"
+              iconColor={theme.colors.success[500]}
+              title="Instant Analysis"
+              description="Get nutrition facts in seconds"
+              theme={theme}
+            />
+            <FeatureCard
+              icon="sparkles"
+              iconColor={theme.colors.warning[500]}
+              title="AI Powered"
+              description="Advanced food recognition"
+              theme={theme}
+            />
+            <FeatureCard
+              icon="bar-chart"
+              iconColor={theme.colors.info[500]}
+              title="Track Progress"
+              description="Monitor your nutrition goals"
+              theme={theme}
+            />
+            <FeatureCard
+              icon="restaurant"
+              iconColor={theme.colors.primary[500]}
+              title="Food Database"
+              description="Millions of foods recognized"
+              theme={theme}
             />
           </View>
-
-          <Spacer size="xl" />
-
-          <Text style={[styles.title, { color: theme.colors.text.primary }]}>
-            Capture Your Meal
-          </Text>
-
-          <Spacer size="md" />
-
-          <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-            Take a photo of your meal or select from your gallery to get instant nutritional
-            analysis
-          </Text>
-
-          <Spacer size="xxl" />
-
-          <View style={styles.buttons}>
-            <Button
-              onPress={handleOpenCamera}
-              variant="primary"
-              disabled={isLoading}
-              style={styles.button}
-              accessibilityLabel="Take photo"
-              accessibilityHint={getActionHint('camera')}
-              icon={<Ionicons name="camera" size={20} color="#fff" />}
-              iconPosition="left"
-            >
-              Take Photo
-            </Button>
-
-            <Spacer size="lg" />
-
-            <Button
-              onPress={handleSelectFromGallery}
-              variant="outline"
-              disabled={isLoading}
-              style={styles.button}
-              accessibilityLabel="Choose from gallery"
-              accessibilityHint={getActionHint('open gallery')}
-              icon={<Ionicons name="images" size={20} color={theme.colors.primary[500]} />}
-              iconPosition="left"
-            >
-              Choose from Gallery
-            </Button>
-          </View>
+        </Animated.View>
+        
+        {/* Tips Section */}
+        <View style={styles.tipsSection}>
+          <LinearGradient
+            colors={theme.isDark
+              ? ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']
+              : ['rgba(0,0,0,0.02)', 'rgba(0,0,0,0.05)']
+            }
+            style={styles.tipsGradient}
+          >
+            <Text style={styles.tipsTitle}>📸 Photography Tips</Text>
+            
+            <View style={styles.tipsList}>
+              <TipItem
+                icon="sunny"
+                text="Use natural lighting when possible"
+                theme={theme}
+              />
+              <TipItem
+                icon="scan"
+                text="Frame the entire meal in view"
+                theme={theme}
+              />
+              <TipItem
+                icon="phone-portrait"
+                text="Hold camera at 45° angle"
+                theme={theme}
+              />
+              <TipItem
+                icon="contrast"
+                text="Avoid harsh shadows"
+                theme={theme}
+              />
+            </View>
+          </LinearGradient>
         </View>
-
-        <View style={styles.tips}>
-          <Text style={[styles.tipsTitle, { color: theme.colors.text.primary }]}>
-            Tips for best results:
-          </Text>
-
-          <Spacer size="small" />
-
-          <View style={styles.tipItem}>
-            <Ionicons name="bulb" size={20} color={theme.colors.warning[500]} style={styles.tipIconView} />
-            <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-              Ensure good lighting - natural light works best
-            </Text>
-          </View>
-
-          <View style={styles.tipItem}>
-            <Ionicons name="restaurant" size={20} color={theme.colors.primary[500]} style={styles.tipIconView} />
-            <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-              Show the entire meal in frame
-            </Text>
-          </View>
-
-          <View style={styles.tipItem}>
-            <Ionicons name="resize" size={20} color={theme.colors.info[500]} style={styles.tipIconView} />
-            <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-              Take photo from above at 45° angle
-            </Text>
-          </View>
-
-          <View style={styles.tipItem}>
-            <Ionicons name="ban" size={20} color={theme.colors.error[500]} style={styles.tipIconView} />
-            <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
-              Avoid shadows and reflections
-            </Text>
-          </View>
-        </View>
-      </View>
+      </ScrollView>
 
       {isLoading && (
         <LoadingOverlay visible={isLoading} message={LOADING_MESSAGES.PREPARING_CAMERA} />
@@ -686,91 +812,355 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
         onConfirm={handleOptionsConfirm}
         initialOptions={cameraOptions || undefined}
       />
-    </SafeAreaContainer>
+    </View>
   );
 };
+
+// Feature Card Component
+const FeatureCard: React.FC<{
+  icon: string;
+  iconColor: string;
+  title: string;
+  description: string;
+  theme: any;
+}> = ({ icon, iconColor, title, description, theme }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  return (
+    <Animated.View style={[styles.featureCard, { transform: [{ scale: scaleAnim }] }]}>
+      <TouchableOpacity
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.9}
+        style={styles.featureCardTouch}
+      >
+        <LinearGradient
+          colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']}
+          style={styles.featureCardGradient}
+        >
+          <View style={[styles.featureIconContainer, { backgroundColor: iconColor + '30' }]}>
+            <Ionicons name={icon as any} size={26} color={iconColor} />
+          </View>
+          <Text style={styles.featureTitle}>
+            {title}
+          </Text>
+          <Text style={styles.featureDescription}>
+            {description}
+          </Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// Tip Item Component
+const TipItem: React.FC<{
+  icon: string;
+  text: string;
+  theme: any;
+}> = ({ icon, text, theme }) => (
+  <View style={styles.tipItem}>
+    <View style={styles.tipIconContainer}>
+      <Ionicons name={icon as any} size={18} color={theme.colors.primary[500]} />
+    </View>
+    <Text style={[styles.tipText, { color: theme.colors.text.secondary }]}>
+      {text}
+    </Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: screenHeight * 0.5,
+  },
+  scrollView: {
     flex: 1,
-    paddingTop: spacing.medium,
+  },
+  content: {
+    paddingBottom: spacing.xlarge * 2,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: spacing.medium,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.large,
+    paddingTop: Platform.OS === 'ios' ? 60 : 45,
+    paddingBottom: spacing.large,
+    zIndex: 10,
   },
-  backButtonTouch: {
-    padding: spacing.small,
-    marginLeft: -spacing.small,
+  backButtonContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
+    ...getModernShadow({ isDark: true }, 'button'),
   },
-  backButton: {
-    fontSize: fontScale(16),
-    fontWeight: '500',
+  backButtonBlur: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  centerContent: {
+  backButtonGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
+  },
+  headerTitleContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cameraIcon: {
-    width: moderateScale(120),
-    height: moderateScale(120),
+  headerTitle: {
+    ...textPresets.h2,
+    color: 'white',
+    fontWeight: '700',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  headerSubtitle: {
+    ...textPresets.caption,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+    marginTop: 4,
+    fontSize: 12,
+  },
+  headerSpacer: {
+    width: 48,
+  },
+  // Hero Section
+  heroSection: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.large,
-  },
-  cameraIconImage: {
-    width: moderateScale(120),
-    height: moderateScale(120),
-  },
-  title: {
-    fontSize: fontScale(28),
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: spacing.medium,
-  },
-  subtitle: {
-    fontSize: fontScale(16),
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: spacing.large,
-    marginBottom: spacing.xlarge,
-  },
-  buttons: {
-    width: '100%',
-    maxWidth: 300,
-  },
-  button: {
-    width: '100%',
-    marginBottom: spacing.medium,
-  },
-  tips: {
-    marginTop: spacing.xlarge,
+    paddingTop: spacing.xlarge,
     paddingBottom: spacing.xlarge,
   },
+  logoContainer: {
+    width: 140,
+    height: 140,
+    marginBottom: spacing.large,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  logoGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 70,
+    padding: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  logo: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  title: {
+    ...textPresets.h1,
+    color: 'white',
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: spacing.small,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  subtitle: {
+    ...textPresets.body,
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+    paddingHorizontal: spacing.xlarge,
+  },
+  // Buttons
+  buttonsContainer: {
+    paddingHorizontal: spacing.large,
+    gap: spacing.large,
+  },
+  primaryButton: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    ...getModernShadow({ isDark: false }, 'cardElevated'),
+    minHeight: 76,
+  },
+  primaryButtonCamera: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  primaryButtonGallery: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  primaryButtonGradient: {
+    paddingVertical: spacing.large,
+    paddingHorizontal: spacing.xlarge,
+    minHeight: 72,
+    justifyContent: 'center',
+  },
+  primaryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: spacing.large,
+  },
+  primaryButtonTextContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  primaryButtonText: {
+    ...textPresets.h3,
+    color: 'white',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  primaryButtonSubtext: {
+    ...textPresets.caption,
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
+    lineHeight: 16,
+  },
+  secondaryButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  secondaryButtonBlur: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.medium,
+    paddingHorizontal: spacing.large,
+    gap: spacing.medium,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  secondaryButtonText: {
+    ...textPresets.body,
+    color: 'white',
+    fontWeight: '500',
+  },
+  // Features Section
+  featuresSection: {
+    paddingHorizontal: spacing.large,
+    marginTop: spacing.xlarge,
+  },
+  featuresTitle: {
+    ...textPresets.h2,
+    color: 'white',
+    fontWeight: '600',
+    marginBottom: spacing.large,
+    textAlign: 'center',
+  },
+  featureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.medium,
+  },
+  featureCard: {
+    width: (screenWidth - spacing.large * 2 - spacing.medium) / 2,
+  },
+  featureCardTouch: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...getModernShadow({ isDark: true }, 'card'),
+  },
+  featureCardGradient: {
+    padding: spacing.large,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    minHeight: 140,
+    justifyContent: 'center',
+  },
+  featureIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.medium,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  featureTitle: {
+    ...textPresets.subtitle,
+    fontWeight: '700',
+    marginBottom: spacing.small,
+    textAlign: 'center',
+    color: 'white',
+  },
+  featureDescription: {
+    ...textPresets.caption,
+    textAlign: 'center',
+    lineHeight: 18,
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+  },
+  // Tips Section
+  tipsSection: {
+    marginTop: spacing.xlarge * 2,
+    marginHorizontal: spacing.large,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  tipsGradient: {
+    padding: spacing.large,
+  },
   tipsTitle: {
-    fontSize: fontScale(16),
+    ...textPresets.h3,
     fontWeight: '600',
     marginBottom: spacing.medium,
+    color: 'white',
+  },
+  tipsList: {
+    gap: spacing.medium,
   },
   tipItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: spacing.small,
+    alignItems: 'center',
+    gap: spacing.small,
   },
-  tipIconView: {
-    marginRight: spacing.small,
-    marginTop: spacing.tiny,
-    width: 24,
+  tipIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tipText: {
-    fontSize: fontScale(14),
-    lineHeight: 20,
+    ...textPresets.body,
     flex: 1,
+    color: 'rgba(255,255,255,0.9)',
   },
   // Camera styles
   cameraContainer: {
@@ -780,136 +1170,240 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  // Header styles
-  cameraHeader: {
+  // Minimal Camera Header
+  minimalHeader: {
     position: 'absolute',
-    top: 0,
+    top: Platform.OS === 'ios' ? 60 : 40,
     left: 0,
     right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.large,
     zIndex: zIndex.dropdown,
+  },
+  minimalButton: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  cameraHeaderGradient: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: spacing.medium,
   },
   cameraHeaderContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: spacing.medium,
   },
-  headerButton: {
-    width: rTouchTarget.minimum,
-    height: rTouchTarget.minimum,
-    borderRadius: rTouchTarget.minimum / 2,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  modernHeaderButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    overflow: 'hidden',
+    ...getModernShadow({ isDark: true }, 'button'),
+  },
+  headerButtonBlur: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  headerButtonGradient: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  headerButtonText: {
-    color: '#fff',
-    fontSize: fontScale(20),
-    fontWeight: '600',
+    borderRadius: 23,
   },
   headerRightButtons: {
     flexDirection: 'row',
     gap: spacing.small,
   },
-  contextBadgeHeader: {
+  contextContainer: {
     flex: 1,
     marginHorizontal: spacing.small,
+    alignItems: 'center',
+  },
+  contextBlur: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  contextGradient: {
+    paddingHorizontal: spacing.medium,
+    paddingVertical: spacing.small,
+  },
+  contextText: {
+    ...textPresets.caption,
+    color: 'white',
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  logoWrapper: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 20,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cameraHeaderLogo: {
-    width: moderateScale(32),
-    height: moderateScale(32),
-    flex: 1,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
   },
-  // Bottom controls
-  cameraBottomContainer: {
+  // Minimal Bottom Controls
+  minimalBottomContainer: {
     position: 'absolute',
-    bottom: 0,
+    bottom: Platform.OS === 'ios' ? 40 : 20,
     left: 0,
     right: 0,
-    paddingBottom: spacing.xlarge,
+    paddingHorizontal: spacing.xlarge,
     zIndex: zIndex.dropdown,
+  },
+  minimalBottomContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  minimalSecondaryButton: {
+    width: 56,
+    height: 56,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  cleanCaptureButton: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#fff',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.8)',
+  },
+  optimalCapture: {
+    backgroundColor: '#10b981',
+    borderColor: '#86efac',
+  },
+  captureButtonRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cameraBottomContainer: {
+    paddingBottom: Platform.OS === 'ios' ? spacing.xlarge * 2 : spacing.xlarge,
+    paddingTop: spacing.large,
   },
   cameraBottomContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: layout.containerPadding,
+    paddingHorizontal: spacing.large,
   },
   secondaryControls: {
     flexDirection: 'row',
-    gap: spacing.small,
+    gap: spacing.medium,
+    alignItems: 'center',
   },
-  secondaryButton: {
-    width: rTouchTarget.small,
-    height: rTouchTarget.small,
-    borderRadius: rTouchTarget.small / 2,
+  modernSecondaryButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    ...getModernShadow({ isDark: true }, 'button'),
+  },
+  secondaryButtonBlur: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  secondaryButtonGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 28,
+  },
+  modernCaptureButton: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    overflow: 'hidden',
+    ...getModernShadow({ isDark: true }, 'floating'),
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  captureButtonGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 40,
+  },
+  captureButtonInner: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  secondaryButtonText: {
-    fontSize: fontScale(24),
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  captureButton: {
-    width: rTouchTarget.large,
-    height: rTouchTarget.large,
-    borderRadius: rTouchTarget.large / 2,
-    backgroundColor: '#fff',
-    padding: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  captureButtonActive: {
-    backgroundColor: '#f0f0f0',
-    transform: [{ scale: 0.95 }],
-  },
-  captureButtonOptimal: {
-    backgroundColor: '#4CAF50',
-    shadowColor: '#4CAF50',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 15,
-  },
-  captureButtonInner: {
-    flex: 1,
-    borderRadius: rTouchTarget.large / 2 - 6,
-    backgroundColor: '#fff',
-    borderWidth: 3,
-    borderColor: '#000',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.4)',
   },
   captureButtonInnerOptimal: {
-    borderColor: '#fff',
-    backgroundColor: '#4CAF50',
-    borderWidth: 4,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(255,255,255,0.6)',
   },
-  toggleButton: {
-    position: 'absolute',
-    right: layout.containerPadding,
-    bottom: spacing.small,
-    width: rTouchTarget.minimum,
-    height: rTouchTarget.minimum,
-    borderRadius: rTouchTarget.minimum / 2,
+  modernToggleButton: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    ...getModernShadow({ isDark: true }, 'button'),
+  },
+  toggleButtonBlur: {
     backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  toggleButtonGradient: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: spacing.medium,
+    paddingVertical: spacing.small + 2,
+    gap: spacing.tiny,
+    borderRadius: 25,
   },
   toggleButtonText: {
-    fontSize: fontScale(20),
+    ...textPresets.caption,
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  guidanceContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: spacing.large,
+    right: spacing.large,
+    paddingHorizontal: spacing.medium,
+    paddingVertical: spacing.small,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    alignItems: 'center',
+  },
+  guidanceText: {
+    ...textPresets.body,
+    color: 'white',
+    textAlign: 'center',
   },
 });

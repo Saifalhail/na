@@ -46,7 +46,6 @@ const iconMap: { [key: string]: string } = {
   
   // Settings icons
   'moon-outline': '🌙',
-  'notifications-outline': '🔔',
   'shield-outline': '🛡️',
   'document-text-outline': '📄',
   'help-circle-outline': '❓',

@@ -494,3 +494,113 @@ class TokenVerifyView(APIView):
         serializer.is_valid(raise_exception=True)
 
         return Response({"message": "Token is valid"})
+
+
+class EmailVerificationCodeView(APIView):
+    """
+    Simple email verification with code for signup only.
+    """
+    
+    permission_classes = [permissions.AllowAny]
+    
+    @extend_schema(
+        summary="Send email verification code",
+        description="Send a verification code to user's email during signup",
+        request={
+            "type": "object",
+            "properties": {
+                "email": {"type": "string", "format": "email"},
+                "action": {"type": "string", "enum": ["send", "verify"]},
+                "code": {"type": "string", "description": "Required only for verify action"}
+            },
+            "required": ["email", "action"]
+        },
+        responses={
+            200: {"description": "Code sent or verified successfully"},
+            400: "Validation error",
+            429: "Too many requests"
+        }
+    )
+    def post(self, request):
+        """Send or verify email verification code."""
+        email = request.data.get('email')
+        action = request.data.get('action')
+        code = request.data.get('code')
+        
+        if not email or not action:
+            return Response(
+                {"error": "Email and action are required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if action == "send":
+            return self._send_code(email)
+        elif action == "verify":
+            return self._verify_code(email, code)
+        else:
+            return Response(
+                {"error": "Action must be 'send' or 'verify'"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    def _send_code(self, email):
+        """Send verification code to email."""
+        # Generate 6-digit code
+        code = get_random_string(6, '0123456789')
+        
+        # Store code in cache for 10 minutes
+        cache_key = f"email_verification_code_{email}"
+        cache.set(cache_key, code, timeout=600)
+        
+        # Send email
+        try:
+            send_mail(
+                subject="Nutrition AI - Email Verification",
+                message=f"Your verification code is: {code}\n\nThis code will expire in 10 minutes.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            
+            logger.info(f"Verification code sent to {email}")
+            return Response({"message": "Verification code sent"})
+            
+        except Exception as e:
+            logger.error(f"Failed to send verification code to {email}: {str(e)}")
+            return Response(
+                {"error": "Failed to send verification code"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def _verify_code(self, email, code):
+        """Verify email code."""
+        if not code:
+            return Response(
+                {"error": "Code is required for verification"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check code in cache
+        cache_key = f"email_verification_code_{email}"
+        stored_code = cache.get(cache_key)
+        
+        if not stored_code:
+            return Response(
+                {"error": "Verification code expired or not found"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if stored_code != code:
+            return Response(
+                {"error": "Invalid verification code"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Clear code from cache
+        cache.delete(cache_key)
+        
+        # Mark email as verified
+        verified_key = f"email_verified_{email}"
+        cache.set(verified_key, True, timeout=1800)  # 30 minutes
+        
+        return Response({"message": "Email verified successfully"})

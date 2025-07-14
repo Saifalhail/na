@@ -16,6 +16,7 @@ import { TextInput } from '@/components/base/TextInput';
 import { LoadingOverlay } from '@/components/base/Loading';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
+import { authApi } from '@/services/api/endpoints/auth';
 import { AuthStackParamList } from '@/navigation/types';
 import { rs } from '@/utils/responsive';
 import {
@@ -34,7 +35,8 @@ interface Props {
 
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const { theme } = useTheme();
-  const { register, isLoading } = useAuthStore();
+  const { register } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -99,20 +101,65 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const handleRegister = async () => {
     if (!validateForm()) return;
 
+    // First, send the verification code
+    setIsLoading(true);
+    
     try {
-      await register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      if (__DEV__) {
+        console.log('📧 [REGISTER] Sending verification code to:', formData.email);
+      }
+      
+      // Send verification code to email with timeout protection
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out')), 15000); // 15 second timeout
+      });
+      
+      await Promise.race([
+        authApi.sendEmailCode(formData.email),
+        timeoutPromise
+      ]);
+      
+      if (__DEV__) {
+        console.log('✅ [REGISTER] Verification code sent successfully');
+      }
+      
+      // Navigate to email verification screen
+      navigation.navigate('EmailVerification', {
         email: formData.email,
-        password: formData.password,
-        passwordConfirm: formData.confirmPassword,
-        termsAccepted: formData.termsAccepted,
+        registrationData: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          passwordConfirm: formData.confirmPassword,
+          termsAccepted: formData.termsAccepted,
+        },
       });
     } catch (error: any) {
+      if (__DEV__) {
+        console.error('❌ [REGISTER] Failed to send verification code:', error);
+      }
+      
+      let errorMessage = 'Failed to send verification code. Please try again.';
+      
+      if (error.message === 'Request timed out') {
+        errorMessage = 'Request timed out. Please check your internet connection and try again.';
+      } else if (error.message?.includes('Network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.response?.status === 429) {
+        errorMessage = 'Too many requests. Please wait a moment and try again.';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Invalid email address. Please check and try again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       setErrors((prev) => ({
         ...prev,
-        email: error.message || ERROR_MESSAGES.GENERIC_ERROR,
+        email: errorMessage,
       }));
+    } finally {
+      setIsLoading(false);
     }
   };
 

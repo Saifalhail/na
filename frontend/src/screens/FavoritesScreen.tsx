@@ -97,8 +97,11 @@ export const FavoritesScreen: React.FC = () => {
   const loadFavorites = async () => {
     try {
       await fetchFavorites();
-    } catch (error) {
-      console.error('Failed to load favorites:', error);
+    } catch (error: any) {
+      // Only log errors that aren't network-related in demo mode
+      if (__DEV__ && !error.message?.includes('Network')) {
+        console.error('Failed to load favorites:', error);
+      }
     }
   };
 
