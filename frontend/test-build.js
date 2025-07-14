@@ -11,10 +11,10 @@ const fs = require('fs');
 function runCommand(command, description) {
   console.log(`🔍 ${description}...`);
   try {
-    const output = execSync(command, { 
-      encoding: 'utf8', 
+    const output = execSync(command, {
+      encoding: 'utf8',
       stdio: 'pipe',
-      timeout: 60000 // 60 second timeout
+      timeout: 60000, // 60 second timeout
     });
     console.log(`✅ ${description} - PASSED`);
     return { success: true, output };
@@ -27,40 +27,41 @@ function runCommand(command, description) {
 
 function main() {
   console.log('🚀 Running comprehensive build and validation tests...\n');
-  
+
   const tests = [
     {
       command: 'node validate-imports.js',
-      description: 'Validating imports'
+      description: 'Validating imports',
     },
     {
       command: 'npm run type-check',
-      description: 'TypeScript compilation check'
+      description: 'TypeScript compilation check',
     },
     {
       command: 'npm run lint',
-      description: 'ESLint validation'
+      description: 'ESLint validation',
     },
     {
-      command: 'npx react-native bundle --platform android --dev false --entry-file index.ts --bundle-output test-bundle.js --reset-cache',
-      description: 'Android bundle creation test'
-    }
+      command:
+        'npx react-native bundle --platform android --dev false --entry-file index.ts --bundle-output test-bundle.js --reset-cache',
+      description: 'Android bundle creation test',
+    },
   ];
-  
+
   let allPassed = true;
   const results = [];
-  
+
   for (const test of tests) {
     const result = runCommand(test.command, test.description);
     results.push({ ...test, ...result });
-    
+
     if (!result.success) {
       allPassed = false;
     }
-    
+
     console.log(); // Add spacing
   }
-  
+
   // Clean up test bundle
   try {
     if (fs.existsSync('test-bundle.js')) {
@@ -70,15 +71,15 @@ function main() {
   } catch (e) {
     // Ignore cleanup errors
   }
-  
+
   console.log('\n📊 Test Results Summary:');
   console.log('========================');
-  
+
   for (const result of results) {
     const status = result.success ? '✅ PASS' : '❌ FAIL';
     console.log(`${status} - ${result.description}`);
   }
-  
+
   if (allPassed) {
     console.log('\n🎉 All tests passed! The app should run without errors.');
     process.exit(0);

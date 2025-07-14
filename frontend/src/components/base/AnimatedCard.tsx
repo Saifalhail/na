@@ -49,7 +49,7 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
 
   useEffect(() => {
     const animation = createAnimation();
-    
+
     const timeout = setTimeout(() => {
       animation.start();
     }, delay);
@@ -151,18 +151,12 @@ export const AnimatedCard: React.FC<AnimatedCardProps> = ({
   const combinedStyle = [cardStyle, style];
 
   const content = (
-    <Animated.View style={[combinedStyle, getAnimatedStyle()]}>
-      {children}
-    </Animated.View>
+    <Animated.View style={[combinedStyle, getAnimatedStyle()]}>{children}</Animated.View>
   );
 
   if (touchable && onPress) {
     return (
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.8}
-        {...touchableProps}
-      >
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8} {...touchableProps}>
         {content}
       </TouchableOpacity>
     );

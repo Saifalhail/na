@@ -60,7 +60,7 @@ const offlineManager = OfflineManager.getInstance();
 const calculateTodayStats = (meals: Meal[]) => {
   const today = new Date();
   const todayString = today.toDateString();
-  
+
   return meals.reduce(
     (stats, meal) => {
       const mealDate = new Date(meal.consumedAt || meal.createdAt);
@@ -99,14 +99,17 @@ export const useMealStore = create<MealState>()(
 
       // Fetch meals with pagination and filters
       fetchMeals: async (page = 1, filters?: MealFilters) => {
+        console.log('🍽️ [MealStore] fetchMeals called:', { page, filters });
         set({ isLoading: true, error: null });
         try {
           const appliedFilters = filters || get().filters;
           const cacheKey = `meals_page_${page}_${JSON.stringify(appliedFilters)}`;
 
+          console.log('🍽️ [MealStore] Checking cache for key:', cacheKey);
           // Check for cached data first
           const cachedData = await offlineManager.getCachedData<PaginatedResponse<Meal>>(cacheKey);
           if (cachedData && offlineManager.isConnected()) {
+            console.log('🍽️ [MealStore] Using cached data, meals count:', cachedData.results.length);
             // Use cached data while fetching fresh data in background
             set({
               meals: cachedData.results,
@@ -120,7 +123,11 @@ export const useMealStore = create<MealState>()(
           }
 
           if (offlineManager.isConnected()) {
-            const response = await mealsApi.getMeals({ ...appliedFilters, page, pageSize: get().pageSize });
+            const response = await mealsApi.getMeals({
+              ...appliedFilters,
+              page,
+              pageSize: get().pageSize,
+            });
 
             // Cache the response
             offlineManager.cacheData(cacheKey, response, 1000 * 60 * 30); // 30 minute cache
@@ -247,7 +254,7 @@ export const useMealStore = create<MealState>()(
           ),
           currentMeal:
             get().currentMeal?.id === id
-              ? { ...get().currentMeal, ...data, updatedAt: new Date().toISOString() } as Meal
+              ? ({ ...get().currentMeal, ...data, updatedAt: new Date().toISOString() } as Meal)
               : get().currentMeal,
           isLoading: false,
           error: null,

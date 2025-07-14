@@ -4,7 +4,14 @@ import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 import { borderRadius, rs } from '@/utils/responsive';
 
-export type BadgeVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
+export type BadgeVariant =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info'
+  | 'neutral';
 export type BadgeSize = 'small' | 'medium' | 'large';
 
 interface BadgeProps {
@@ -40,11 +47,12 @@ export const Badge: React.FC<BadgeProps> = ({
   const content = count !== undefined ? displayCount : children;
 
   // Create accessibility label
-  const defaultAccessibilityLabel = count !== undefined 
-    ? `${count} notifications`
-    : typeof children === 'string' 
-    ? children 
-    : 'Badge';
+  const defaultAccessibilityLabel =
+    count !== undefined
+      ? `${count} notifications`
+      : typeof children === 'string'
+        ? children
+        : 'Badge';
 
   const badgeStyle = [
     styles.base,

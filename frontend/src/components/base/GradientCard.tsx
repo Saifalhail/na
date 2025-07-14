@@ -6,7 +6,15 @@ import { getModernShadow } from '@/theme/shadows';
 import { rs, moderateScale } from '@/utils/responsive';
 import Animated, { FadeInDown, FadeInUp, ZoomIn, SlideInRight } from 'react-native-reanimated';
 
-export type GradientVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'custom';
+export type GradientVariant =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info'
+  | 'neutral'
+  | 'custom';
 export type AnimationType = 'fadeDown' | 'fadeUp' | 'zoomIn' | 'slideRight' | 'none';
 
 interface GradientCardProps {
@@ -44,30 +52,32 @@ export const GradientCard: React.FC<GradientCardProps> = ({
   animationDelay = 0,
 }) => {
   const { theme } = useTheme();
-  
-  const getGradientColors = (): string[] => {
-    if (customColors) return customColors;
-    
+
+  const getGradientColors = (): readonly [string, string, ...string[]] => {
+    if (customColors && customColors.length >= 2) {
+      return customColors as unknown as readonly [string, string, ...string[]];
+    }
+
     switch (variant) {
       case 'primary':
-        return [theme.colors.primary[400] + '15', theme.colors.primary[500] + '08'];
+        return [theme.colors.primary[400] + '15', theme.colors.primary[500] + '08'] as const;
       case 'secondary':
-        return [theme.colors.secondary[400] + '15', theme.colors.secondary[500] + '08'];
+        return [theme.colors.secondary[400] + '15', theme.colors.secondary[500] + '08'] as const;
       case 'success':
-        return [theme.colors.success[400] + '15', theme.colors.success[500] + '08'];
+        return [theme.colors.success[400] + '15', theme.colors.success[500] + '08'] as const;
       case 'warning':
-        return [theme.colors.warning[400] + '15', theme.colors.warning[500] + '08'];
+        return [theme.colors.warning[400] + '15', theme.colors.warning[500] + '08'] as const;
       case 'error':
-        return [theme.colors.error[400] + '15', theme.colors.error[500] + '08'];
+        return [theme.colors.error[400] + '15', theme.colors.error[500] + '08'] as const;
       case 'info':
-        return [theme.colors.info[400] + '15', theme.colors.info[500] + '08'];
+        return [theme.colors.info[400] + '15', theme.colors.info[500] + '08'] as const;
       case 'neutral':
-        return [theme.colors.neutral[200] + '20', theme.colors.neutral[300] + '10'];
+        return [theme.colors.neutral[200] + '20', theme.colors.neutral[300] + '10'] as const;
       default:
-        return [theme.colors.primary[400] + '15', theme.colors.primary[500] + '08'];
+        return [theme.colors.primary[400] + '15', theme.colors.primary[500] + '08'] as const;
     }
   };
-  
+
   const getAnimation = () => {
     switch (animationType) {
       case 'fadeDown':
@@ -82,20 +92,11 @@ export const GradientCard: React.FC<GradientCardProps> = ({
         return undefined;
     }
   };
-  
-  const containerStyle = [
-    styles.container,
-    getModernShadow(elevation),
-    { borderRadius },
-    style,
-  ];
-  
-  const gradientStyleCombined = [
-    styles.gradient,
-    { borderRadius, padding },
-    gradientStyle,
-  ];
-  
+
+  const containerStyle = [styles.container, getModernShadow(elevation), { borderRadius }, style];
+
+  const gradientStyleCombined = [styles.gradient, { borderRadius, padding }, gradientStyle];
+
   const content = (
     <LinearGradient
       colors={getGradientColors()}
@@ -106,7 +107,7 @@ export const GradientCard: React.FC<GradientCardProps> = ({
       {children}
     </LinearGradient>
   );
-  
+
   if (onPress) {
     if (animated) {
       return (
@@ -121,7 +122,7 @@ export const GradientCard: React.FC<GradientCardProps> = ({
         </AnimatedTouchableOpacity>
       );
     }
-    
+
     return (
       <TouchableOpacity
         style={containerStyle}
@@ -133,7 +134,7 @@ export const GradientCard: React.FC<GradientCardProps> = ({
       </TouchableOpacity>
     );
   }
-  
+
   if (animated) {
     return (
       <AnimatedView entering={getAnimation()} style={containerStyle}>
@@ -141,12 +142,8 @@ export const GradientCard: React.FC<GradientCardProps> = ({
       </AnimatedView>
     );
   }
-  
-  return (
-    <View style={containerStyle}>
-      {content}
-    </View>
-  );
+
+  return <View style={containerStyle}>{content}</View>;
 };
 
 const styles = StyleSheet.create({

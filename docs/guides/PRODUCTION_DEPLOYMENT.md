@@ -21,6 +21,7 @@ Complete guide for deploying the Nutrition AI backend to production with Docker,
 ### System Requirements
 
 **Minimum Production Server:**
+
 - **CPU:** 4 cores (8 recommended)
 - **RAM:** 8GB (16GB recommended)
 - **Storage:** 100GB SSD (500GB recommended)
@@ -28,6 +29,7 @@ Complete guide for deploying the Nutrition AI backend to production with Docker,
 - **OS:** Ubuntu 22.04 LTS or CentOS 8+
 
 **Required Software:**
+
 - Docker 24.0+
 - Docker Compose 2.20+
 - PostgreSQL 15+ (if using external database)
@@ -249,6 +251,7 @@ chmod +x scripts/deploy.sh
 ```
 
 **Deployment Process:**
+
 1. ✅ Prerequisites check
 2. ✅ Database backup creation
 3. ✅ Media files backup
@@ -295,12 +298,14 @@ GET /api/metrics/
 ### 2. Monitoring Setup
 
 **Sentry Integration:**
+
 ```bash
 # Sentry automatically captures errors when configured
 # View errors at: https://sentry.io/organizations/your-org/projects/
 ```
 
 **Health Check Monitoring:**
+
 ```bash
 # Setup external monitoring (example with UptimeRobot)
 # Monitor these endpoints:
@@ -362,6 +367,7 @@ gunzip < backup.sql.gz | docker-compose -f docker-compose.prod.yml exec -T db ps
 ### 1. Horizontal Scaling
 
 **Load Balancer Configuration:**
+
 ```nginx
 upstream backend {
     server server1.yourdomain.com:443;
@@ -373,6 +379,7 @@ upstream backend {
 ### 2. Vertical Scaling
 
 **Update Docker Compose:**
+
 ```yaml
 # In docker-compose.prod.yml
 services:
@@ -380,10 +387,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
+          cpus: "2.0"
           memory: 4G
         reservations:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 2G
 ```
 
@@ -452,6 +459,7 @@ hostssl all all 0.0.0.0/0 md5
 ### Common Issues
 
 **1. Container Won't Start:**
+
 ```bash
 # Check logs
 docker-compose -f docker-compose.prod.yml logs web
@@ -463,6 +471,7 @@ docker-compose -f docker-compose.prod.yml logs web
 ```
 
 **2. Database Connection Issues:**
+
 ```bash
 # Test database connectivity
 docker-compose -f docker-compose.prod.yml exec web python manage.py dbshell --settings=core.settings.production
@@ -472,6 +481,7 @@ docker-compose -f docker-compose.prod.yml logs db
 ```
 
 **3. SSL Certificate Issues:**
+
 ```bash
 # Check certificate validity
 openssl x509 -in ssl/cert.pem -text -noout
@@ -481,6 +491,7 @@ sudo certbot renew --force-renewal
 ```
 
 **4. Performance Issues:**
+
 ```bash
 # Check system resources
 htop
@@ -493,6 +504,7 @@ docker-compose -f docker-compose.prod.yml exec db psql -U nutrition_user -d nutr
 ### Emergency Procedures
 
 **1. Service Recovery:**
+
 ```bash
 # Restart all services
 docker-compose -f docker-compose.prod.yml restart
@@ -503,6 +515,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
 **2. Database Recovery:**
+
 ```bash
 # Restore from backup
 ./scripts/deploy.sh rollback
@@ -516,7 +529,7 @@ docker-compose -f docker-compose.prod.yml exec -T db psql -U nutrition_user -d n
 
 - [ ] All services running without errors
 - [ ] Health checks passing
-- [ ] SSL certificates valid and auto-renewing  
+- [ ] SSL certificates valid and auto-renewing
 - [ ] Database backups scheduled and tested
 - [ ] Monitoring alerts configured
 - [ ] Log rotation configured
@@ -530,18 +543,21 @@ docker-compose -f docker-compose.prod.yml exec -T db psql -U nutrition_user -d n
 ### Regular Maintenance Tasks
 
 **Weekly:**
+
 - [ ] Review application logs for errors
 - [ ] Check system resource usage
 - [ ] Verify backup completion
 - [ ] Review security alerts
 
 **Monthly:**
+
 - [ ] Update dependencies
 - [ ] Security patches
 - [ ] Performance review
 - [ ] Capacity planning review
 
 **Quarterly:**
+
 - [ ] Disaster recovery testing
 - [ ] Security audit
 - [ ] Performance optimization
@@ -550,6 +566,7 @@ docker-compose -f docker-compose.prod.yml exec -T db psql -U nutrition_user -d n
 ---
 
 **Need Help?**
+
 - 📧 Technical Support: tech@yourdomain.com
 - 📚 Documentation: https://docs.yourdomain.com
 - 🐛 Bug Reports: https://github.com/your-org/nutrition-ai/issues

@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/IconFallback';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 
@@ -73,11 +73,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     style,
   ].filter(Boolean);
 
-  const initialsStyle = [
-    styles.initials,
-    styles[`${size}Text`],
-    textStyle,
-  ].filter(Boolean);
+  const initialsStyle = [styles.initials, styles[`${size}Text`], textStyle].filter(Boolean);
 
   const renderContent = () => {
     if (icon) {

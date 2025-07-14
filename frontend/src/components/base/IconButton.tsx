@@ -1,16 +1,9 @@
 import React, { useRef } from 'react';
-import { 
-  TouchableOpacity, 
-  StyleSheet, 
-  Animated, 
-  ViewStyle,
-  View,
-  Platform
-} from 'react-native';
+import { TouchableOpacity, StyleSheet, Animated, ViewStyle, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/hooks/useTheme';
 import { getModernShadow } from '@/theme/shadows';
-import { moderateScale, rTouchTarget, rs } from '@/utils/responsive';;
+import { moderateScale, rTouchTarget, rs } from '@/utils/responsive';
 import * as Haptics from 'expo-haptics';
 
 export type IconButtonVariant = 'filled' | 'tinted' | 'ghost' | 'gradient';
@@ -22,7 +15,7 @@ interface IconButtonProps {
   variant?: IconButtonVariant;
   size?: IconButtonSize;
   color?: string;
-  gradientColors?: string[];
+  gradientColors?: readonly [string, string, ...string[]];
   disabled?: boolean;
   haptic?: boolean;
   style?: ViewStyle;
@@ -49,33 +42,33 @@ export const IconButton: React.FC<IconButtonProps> = ({
 }) => {
   const { theme } = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  
+
   const getSizeStyle = () => {
     switch (size) {
       case 'small':
-        return { 
-          width: rTouchTarget.small, 
+        return {
+          width: rTouchTarget.small,
           height: rTouchTarget.small,
-          borderRadius: rTouchTarget.small / 2 
+          borderRadius: rTouchTarget.small / 2,
         };
       case 'large':
-        return { 
-          width: rTouchTarget.large, 
+        return {
+          width: rTouchTarget.large,
           height: rTouchTarget.large,
-          borderRadius: rTouchTarget.large / 2 
+          borderRadius: rTouchTarget.large / 2,
         };
       default:
-        return { 
-          width: rTouchTarget.medium, 
+        return {
+          width: rTouchTarget.medium,
           height: rTouchTarget.medium,
-          borderRadius: rTouchTarget.medium / 2 
+          borderRadius: rTouchTarget.medium / 2,
         };
     }
   };
-  
+
   const getBackgroundStyle = (): ViewStyle => {
     const bgColor = color || theme.colors.primary[500];
-    
+
     switch (variant) {
       case 'filled':
         return {
@@ -93,14 +86,14 @@ export const IconButton: React.FC<IconButtonProps> = ({
         return {};
     }
   };
-  
+
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.9,
       useNativeDriver: true,
     }).start();
   };
-  
+
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
@@ -109,7 +102,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       useNativeDriver: true,
     }).start();
   };
-  
+
   const handlePress = async () => {
     if (!disabled) {
       if (haptic) {
@@ -118,10 +111,10 @@ export const IconButton: React.FC<IconButtonProps> = ({
       onPress();
     }
   };
-  
+
   const sizeStyle = getSizeStyle();
   const backgroundStyle = getBackgroundStyle();
-  
+
   const containerStyle: ViewStyle[] = [
     styles.container,
     sizeStyle,
@@ -130,17 +123,12 @@ export const IconButton: React.FC<IconButtonProps> = ({
     disabled && styles.disabled,
     style,
   ].filter(Boolean) as ViewStyle[];
-  
+
   const content = (
     <>
       {icon}
       {badge !== undefined && (
-        <View 
-          style={[
-            styles.badge,
-            { backgroundColor: badgeColor || theme.colors.error[500] }
-          ]}
-        >
+        <View style={[styles.badge, { backgroundColor: badgeColor || theme.colors.error[500] }]}>
           <Animated.Text style={styles.badgeText}>
             {typeof badge === 'number' && badge > 99 ? '99+' : badge}
           </Animated.Text>
@@ -148,7 +136,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       )}
     </>
   );
-  
+
   return (
     <Animated.View
       style={{
@@ -168,7 +156,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       >
         {variant === 'gradient' && gradientColors ? (
           <LinearGradient
-            colors={gradientColors || [theme.colors.primary[400], theme.colors.primary[600]]}
+            colors={gradientColors || [theme.colors.primary[400], theme.colors.primary[600]] as const}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[StyleSheet.absoluteFillObject, sizeStyle]}

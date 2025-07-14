@@ -11,13 +11,13 @@ Complete API reference for the Nutrition AI backend service.
 
 ## Documentation Structure
 
-| File | Purpose |
-|------|---------|
-| `POSTMAN_GUIDE.md` | Complete Postman collection and testing guide |
-| `API_INTEGRATION.md` | Integration patterns and best practices |
-| `API_CHANGELOG.md` | Version history and breaking changes |
-| `API_ERROR_CODES.md` | Error codes and troubleshooting |
-| `API_REFERENCE.md` | Complete endpoint reference |
+| File                 | Purpose                                       |
+| -------------------- | --------------------------------------------- |
+| `POSTMAN_GUIDE.md`   | Complete Postman collection and testing guide |
+| `API_INTEGRATION.md` | Integration patterns and best practices       |
+| `API_CHANGELOG.md`   | Version history and breaking changes          |
+| `API_ERROR_CODES.md` | Error codes and troubleshooting               |
+| `API_REFERENCE.md`   | Complete endpoint reference                   |
 
 ## Authentication
 
@@ -40,6 +40,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
@@ -56,6 +57,7 @@ Response:
 ## Core Endpoints
 
 ### Authentication
+
 - `POST /auth/register/` - User registration
 - `POST /auth/login/` - User login
 - `POST /auth/logout/` - User logout
@@ -63,10 +65,12 @@ Response:
 - `POST /auth/password/reset/` - Password reset
 
 ### AI Analysis
+
 - `POST /ai/analyze/` - Analyze food image
 - `POST /ai/recalculate/` - Recalculate nutrition
 
 ### Meals
+
 - `GET /meals/` - List user meals
 - `POST /meals/` - Create new meal
 - `GET /meals/{id}/` - Get meal details
@@ -74,21 +78,23 @@ Response:
 - `DELETE /meals/{id}/` - Delete meal
 
 ### User Profile
+
 - `GET /auth/profile/` - Get user profile
 - `PUT /auth/profile/` - Update user profile
 
 ## Rate Limits
 
-| Endpoint | Limit |
-|----------|-------|
-| `/auth/login/` | 5 requests/minute |
-| `/ai/analyze/` | 10 requests/minute |
-| `/ai/recalculate/` | 20 requests/minute |
-| General API | 100 requests/minute |
+| Endpoint           | Limit               |
+| ------------------ | ------------------- |
+| `/auth/login/`     | 5 requests/minute   |
+| `/ai/analyze/`     | 10 requests/minute  |
+| `/ai/recalculate/` | 20 requests/minute  |
+| General API        | 100 requests/minute |
 
 ## Response Format
 
 ### Success Response
+
 ```json
 {
   "data": { ... },
@@ -98,6 +104,7 @@ Response:
 ```
 
 ### Error Response
+
 ```json
 {
   "error": {
@@ -130,6 +137,7 @@ Content-Type: multipart/form-data
 ```
 
 Response:
+
 ```json
 {
   "data": {
@@ -207,16 +215,16 @@ curl -X GET http://127.0.0.1:8000/api/v1/meals/ \
 ### JavaScript/TypeScript
 
 ```typescript
-import { NutritionAIClient } from './api-client';
+import { NutritionAIClient } from "./api-client";
 
 const client = new NutritionAIClient({
-  baseURL: 'http://127.0.0.1:8000/api/v1',
-  apiKey: 'your-token'
+  baseURL: "http://127.0.0.1:8000/api/v1",
+  apiKey: "your-token",
 });
 
 // Analyze image
 const result = await client.ai.analyzeImage(imageFile, {
-  meal_type: 'lunch'
+  meal_type: "lunch",
 });
 ```
 

@@ -101,7 +101,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
         }
 
         result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ImagePicker.MediaType.Images,
           allowsEditing: true,
           aspect: [1, 1],
           quality: 0.8,
@@ -117,7 +117,7 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
         }
 
         result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ImagePicker.MediaType.Images,
           allowsEditing: true,
           aspect: [1, 1],
           quality: 0.8,
@@ -185,7 +185,12 @@ export const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
             { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
           ]}
         >
-          <Text style={[styles.initials, { fontSize: avatarSize * 0.4, color: theme.colors.text.primary }]}>
+          <Text
+            style={[
+              styles.initials,
+              { fontSize: avatarSize * 0.4, color: theme.colors.text.primary },
+            ]}
+          >
             {getInitials()}
           </Text>
         </View>

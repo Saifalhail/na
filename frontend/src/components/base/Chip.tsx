@@ -1,14 +1,7 @@
 import React from 'react';
 import { borderRadius, rs } from '@/utils/responsive';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Ionicons } from '@/components/IconFallback';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 

@@ -1,12 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { rs } from '@/utils/responsive';
-import { 
-  View, 
-  StyleSheet, 
-  Animated, 
-  ViewStyle,
-  Dimensions
-} from 'react-native';
+import { View, StyleSheet, Animated, ViewStyle, Dimensions } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -37,7 +31,7 @@ export const WaveBackground: React.FC<WaveBackgroundProps> = ({
 }) => {
   const { theme } = useTheme();
   const animValue = useRef(new Animated.Value(0)).current;
-  
+
   const getDefaultColors = (): string[] => {
     return [
       theme.colors.primary[300] + '40',
@@ -45,7 +39,7 @@ export const WaveBackground: React.FC<WaveBackgroundProps> = ({
       theme.colors.primary[500] + '20',
     ];
   };
-  
+
   const getSpeedDuration = () => {
     switch (speed) {
       case 'slow':
@@ -56,7 +50,7 @@ export const WaveBackground: React.FC<WaveBackgroundProps> = ({
         return 8000;
     }
   };
-  
+
   useEffect(() => {
     const animation = Animated.loop(
       Animated.timing(animValue, {
@@ -65,53 +59,53 @@ export const WaveBackground: React.FC<WaveBackgroundProps> = ({
         useNativeDriver: false,
       })
     );
-    
+
     animation.start();
-    
+
     return () => {
       animation.stop();
     };
   }, [animValue, speed]);
-  
+
   const waveColors = colors || getDefaultColors();
-  
+
   const generateWavePath = (offset: number): string => {
     let path = `M0,${height}`;
     const segments = 50;
     const segmentWidth = screenWidth / segments;
-    
+
     for (let i = 0; i <= segments; i++) {
       const x = i * segmentWidth;
       const angle = (i / segments) * Math.PI * frequency + offset;
       const y = height / 2 + Math.sin(angle) * amplitude;
-      
+
       if (i === 0) {
         path += ` L${x},${y}`;
       } else {
         const prevX = (i - 1) * segmentWidth;
         const prevAngle = ((i - 1) / segments) * Math.PI * frequency + offset;
         const prevY = height / 2 + Math.sin(prevAngle) * amplitude;
-        
+
         const cpx1 = prevX + segmentWidth / 3;
         const cpy1 = prevY;
         const cpx2 = x - segmentWidth / 3;
         const cpy2 = y;
-        
+
         path += ` C${cpx1},${cpy1} ${cpx2},${cpy2} ${x},${y}`;
       }
     }
-    
+
     path += ` L${screenWidth},${height} L0,${height} Z`;
     return path;
   };
-  
+
   const containerStyle: ViewStyle[] = [
     styles.container,
     position === 'top' ? styles.topPosition : styles.bottomPosition,
     { height },
     style,
   ];
-  
+
   return (
     <View style={containerStyle}>
       {Array.from({ length: numberOfWaves }).map((_, index) => {
@@ -119,17 +113,17 @@ export const WaveBackground: React.FC<WaveBackgroundProps> = ({
           inputRange: [0, 1],
           outputRange: [0, Math.PI * 2],
         });
-        
+
         const delayMultiplier = index * 0.3;
         const speedMultiplier = 1 + index * 0.2;
-        
+
         return (
           <Animated.View
             key={index}
             style={[
               StyleSheet.absoluteFillObject,
               {
-                opacity: 1 - (index * 0.3),
+                opacity: 1 - index * 0.3,
                 transform: [
                   {
                     translateX: animValue.interpolate({

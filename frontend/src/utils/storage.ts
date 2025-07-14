@@ -40,15 +40,15 @@ class AsyncStorageAdapter implements Storage {
 
   async clearAll(): Promise<void> {
     const keys = await AsyncStorage.getAllKeys();
-    const prefixedKeys = keys.filter(k => k.startsWith(`${this.prefix}_`));
+    const prefixedKeys = keys.filter((k) => k.startsWith(`${this.prefix}_`));
     await AsyncStorage.multiRemove(prefixedKeys);
   }
 
   async getAllKeys(): Promise<string[]> {
     const keys = await AsyncStorage.getAllKeys();
     return keys
-      .filter(k => k.startsWith(`${this.prefix}_`))
-      .map(k => k.replace(`${this.prefix}_`, ''));
+      .filter((k) => k.startsWith(`${this.prefix}_`))
+      .map((k) => k.replace(`${this.prefix}_`, ''));
   }
 }
 

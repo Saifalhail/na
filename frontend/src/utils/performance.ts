@@ -88,27 +88,65 @@ export function batchedUpdates<T extends (...args: any[]) => void>(callback: T):
 export function usePerformanceMonitor(componentName: string) {
   const renderCount = React.useRef(0);
   const renderStartTime = React.useRef<number | undefined>(undefined);
+  const mountTime = React.useRef<number | undefined>(undefined);
 
+  // Track component mount time
   React.useEffect(() => {
-    renderStartTime.current = performance.now();
+    mountTime.current = performance.now();
+    console.log(`🚀 [Performance] ${componentName} mounting...`);
+    
+    return () => {
+      if (mountTime.current) {
+        const totalLifetime = performance.now() - mountTime.current;
+        console.log(`🏁 [Performance] ${componentName} unmounted after ${totalLifetime.toFixed(2)}ms`);
+      }
+    };
+  }, [componentName]); // Add dependency to prevent re-runs
+
+  // Track render performance using useLayoutEffect to measure synchronously
+  React.useLayoutEffect(() => {
+    const startTime = performance.now();
+    renderCount.current++;
+    
+    // Log render start only in dev and on first few renders
+    if (__DEV__ && renderCount.current <= 3) {
+      console.log(`🔄 [Performance] ${componentName} render #${renderCount.current} started`);
+    }
 
     return () => {
-      if (renderStartTime.current) {
-        const renderTime = performance.now() - renderStartTime.current;
+      const renderTime = performance.now() - startTime;
+      
+      // Only log slow renders or first few renders
+      if (__DEV__ && (renderTime > 16.67 || renderCount.current <= 3)) {
+        console.log(`⏱️ [Performance] ${componentName} render #${renderCount.current} took ${renderTime.toFixed(2)}ms`);
+        
         if (renderTime > 16.67) {
-          // More than one frame (60fps)
-          console.warn(`[Performance] ${componentName} took ${renderTime.toFixed(2)}ms to render`);
+          // More than one frame (60fps) - this is bad
+          console.warn(`🐌 [Performance] ${componentName} SLOW RENDER: ${renderTime.toFixed(2)}ms (${Math.round(renderTime/16.67)}x frame budget)`);
+        }
+        
+        if (renderTime > 100) {
+          // Extremely slow render
+          console.error(`🔥 [Performance] ${componentName} CRITICAL SLOW RENDER: ${renderTime.toFixed(2)}ms`);
         }
       }
     };
-  });
+  }); // No dependency array needed for performance measurement
 
+  // Warn about excessive re-renders (check after a delay)
   React.useEffect(() => {
-    renderCount.current++;
-    if (__DEV__ && renderCount.current > 10) {
-      console.warn(`[Performance] ${componentName} has rendered ${renderCount.current} times`);
-    }
-  });
+    const checkTimer = setTimeout(() => {
+      if (__DEV__ && renderCount.current > 5) {
+        console.warn(`🔄 [Performance] ${componentName} has rendered ${renderCount.current} times - check for unnecessary re-renders`);
+      }
+      
+      if (__DEV__ && renderCount.current > 20) {
+        console.error(`🚨 [Performance] ${componentName} excessive re-renders: ${renderCount.current} times`);
+      }
+    }, 5000); // Check after 5 seconds
+    
+    return () => clearTimeout(checkTimer);
+  }, [componentName]); // Only run once per component
 }
 
 /**

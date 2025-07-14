@@ -287,10 +287,7 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
                 getArrowStyle(),
                 {
                   opacity: fadeAnim,
-                  transform: [
-                    ...(getArrowStyle().transform || []),
-                    { scale: scaleAnim },
-                  ],
+                  transform: [...(getArrowStyle().transform || []), { scale: scaleAnim }],
                 },
               ]}
             />

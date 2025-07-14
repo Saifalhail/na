@@ -5,6 +5,7 @@ This document outlines the secrets required for CI/CD pipelines and deployment o
 ## Required Secrets for GitHub Actions
 
 ### Database Configuration
+
 - `STAGING_DATABASE_URL`: PostgreSQL connection string for staging environment
 - `PRODUCTION_DATABASE_URL`: PostgreSQL connection string for production environment
 - `DB_USER`: Database username for production
@@ -12,17 +13,20 @@ This document outlines the secrets required for CI/CD pipelines and deployment o
 - `DB_NAME`: Database name for production
 
 ### Application Secrets
+
 - `STAGING_SECRET_KEY`: Django secret key for staging
 - `PRODUCTION_SECRET_KEY`: Django secret key for production
 - `GEMINI_API_KEY`: Google Gemini API key for AI services
 
 ### AWS Configuration
+
 - `AWS_ACCESS_KEY_ID`: AWS access key for S3 storage
 - `AWS_SECRET_ACCESS_KEY`: AWS secret key for S3 storage
 - `STAGING_S3_BUCKET`: S3 bucket name for staging static files
 - `PRODUCTION_S3_BUCKET`: S3 bucket name for production static files
 
 ### Deployment Configuration
+
 - `STAGING_HOST`: Staging server hostname/IP
 - `STAGING_USER`: SSH username for staging deployment
 - `STAGING_SSH_KEY`: SSH private key for staging deployment
@@ -34,10 +38,12 @@ This document outlines the secrets required for CI/CD pipelines and deployment o
 - `PRODUCTION_URL`: Production application URL for health checks
 
 ### Monitoring & Notifications
+
 - `SENTRY_DSN`: Sentry error tracking DSN
 - `SLACK_WEBHOOK`: Slack webhook URL for deployment notifications
 
 ### Environment Variables
+
 - `ALLOWED_HOSTS`: Comma-separated list of allowed hosts
 - `CORS_ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins
 
@@ -51,6 +57,7 @@ This document outlines the secrets required for CI/CD pipelines and deployment o
 ## Environment-Specific .env Files
 
 ### Staging Environment (.env.staging)
+
 ```env
 DEBUG=False
 SECRET_KEY=${STAGING_SECRET_KEY}
@@ -67,6 +74,7 @@ EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 ```
 
 ### Production Environment (.env.production)
+
 ```env
 DEBUG=False
 SECRET_KEY=${PRODUCTION_SECRET_KEY}
@@ -94,16 +102,19 @@ EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 ## Secret Generation Commands
 
 ### Generate Django Secret Key
+
 ```bash
 python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
 ### Generate Database Password
+
 ```bash
 openssl rand -base64 32
 ```
 
 ### Generate SSH Key Pair
+
 ```bash
 ssh-keygen -t ed25519 -C "nutrition-ai-deploy" -f ~/.ssh/nutrition_ai_deploy
 ```

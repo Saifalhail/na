@@ -26,43 +26,50 @@ cd /home/saifalhail/development/na
 ## 📱 Development Options
 
 ### Phone Development (Recommended)
+
 ```bash
 ./dev-start.sh phone
 ```
+
 - ✅ Uses tunnel mode - works anywhere with internet
 - ✅ No network configuration needed
 - ✅ Scan QR code with Expo Go app
 - ✅ Best for real device testing
 
 ### Android Emulator
+
 ```bash
 ./setup-android.sh      # One-time setup
 ./dev-start.sh emulator
 ```
+
 - Requires Android Studio on Windows or WSL
 - Best performance for debugging
 - No phone needed
 
 ### Web Development
+
 ```bash
 ./dev-start.sh web
 ```
+
 - Runs in web browser
 - Good for UI development and testing
 - Fastest iteration cycle
 
 ## 🛠️ Setup Scripts Overview
 
-| Script | Purpose | When to Run |
-|--------|---------|-------------|
+| Script             | Purpose                           | When to Run                     |
+| ------------------ | --------------------------------- | ------------------------------- |
 | `setup-backend.sh` | Python environment + Django setup | First time + dependency changes |
-| `setup-android.sh` | Android SDK configuration | If using emulator |
-| `setup-network.sh` | WSL network optimization | Network connectivity issues |
-| `dev-start.sh` | Start both frontend + backend | Daily development |
+| `setup-android.sh` | Android SDK configuration         | If using emulator               |
+| `setup-network.sh` | WSL network optimization          | Network connectivity issues     |
+| `dev-start.sh`     | Start both frontend + backend     | Daily development               |
 
 ## 🔧 Individual Component Setup
 
 ### Backend Only
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -70,6 +77,7 @@ python manage.py runserver 0.0.0.0:8000
 ```
 
 ### Frontend Only
+
 ```bash
 cd frontend
 
@@ -83,10 +91,12 @@ npx expo start --web --clear     # Web browser
 ## 📊 Development URLs
 
 ### Frontend (Expo)
+
 - **Metro Bundler**: http://localhost:8081
 - **Expo DevTools**: http://localhost:19002
 
 ### Backend (Django)
+
 - **API Server**: http://localhost:8000
 - **Admin Panel**: http://localhost:8000/admin/
 - **API Documentation**: http://localhost:8000/api/docs/
@@ -94,6 +104,7 @@ npx expo start --web --clear     # Web browser
 ## 🐛 Troubleshooting Guide
 
 ### 1. Phone Can't Connect to Metro
+
 ```bash
 # Run network diagnostics
 ./network-test.sh
@@ -107,6 +118,7 @@ npx expo start --tunnel --clear
 ```
 
 ### 2. Android Emulator Not Working
+
 ```bash
 # Reconfigure Android SDK
 ./setup-android.sh
@@ -119,6 +131,7 @@ npx expo start --tunnel --clear
 ```
 
 ### 3. Backend Setup Issues
+
 ```bash
 # Install required system packages
 sudo apt update
@@ -129,6 +142,7 @@ sudo apt install python3.12-venv python3-pip
 ```
 
 ### 4. Port Conflicts
+
 ```bash
 # Kill existing processes
 pkill -f "python.*manage.py.*runserver"
@@ -142,6 +156,7 @@ lsof -i :8081  # Frontend port
 ### 5. WSL Network Issues
 
 **For Phone Development**, configure Windows Firewall:
+
 ```powershell
 # Run in PowerShell as Administrator on Windows
 New-NetFirewallRule -DisplayName "Metro Bundler" -Direction Inbound -Protocol TCP -LocalPort 8081 -Action Allow
@@ -150,6 +165,7 @@ New-NetFirewallRule -DisplayName "Expo DevTools" -Direction Inbound -Protocol TC
 ```
 
 **Or use tunnel mode** (recommended):
+
 ```bash
 ./dev-start.sh phone  # Bypasses all network configuration
 ```
@@ -157,16 +173,19 @@ New-NetFirewallRule -DisplayName "Expo DevTools" -Direction Inbound -Protocol TC
 ## 📱 Mobile Testing Options
 
 ### Option 1: Expo Go App (Easiest)
+
 1. Install Expo Go from app store
 2. Run `./dev-start.sh phone`
 3. Scan QR code with Expo Go
 
 ### Option 2: Android Emulator
+
 1. Install Android Studio on Windows
 2. Create Virtual Device (AVD)
 3. Run `./dev-start.sh emulator`
 
 ### Option 3: iOS Simulator (macOS only)
+
 1. Install Xcode
 2. Run `./dev-start.sh`
 3. Press 'i' in Metro terminal
@@ -174,6 +193,7 @@ New-NetFirewallRule -DisplayName "Expo DevTools" -Direction Inbound -Protocol TC
 ## 🔄 Development Workflow
 
 ### Daily Development
+
 ```bash
 # 1. Open WSL terminal
 wsl
@@ -190,6 +210,7 @@ cd /home/saifalhail/development/na
 ```
 
 ### Making Changes
+
 - **Frontend**: Edit files in `frontend/src/`
 - **Backend**: Edit files in `backend/`
 - **API Changes**: Restart backend only
@@ -232,16 +253,17 @@ cd /home/saifalhail/development/na
 
 ## 🎯 Development Modes Comparison
 
-| Mode | Use Case | Setup Effort | Performance | Network Required |
-|------|----------|--------------|-------------|------------------|
-| **Phone (Tunnel)** | Real device testing | Easy | Good | Any internet |
-| **Phone (LAN)** | Real device testing | Medium | Better | Same WiFi |
-| **Android Emulator** | Development/Debug | Medium | Best | None |
-| **Web Browser** | UI Development | Easy | Fastest | None |
+| Mode                 | Use Case            | Setup Effort | Performance | Network Required |
+| -------------------- | ------------------- | ------------ | ----------- | ---------------- |
+| **Phone (Tunnel)**   | Real device testing | Easy         | Good        | Any internet     |
+| **Phone (LAN)**      | Real device testing | Medium       | Better      | Same WiFi        |
+| **Android Emulator** | Development/Debug   | Medium       | Best        | None             |
+| **Web Browser**      | UI Development      | Easy         | Fastest     | None             |
 
 ## 🔧 Environment Configuration
 
 ### Backend Environment (.env)
+
 ```bash
 # Located in: backend/.env
 # Copy from: backend/.env.example
@@ -253,6 +275,7 @@ GEMINI_API_KEY=your-gemini-key
 ```
 
 ### Frontend Environment (.env)
+
 ```bash
 # Located in: frontend/.env
 # Copy from: frontend/.env.example
@@ -264,6 +287,7 @@ EXPO_PUBLIC_ENVIRONMENT=development
 ## 📞 Getting Help
 
 ### Quick Diagnostics
+
 ```bash
 ./network-test.sh        # Network connectivity check
 tail -f /tmp/backend.log  # Backend logs
@@ -271,6 +295,7 @@ tail -f /tmp/frontend.log # Frontend logs
 ```
 
 ### Common Solutions
+
 1. **Metro won't start**: Use `./dev-start.sh` instead of manual commands
 2. **Phone can't connect**: Use `./dev-start.sh phone` (tunnel mode)
 3. **Emulator issues**: Run `./setup-android.sh` first

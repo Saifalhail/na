@@ -10,11 +10,15 @@ export function lazyWithSuspense<T extends ComponentType<any>>(
 ): ComponentType<React.ComponentProps<T>> {
   const LazyComponent = lazy(factory);
   const FallbackComponent = fallback || Spinner;
-  
+
   return (props: React.ComponentProps<T>) => {
-    return React.createElement(Suspense, {
-      fallback: React.createElement(FallbackComponent)
-    }, React.createElement(LazyComponent, props));
+    return React.createElement(
+      Suspense,
+      {
+        fallback: React.createElement(FallbackComponent),
+      },
+      React.createElement(LazyComponent, props)
+    );
   };
 }
 
@@ -40,13 +44,17 @@ export function createLazyComponent<T extends ComponentType<any>>(
         throw error;
       });
   });
-  
+
   const FallbackComponent = options?.fallback || Spinner;
-  
+
   return (props: React.ComponentProps<T>) => {
-    return React.createElement(Suspense, {
-      fallback: React.createElement(FallbackComponent)
-    }, React.createElement(LazyComponent, props));
+    return React.createElement(
+      Suspense,
+      {
+        fallback: React.createElement(FallbackComponent),
+      },
+      React.createElement(LazyComponent, props)
+    );
   };
 }
 
@@ -84,7 +92,6 @@ export const LazyScreens = {
 export const preloadCriticalScreens = () => {
   // Preload camera screen since it's commonly accessed
   // preloadLazyComponent(() => import('@/screens/CameraScreen'));
-  
   // Preload profile screen
   // preloadLazyComponent(() => import('@/screens/ProfileScreen'));
 };

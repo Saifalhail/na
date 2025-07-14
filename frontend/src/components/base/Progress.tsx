@@ -1,14 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { borderRadius, rs } from '@/utils/responsive';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-  Animated,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, TextStyle, Animated, Platform } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 
@@ -110,11 +102,11 @@ export const Progress: React.FC<ProgressProps> = ({
           outputRange: ['20%', '100%'],
         })
       : animated
-      ? animatedValue.interpolate({
-          inputRange: [0, 100],
-          outputRange: ['0%', '100%'],
-        })
-      : `${percentage}%`;
+        ? animatedValue.interpolate({
+            inputRange: [0, 100],
+            outputRange: ['0%', '100%'],
+          })
+        : `${percentage}%`;
 
     const progressTranslate = indeterminate
       ? indeterminateAnimation.interpolate({
@@ -151,9 +143,7 @@ export const Progress: React.FC<ProgressProps> = ({
     const strokeWidth = getThickness();
     const radius = (circleSize - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
-    const strokeDashoffset = indeterminate
-      ? 0
-      : circumference - (percentage / 100) * circumference;
+    const strokeDashoffset = indeterminate ? 0 : circumference - (percentage / 100) * circumference;
 
     // For React Native, we'll use a simple view-based circular progress
     return (

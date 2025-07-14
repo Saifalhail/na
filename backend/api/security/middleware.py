@@ -64,6 +64,15 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         # Generate correlation ID
         request.correlation_id = str(uuid.uuid4())
         request._start_time = time.time()
+        
+        # Cache request body early to avoid "body already read" errors
+        try:
+            request._cached_body = request.body
+            request._cached_body_size = len(request._cached_body) if request._cached_body else 0
+        except Exception:
+            # If body can't be read, set defaults
+            request._cached_body = b''
+            request._cached_body_size = 0
 
         # Log request
         logger.info(
@@ -112,7 +121,7 @@ class RequestLoggingMiddleware(MiddlewareMixin):
                     method=request.method,
                     ip_address=self.get_client_ip(request),
                     user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
-                    request_body_size=len(request.body) if request.body else 0,
+                    request_body_size=getattr(request, "_cached_body_size", 0),
                     response_status_code=response.status_code,
                     response_time_ms=response_time_ms,
                     ai_tokens_used=getattr(request, "ai_tokens_used", 0),

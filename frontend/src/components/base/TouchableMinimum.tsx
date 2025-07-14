@@ -20,7 +20,7 @@ export const TouchableMinimum: React.FC<TouchableMinimumProps> = ({
   ...props
 }) => {
   const minSize = rTouchTarget[size];
-  
+
   const touchableStyle: ViewStyle = {
     minWidth: minSize,
     minHeight: minSize,
@@ -31,10 +31,7 @@ export const TouchableMinimum: React.FC<TouchableMinimumProps> = ({
   };
 
   return (
-    <TouchableOpacity
-      style={[touchableStyle, style]}
-      {...props}
-    >
+    <TouchableOpacity style={[touchableStyle, style]} {...props}>
       {children}
     </TouchableOpacity>
   );
@@ -49,12 +46,12 @@ export const withMinimumTouchTarget = <P extends object>(
 ): React.FC<P> => {
   return (props: P) => {
     const minSize = rTouchTarget[size];
-    
+
     const wrapperStyle: ViewStyle = {
       minWidth: minSize,
       minHeight: minSize,
     };
-    
+
     return (
       <View style={wrapperStyle}>
         <Component {...props} />

@@ -1,13 +1,6 @@
 import React, { useMemo } from 'react';
 import { rs } from '@/utils/responsive';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedCard } from '@/components/base/AnimatedCard';
 import { ProgressRing } from '@/components/base/ProgressRing';
@@ -60,19 +53,23 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   const { theme } = useTheme();
 
   // Calculate percentages
-  const percentages = useMemo(() => ({
-    calories: Math.min((nutritionData.calories / goals.calories) * 100, 100),
-    protein: Math.min((nutritionData.protein / goals.protein) * 100, 100),
-    carbs: Math.min((nutritionData.carbs / goals.carbs) * 100, 100),
-    fat: Math.min((nutritionData.fat / goals.fat) * 100, 100),
-    fiber: Math.min((nutritionData.fiber / goals.fiber) * 100, 100),
-  }), [nutritionData, goals]);
+  const percentages = useMemo(
+    () => ({
+      calories: Math.min((nutritionData.calories / goals.calories) * 100, 100),
+      protein: Math.min((nutritionData.protein / goals.protein) * 100, 100),
+      carbs: Math.min((nutritionData.carbs / goals.carbs) * 100, 100),
+      fat: Math.min((nutritionData.fat / goals.fat) * 100, 100),
+      fiber: Math.min((nutritionData.fiber / goals.fiber) * 100, 100),
+    }),
+    [nutritionData, goals]
+  );
 
   // Calculate macro distribution
   const macroDistribution = useMemo(() => {
-    const totalCalories = nutritionData.protein * 4 + nutritionData.carbs * 4 + nutritionData.fat * 9;
+    const totalCalories =
+      nutritionData.protein * 4 + nutritionData.carbs * 4 + nutritionData.fat * 9;
     if (totalCalories === 0) return { protein: 0, carbs: 0, fat: 0 };
-    
+
     return {
       protein: ((nutritionData.protein * 4) / totalCalories) * 100,
       carbs: ((nutritionData.carbs * 4) / totalCalories) * 100,
@@ -81,10 +78,10 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   }, [nutritionData]);
 
   // Find max value for weekly chart scaling
-  const maxWeeklyCalories = Math.max(...weeklyData.map(d => d.calories), goals.calories);
+  const maxWeeklyCalories = Math.max(...weeklyData.map((d) => d.calories), goals.calories);
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.scrollContent}
@@ -96,19 +93,15 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
         </Text>
         {onExport && (
           <TouchableOpacity onPress={onExport} style={styles.exportButton}>
-            <Text style={[styles.exportText, { color: theme.colors.primary[500] }]}>
-              Export 📊
-            </Text>
+            <Text style={[styles.exportText, { color: theme.colors.primary[500] }]}>Export 📊</Text>
           </TouchableOpacity>
         )}
       </View>
 
       {/* Daily Overview */}
       <AnimatedCard animationType="fadeIn" delay={100} style={styles.card}>
-        <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>
-          Daily Overview
-        </Text>
-        
+        <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>Daily Overview</Text>
+
         <View style={styles.overviewContainer}>
           <View style={styles.mainProgress}>
             <ProgressRing
@@ -161,12 +154,12 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
         <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>
           Macro Distribution
         </Text>
-        
+
         <View style={styles.distributionContainer}>
           <View style={styles.pieChart}>
             <MacroPieChart distribution={macroDistribution} />
           </View>
-          
+
           <View style={styles.legendContainer}>
             <LegendItem label="Protein" percentage={macroDistribution.protein} color="#10b981" />
             <LegendItem label="Carbs" percentage={macroDistribution.carbs} color="#f59e0b" />
@@ -180,7 +173,7 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
         <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>
           Meal Timing Distribution
         </Text>
-        
+
         <View style={styles.mealTimingContainer}>
           <MealTimingBar
             label="Breakfast"
@@ -216,23 +209,22 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
       {/* Weekly Trend */}
       {weeklyData.length > 0 && (
         <AnimatedCard animationType="slideUp" delay={400} style={styles.card}>
-          <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>
-            Weekly Trend
-          </Text>
-          
+          <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>Weekly Trend</Text>
+
           <View style={styles.weeklyChart}>
             {weeklyData.map((day, index) => (
               <View key={day.day} style={styles.dayColumn}>
                 <View style={styles.barContainer}>
-                  <View 
+                  <View
                     style={[
                       styles.bar,
                       {
                         height: `${(day.calories / maxWeeklyCalories) * 100}%`,
-                        backgroundColor: day.calories > goals.calories 
-                          ? theme.colors.error[500] 
-                          : theme.colors.primary[500],
-                      }
+                        backgroundColor:
+                          day.calories > goals.calories
+                            ? theme.colors.error[500]
+                            : theme.colors.primary[500],
+                      },
                     ]}
                   />
                 </View>
@@ -242,7 +234,7 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
               </View>
             ))}
           </View>
-          
+
           <View style={styles.goalLine}>
             <View style={[styles.goalLineDashed, { borderColor: theme.colors.primary[300] }]} />
             <Text style={[styles.goalLineLabel, { color: theme.colors.primary[500] }]}>
@@ -254,10 +246,8 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
 
       {/* Micronutrients */}
       <AnimatedCard animationType="slideUp" delay={500} style={styles.card}>
-        <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>
-          Micronutrients
-        </Text>
-        
+        <Text style={[styles.cardTitle, { color: theme.colors.text.primary }]}>Micronutrients</Text>
+
         <View style={styles.microContainer}>
           <MicronutrientItem
             label="Fiber"
@@ -307,23 +297,18 @@ const MacroProgress: React.FC<{
   unit: string;
 }> = ({ label, value, goal, percentage, color, unit }) => {
   const { theme } = useTheme();
-  
+
   return (
     <View style={styles.macroItem}>
-      <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>
-        {label}
-      </Text>
-      <ProgressRing
-        progress={percentage}
-        size={60}
-        strokeWidth={6}
-        color={color}
-      />
+      <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
+      <ProgressRing progress={percentage} size={60} strokeWidth={6} color={color} />
       <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
-        {value}{unit}
+        {value}
+        {unit}
       </Text>
       <Text style={[styles.macroGoal, { color: theme.colors.textSecondary }]}>
-        of {goal}{unit}
+        of {goal}
+        {unit}
       </Text>
     </View>
   );
@@ -343,19 +328,17 @@ const MacroPieChart: React.FC<{ distribution: any }> = ({ distribution }) => {
   );
 };
 
-const LegendItem: React.FC<{ label: string; percentage: number; color: string }> = ({ 
-  label, 
-  percentage, 
-  color 
+const LegendItem: React.FC<{ label: string; percentage: number; color: string }> = ({
+  label,
+  percentage,
+  color,
 }) => {
   const { theme } = useTheme();
-  
+
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
-      <Text style={[styles.legendLabel, { color: theme.colors.text.primary }]}>
-        {label}
-      </Text>
+      <Text style={[styles.legendLabel, { color: theme.colors.text.primary }]}>{label}</Text>
       <Text style={[styles.legendValue, { color: theme.colors.textSecondary }]}>
         {percentage.toFixed(0)}%
       </Text>
@@ -371,17 +354,13 @@ const MealTimingBar: React.FC<{
   theme: any;
 }> = ({ label, value, total, icon, theme }) => {
   const percentage = total > 0 ? (value / total) * 100 : 0;
-  
+
   return (
     <View style={styles.timingItem}>
       <View style={styles.timingHeader}>
         <Text style={styles.timingIcon}>{icon}</Text>
-        <Text style={[styles.timingLabel, { color: theme.colors.text.primary }]}>
-          {label}
-        </Text>
-        <Text style={[styles.timingValue, { color: theme.colors.textSecondary }]}>
-          {value} cal
-        </Text>
+        <Text style={[styles.timingLabel, { color: theme.colors.text.primary }]}>{label}</Text>
+        <Text style={[styles.timingValue, { color: theme.colors.textSecondary }]}>{value} cal</Text>
       </View>
       <View style={[styles.timingBarBg, { backgroundColor: theme.colors.neutral[200] }]}>
         <LinearGradient
@@ -405,28 +384,29 @@ const MicronutrientItem: React.FC<{
 }> = ({ label, value, goal, unit, icon, theme }) => {
   const percentage = Math.min((value / goal) * 100, 100);
   const isOverGoal = value > goal;
-  
+
   return (
     <View style={styles.microItem}>
       <Text style={styles.microIcon}>{icon}</Text>
-      <Text style={[styles.microLabel, { color: theme.colors.text.primary }]}>
-        {label}
-      </Text>
-      <Text style={[
-        styles.microValue, 
-        { color: isOverGoal ? theme.colors.error : theme.colors.text.primary }
-      ]}>
-        {value}{unit}
+      <Text style={[styles.microLabel, { color: theme.colors.text.primary }]}>{label}</Text>
+      <Text
+        style={[
+          styles.microValue,
+          { color: isOverGoal ? theme.colors.error : theme.colors.text.primary },
+        ]}
+      >
+        {value}
+        {unit}
       </Text>
       <View style={[styles.microBar, { backgroundColor: theme.colors.neutral[200] }]}>
-        <View 
+        <View
           style={[
-            styles.microProgress, 
-            { 
+            styles.microProgress,
+            {
               width: `${percentage}%`,
               backgroundColor: isOverGoal ? theme.colors.error : theme.colors.success,
-            }
-          ]} 
+            },
+          ]}
         />
       </View>
     </View>

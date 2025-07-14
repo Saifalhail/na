@@ -31,8 +31,8 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.content}>
         {/* Bite Sight Logo */}
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../../assets/logo.png')} 
+          <Image
+            source={require('../../assets/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -81,11 +81,7 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       <View style={styles.buttons}>
-        <Button
-          onPress={handleRegister}
-          variant="primary"
-          style={styles.primaryButton}
-        >
+        <Button onPress={handleRegister} variant="primary" style={styles.primaryButton}>
           Get Started
         </Button>
 

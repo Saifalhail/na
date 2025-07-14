@@ -137,7 +137,9 @@ export const NotificationScreen: React.FC = () => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Text style={[styles.emptyIcon, { color: theme.colors.textSecondary }]}>🔔</Text>
-      <Text style={[styles.emptyTitle, { color: theme.colors.text.primary }]}>No Notifications</Text>
+      <Text style={[styles.emptyTitle, { color: theme.colors.text.primary }]}>
+        No Notifications
+      </Text>
       <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
         You're all caught up! Notifications will appear here when you receive them.
       </Text>

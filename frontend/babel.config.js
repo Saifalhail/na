@@ -26,11 +26,13 @@ module.exports = function (api) {
       'react-native-reanimated/plugin',
       // Performance optimizations
       '@babel/plugin-transform-runtime',
-      ['transform-remove-console', { exclude: ['error', 'warn'] }],
     ],
     env: {
       production: {
-        plugins: ['transform-remove-console', 'react-native-paper/babel'],
+        plugins: [
+          ['transform-remove-console', { exclude: ['error', 'warn'] }],
+          'react-native-paper/babel'
+        ],
       },
     },
   };

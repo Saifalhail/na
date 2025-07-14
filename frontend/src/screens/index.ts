@@ -16,3 +16,4 @@ export { ProfileScreen } from './ProfileScreen';
 export { MealHistoryScreen } from './MealHistoryScreen';
 export { FavoritesScreen } from './FavoritesScreen';
 export { SettingsScreen } from './SettingsScreen';
+export { NotificationScreen } from './NotificationScreen';

@@ -19,10 +19,28 @@ logger = logging.getLogger(__name__)
 def invalidate_user_cache_on_user_save(sender, instance, **kwargs):
     """
     Invalidate user cache when User model is saved.
+    Only invalidate for significant changes, not routine updates like last_login.
     """
     try:
-        user_cache_service.invalidate_user_cache(instance.id)
-        logger.debug(f"Invalidated cache for user {instance.id} after User save")
+        # Get the fields that were updated
+        update_fields = kwargs.get('update_fields', None)
+        
+        # Skip cache invalidation for routine login updates
+        if update_fields and set(update_fields).issubset({'last_login', 'last_login_ip'}):
+            logger.debug(f"Skipping cache invalidation for routine login update for user {instance.id}")
+            return
+        
+        # Only invalidate cache for significant changes
+        significant_fields = {
+            'account_type', 'is_active', 'is_verified', 'two_factor_enabled',
+            'email', 'first_name', 'last_name', 'is_staff', 'is_superuser'
+        }
+        
+        if update_fields is None or not significant_fields.isdisjoint(update_fields):
+            user_cache_service.invalidate_user_cache(instance.id)
+            logger.debug(f"Invalidated cache for user {instance.id} after User save")
+        else:
+            logger.debug(f"Skipping cache invalidation for non-significant update for user {instance.id}")
     except Exception as e:
         logger.error(f"Error invalidating user cache on User save: {e}")
 

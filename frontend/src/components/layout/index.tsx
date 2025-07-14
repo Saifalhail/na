@@ -16,54 +16,55 @@ interface ContainerProps extends ViewProps {
   scrollProps?: ScrollViewProps;
 }
 
-export const Container: React.FC<ContainerProps> = memo(({
-  safe = true,
-  scroll = false,
-  padding = 'medium',
-  center = false,
-  maxWidth,
-  fullHeight = true,
-  scrollProps,
-  children,
-  style,
-  ...props
-}) => {
-  const { theme } = useTheme();
-  const styles = createStyles(theme);
+export const Container: React.FC<ContainerProps> = memo(
+  ({
+    safe = true,
+    scroll = false,
+    padding = 'medium',
+    center = false,
+    maxWidth,
+    fullHeight = true,
+    scrollProps,
+    children,
+    style,
+    ...props
+  }) => {
+    const { theme } = useTheme();
+    const styles = createStyles(theme);
 
-  const containerStyle: ViewStyle[] = [
-    fullHeight ? styles.container : styles.containerAutoHeight,
-    styles[`${padding}Padding`],
-    ...(center ? [styles.center] : []),
-    ...(maxWidth ? [{ maxWidth, alignSelf: 'center', width: '100%' }] : []),
-    style as ViewStyle,
-  ];
+    const containerStyle: ViewStyle[] = [
+      fullHeight ? styles.container : styles.containerAutoHeight,
+      styles[`${padding}Padding`],
+      ...(center ? [styles.center] : []),
+      ...(maxWidth ? [{ maxWidth, alignSelf: 'center', width: '100%' }] : []),
+      style as ViewStyle,
+    ];
 
-  const content = scroll ? (
-    <ScrollView
-      contentContainerStyle={[
-        containerStyle,
-        !fullHeight && styles.scrollContent,
-      ]}
-      style={fullHeight ? { flex: 1 } : undefined}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      {...scrollProps}
-    >
-      {children}
-    </ScrollView>
-  ) : (
-    <View style={containerStyle} {...props}>
-      {children}
-    </View>
-  );
+    const content = scroll ? (
+      <ScrollView
+        contentContainerStyle={[containerStyle, !fullHeight && styles.scrollContent]}
+        style={fullHeight ? { flex: 1 } : undefined}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        {...scrollProps}
+      >
+        {children}
+      </ScrollView>
+    ) : (
+      <View style={containerStyle} {...props}>
+        {children}
+      </View>
+    );
 
-  if (safe) {
-    return <SafeAreaView style={[styles.safeArea, !fullHeight && { flex: 0 }]}>{content}</SafeAreaView>;
+    if (safe) {
+      return (
+        <SafeAreaView style={[styles.safeArea, !fullHeight && { flex: 0 }]}>{content}</SafeAreaView>
+      );
+    }
+
+    return content;
   }
-
-  return content;
-});
+);
 
 // Row component
 interface RowProps extends ViewProps {
@@ -76,53 +77,55 @@ interface RowProps extends ViewProps {
   overflow?: 'visible' | 'hidden' | 'scroll';
 }
 
-export const Row: React.FC<RowProps> = memo(({
-  align = 'center',
-  justify = 'start',
-  wrap = false,
-  gap = 0,
-  minHeight,
-  maxWidth,
-  overflow = 'visible',
-  children,
-  style,
-  ...props
-}) => {
-  const rowStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems:
-      align === 'start'
-        ? 'flex-start'
-        : align === 'end'
-          ? 'flex-end'
-          : align === 'stretch'
-            ? 'stretch'
-            : 'center',
-    justifyContent:
-      justify === 'start'
-        ? 'flex-start'
-        : justify === 'end'
-          ? 'flex-end'
-          : justify === 'between'
-            ? 'space-between'
-            : justify === 'around'
-              ? 'space-around'
-              : justify === 'evenly'
-                ? 'space-evenly'
-                : 'center',
-    flexWrap: wrap ? 'wrap' : 'nowrap',
-    gap,
-    ...(minHeight && { minHeight }),
-    ...(maxWidth && { maxWidth }),
-    overflow,
-  };
+export const Row: React.FC<RowProps> = memo(
+  ({
+    align = 'center',
+    justify = 'start',
+    wrap = false,
+    gap = 0,
+    minHeight,
+    maxWidth,
+    overflow = 'visible',
+    children,
+    style,
+    ...props
+  }) => {
+    const rowStyle: ViewStyle = {
+      flexDirection: 'row',
+      alignItems:
+        align === 'start'
+          ? 'flex-start'
+          : align === 'end'
+            ? 'flex-end'
+            : align === 'stretch'
+              ? 'stretch'
+              : 'center',
+      justifyContent:
+        justify === 'start'
+          ? 'flex-start'
+          : justify === 'end'
+            ? 'flex-end'
+            : justify === 'between'
+              ? 'space-between'
+              : justify === 'around'
+                ? 'space-around'
+                : justify === 'evenly'
+                  ? 'space-evenly'
+                  : 'center',
+      flexWrap: wrap ? 'wrap' : 'nowrap',
+      gap,
+      ...(minHeight && { minHeight }),
+      ...(maxWidth && { maxWidth }),
+      overflow,
+    };
 
-  return (
-    <View style={[rowStyle, style]} {...props}>
-      {children}
-    </View>
-  );
-});
+    return (
+      <View style={[rowStyle, style]} {...props}>
+        {children}
+      </View>
+    );
+  }
+);
 
 // Column component
 interface ColumnProps extends ViewProps {
@@ -131,49 +134,57 @@ interface ColumnProps extends ViewProps {
   gap?: number;
 }
 
-export const Column: React.FC<ColumnProps> = memo(({
-  align = 'stretch',
-  justify = 'start',
-  gap = 0,
-  children,
-  style,
-  ...props
-}) => {
-  const columnStyle: ViewStyle = {
-    flexDirection: 'column',
-    alignItems:
-      align === 'start'
-        ? 'flex-start'
-        : align === 'end'
-          ? 'flex-end'
-          : align === 'center'
-            ? 'center'
-            : 'stretch',
-    justifyContent:
-      justify === 'start'
-        ? 'flex-start'
-        : justify === 'end'
-          ? 'flex-end'
-          : justify === 'between'
-            ? 'space-between'
-            : justify === 'around'
-              ? 'space-around'
-              : justify === 'evenly'
-                ? 'space-evenly'
-                : 'center',
-    gap,
-  };
+export const Column: React.FC<ColumnProps> = memo(
+  ({ align = 'stretch', justify = 'start', gap = 0, children, style, ...props }) => {
+    const columnStyle: ViewStyle = {
+      flexDirection: 'column',
+      alignItems:
+        align === 'start'
+          ? 'flex-start'
+          : align === 'end'
+            ? 'flex-end'
+            : align === 'center'
+              ? 'center'
+              : 'stretch',
+      justifyContent:
+        justify === 'start'
+          ? 'flex-start'
+          : justify === 'end'
+            ? 'flex-end'
+            : justify === 'between'
+              ? 'space-between'
+              : justify === 'around'
+                ? 'space-around'
+                : justify === 'evenly'
+                  ? 'space-evenly'
+                  : 'center',
+      gap,
+    };
 
-  return (
-    <View style={[columnStyle, style]} {...props}>
-      {children}
-    </View>
-  );
-});
+    return (
+      <View style={[columnStyle, style]} {...props}>
+        {children}
+      </View>
+    );
+  }
+);
 
 // Spacer component
 interface SpacerProps {
-  size?: 'xs' | 'xsmall' | 's' | 'small' | 'm' | 'medium' | 'md' | 'l' | 'large' | 'lg' | 'xl' | 'xlarge' | 'xxl';
+  size?:
+    | 'xs'
+    | 'xsmall'
+    | 's'
+    | 'small'
+    | 'm'
+    | 'medium'
+    | 'md'
+    | 'l'
+    | 'large'
+    | 'lg'
+    | 'xl'
+    | 'xlarge'
+    | 'xxl';
   horizontal?: boolean;
 }
 
@@ -209,27 +220,24 @@ interface DividerProps {
   style?: ViewStyle;
 }
 
-export const Divider: React.FC<DividerProps> = memo(({
-  color,
-  thickness = 1,
-  spacing = 'medium',
-  style,
-}) => {
-  const { theme } = useTheme();
-  const styles = createStyles(theme);
+export const Divider: React.FC<DividerProps> = memo(
+  ({ color, thickness = 1, spacing = 'medium', style }) => {
+    const { theme } = useTheme();
+    const styles = createStyles(theme);
 
-  const dividerStyle: ViewStyle[] = [
-    styles.divider,
-    {
-      backgroundColor: color || theme.colors.neutral[300],
-      height: thickness,
-    },
-    styles[`${spacing}Spacing`],
-    style as ViewStyle,
-  ];
+    const dividerStyle: ViewStyle[] = [
+      styles.divider,
+      {
+        backgroundColor: color || theme.colors.neutral[300],
+        height: thickness,
+      },
+      styles[`${spacing}Spacing`],
+      style as ViewStyle,
+    ];
 
-  return <View style={dividerStyle} />;
-});
+    return <View style={dividerStyle} />;
+  }
+);
 
 const createStyles = (theme: Theme) =>
   StyleSheet.create({

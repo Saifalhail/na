@@ -191,19 +191,4 @@ def _get_error_code_and_message(exc, status_code, error_details):
         return "INVALID_REQUEST", "Invalid request"
 
 
-class GeminiAPIException(Exception):
-    """Exception raised when Gemini API calls fail."""
-
-    pass
-
-
-class NutritionCalculationException(Exception):
-    """Exception raised when nutrition calculation fails."""
-
-    pass
-
-
-class ImageAnalysisException(Exception):
-    """Exception raised when image analysis fails."""
-
-    pass
+# Removed duplicate exception definitions - these are now properly defined in custom_exceptions.py

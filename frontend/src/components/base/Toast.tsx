@@ -11,7 +11,7 @@ import {
   Dimensions,
   AccessibilityInfo,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/IconFallback';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -76,7 +76,7 @@ export const Toast: React.FC<ToastProps> = ({
 
       return () => clearTimeout(timer);
     }
-    
+
     return undefined;
   }, []);
 
@@ -125,7 +125,7 @@ export const Toast: React.FC<ToastProps> = ({
   const toastStyle: ViewStyle[] = [
     styles.container,
     styles[variant],
-    position === 'top' 
+    position === 'top'
       ? { top: insets.top + theme.spacing.m }
       : { bottom: insets.bottom + theme.spacing.m },
   ];

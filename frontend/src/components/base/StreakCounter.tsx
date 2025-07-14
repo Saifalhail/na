@@ -1,14 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { rs } from '@/utils/responsive';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  ViewStyle,
-  TextStyle,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, Animated, ViewStyle, TextStyle, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -116,8 +108,8 @@ export const StreakCounter: React.FC<StreakCounterProps> = ({
       {count > 0 ? (
         <LinearGradient
           colors={
-            isMilestone 
-              ? [theme.colors.primary[500], theme.colors.primary[700]] 
+            isMilestone
+              ? [theme.colors.primary[500], theme.colors.primary[700]]
               : [theme.colors.primary[400], theme.colors.primary[600]]
           }
           start={{ x: 0, y: 0 }}
@@ -125,26 +117,23 @@ export const StreakCounter: React.FC<StreakCounterProps> = ({
           style={[styles.gradient, containerStyle]}
         >
           {showFlame && (
-            <Animated.Text
-              style={[
-                styles.flame,
-                { fontSize: flameSize, transform: [{ rotate }] },
-              ]}
-            >
-⚡
+            <Animated.Text style={[styles.flame, { fontSize: flameSize, transform: [{ rotate }] }]}>
+              ⚡
             </Animated.Text>
           )}
           <View style={styles.content}>
-            <Text style={[styles.count, textStyles.count, textStyle]}>
-              {count}
-            </Text>
-            <Text style={[styles.label, textStyles.label, textStyle]}>
-              {label}
-            </Text>
+            <Text style={[styles.count, textStyles.count, textStyle]}>{count}</Text>
+            <Text style={[styles.label, textStyles.label, textStyle]}>{label}</Text>
           </View>
         </LinearGradient>
       ) : (
-        <View style={[styles.emptyContainer, containerStyle, { backgroundColor: theme.colors.neutral[200] }]}>
+        <View
+          style={[
+            styles.emptyContainer,
+            containerStyle,
+            { backgroundColor: theme.colors.neutral[200] },
+          ]}
+        >
           <Text style={[styles.emptyText, { color: theme.colors.neutral[500] }]}>
             Start your streak! 🎯
           </Text>

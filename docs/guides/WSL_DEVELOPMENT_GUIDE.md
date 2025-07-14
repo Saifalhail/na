@@ -45,6 +45,7 @@ cd /mnt/c/Users/Saif-/OneDrive/Desktop/development/na
 ## 🔧 Recent Fixes (January 11, 2025)
 
 ### 1. Fixed MMKV Native Module Error
+
 - **Problem**: `react-native-mmkv` doesn't work in Expo Go
 - **Solution**: Completely removed MMKV, now using AsyncStorage
 - **Files Changed**:
@@ -53,6 +54,7 @@ cd /mnt/c/Users/Saif-/OneDrive/Desktop/development/na
   - All storage now uses `@react-native-async-storage/async-storage`
 
 ### 2. Fixed Google Sign-In Native Module Error
+
 - **Problem**: `@react-native-google-signin/google-signin` doesn't work in Expo Go
 - **Solution**: Replaced with `expo-auth-session` for web-based OAuth
 - **Files Changed**:
@@ -62,6 +64,7 @@ cd /mnt/c/Users/Saif-/OneDrive/Desktop/development/na
   - `jest.setup.js` - Updated mocks
 
 ### 3. Fixed Path Issues in Scripts
+
 - **Problem**: Scripts hardcoded to `/home/saifalhail/development/na`
 - **Solution**: Created flexible path management
 - **New Files**:
@@ -80,19 +83,21 @@ All dependencies are now Expo Go compatible:
     "@react-native-async-storage/async-storage": "^2.1.2",
     "expo-auth-session": "^6.2.1",
     "expo-web-browser": "^14.2.0",
-    "expo-crypto": "^14.1.5",
+    "expo-crypto": "^14.1.5"
     // ... other Expo-compatible packages
   }
 }
 ```
 
 Removed packages:
+
 - ❌ `react-native-mmkv`
 - ❌ `@react-native-google-signin/google-signin`
 
 ## ⚙️ Environment Configuration
 
 ### Frontend .env
+
 ```bash
 # API Configuration
 EXPO_PUBLIC_API_URL=http://127.0.0.1:8000
@@ -117,6 +122,7 @@ EXPO_PUBLIC_ENABLE_OFFLINE_MODE=true
 ### Starting Development
 
 1. **Backend** (Django):
+
    ```bash
    cd backend
    source venv/bin/activate
@@ -124,6 +130,7 @@ EXPO_PUBLIC_ENABLE_OFFLINE_MODE=true
    ```
 
 2. **Frontend** (Expo):
+
    ```bash
    cd frontend
    npx expo start --clear --tunnel
@@ -161,6 +168,7 @@ If you see native module errors:
    - iOS: Delete and reinstall Expo Go
 
 2. **Clear all caches**:
+
    ```bash
    rm -rf .metro-cache .expo/* node_modules/.cache
    rm -rf /tmp/metro-* /tmp/haste-map-*
@@ -175,10 +183,11 @@ If you see native module errors:
 ### WSL-Specific Issues
 
 1. **Permission errors**:
+
    ```bash
    # Fix ownership
    sudo chown -R $(whoami):$(whoami) .
-   
+
    # Fix permissions
    find . -type d -exec chmod 755 {} \;
    find . -type f -exec chmod 644 {} \;
@@ -189,10 +198,11 @@ If you see native module errors:
    - Run `source scripts/common.sh` to set correct paths
 
 3. **Metro bundler issues**:
+
    ```bash
    # Kill all Metro processes
    pkill -f metro
-   
+
    # Clear watchman
    watchman watch-del-all
    ```
@@ -228,6 +238,7 @@ git push
 ## 📱 Mobile Testing
 
 1. **Start Expo**:
+
    ```bash
    ./scripts/quick-start.sh
    ```
@@ -242,6 +253,7 @@ git push
 ## 🐳 Docker (Future)
 
 Docker configuration exists in `backend/` directory:
+
 - `Dockerfile`
 - `docker-compose.yml`
 - `docker-compose.prod.yml`

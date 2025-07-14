@@ -1,15 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { 
-  TouchableOpacity, 
-  StyleSheet, 
-  Animated, 
-  ViewStyle,
-  View
-} from 'react-native';
+import { TouchableOpacity, StyleSheet, Animated, ViewStyle, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/hooks/useTheme';
 import { getModernShadow } from '@/theme/shadows';
-import { moderateScale, rTouchTarget, rs } from '@/utils/responsive';;
+import { moderateScale, rTouchTarget, rs } from '@/utils/responsive';
 import * as Haptics from 'expo-haptics';
 
 interface FloatingActionButtonProps {
@@ -39,7 +33,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
-  
+
   useEffect(() => {
     if (animated) {
       Animated.spring(scaleAnim, {
@@ -52,7 +46,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       scaleAnim.setValue(1);
     }
   }, [animated, scaleAnim]);
-  
+
   useEffect(() => {
     if (pulseAnimation && !disabled) {
       const pulseAnimationLoop = Animated.loop(
@@ -70,13 +64,15 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         ])
       );
       pulseAnimationLoop.start();
-      
+
       return () => {
         pulseAnimationLoop.stop();
       };
     }
+    // No cleanup needed when animation is disabled
+    return undefined;
   }, [pulseAnimation, disabled, pulseAnim]);
-  
+
   const getSizeStyle = () => {
     switch (size) {
       case 'small':
@@ -87,13 +83,13 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         return { width: rTouchTarget.medium, height: rTouchTarget.medium };
     }
   };
-  
+
   const getPositionStyle = (): ViewStyle => {
     const basePosition: ViewStyle = {
       position: 'absolute',
       bottom: moderateScale(24),
     };
-    
+
     switch (position) {
       case 'bottom-left':
         return { ...basePosition, left: moderateScale(24) };
@@ -103,24 +99,24 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         return { ...basePosition, right: moderateScale(24) };
     }
   };
-  
-  const getGradientColors = () => {
+
+  const getGradientColors = (): readonly [string, string] => {
     switch (variant) {
       case 'secondary':
-        return [theme.colors.secondary[400], theme.colors.secondary[600]];
+        return [theme.colors.secondary[400], theme.colors.secondary[600]] as const;
       case 'success':
-        return [theme.colors.success[400], theme.colors.success[600]];
+        return [theme.colors.success[400], theme.colors.success[600]] as const;
       case 'warning':
-        return [theme.colors.warning[400], theme.colors.warning[600]];
+        return [theme.colors.warning[400], theme.colors.warning[600]] as const;
       default:
-        return [theme.colors.primary[400], theme.colors.primary[600]];
+        return [theme.colors.primary[400], theme.colors.primary[600]] as const;
     }
   };
-  
+
   const handlePress = async () => {
     if (!disabled) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      
+
       // Rotate animation on press
       Animated.sequence([
         Animated.timing(rotateAnim, {
@@ -134,14 +130,14 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       onPress();
     }
   };
-  
+
   const sizeStyle = getSizeStyle();
   const positionStyle = getPositionStyle();
-  
+
   const animatedStyle = {
     transform: [
       { scale: Animated.multiply(scaleAnim, pulseAnim) },
@@ -154,15 +150,9 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     ],
     opacity: disabled ? 0.5 : 1,
   };
-  
+
   return (
-    <Animated.View
-      style={[
-        positionStyle,
-        style,
-        animatedStyle,
-      ]}
-    >
+    <Animated.View style={[positionStyle, style, animatedStyle]}>
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.8}
@@ -173,11 +163,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           colors={getGradientColors()}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[
-            styles.gradient,
-            sizeStyle,
-            getModernShadow('high'),
-          ]}
+          style={[styles.gradient, sizeStyle, getModernShadow('high')]}
         >
           {/* Ripple effect background */}
           {pulseAnimation && !disabled && (

@@ -64,11 +64,7 @@ export const SafeAreaContainer: React.FC<SafeAreaContainerProps> = ({
     );
   }
 
-  return (
-    <View style={[containerStyle, contentStyle]}>
-      {children}
-    </View>
-  );
+  return <View style={[containerStyle, contentStyle]}>{children}</View>;
 };
 
 const styles = StyleSheet.create({
@@ -121,10 +117,7 @@ interface SafeAreaTabBarProps {
   style?: ViewStyle;
 }
 
-export const SafeAreaTabBar: React.FC<SafeAreaTabBarProps> = ({
-  children,
-  style,
-}) => {
+export const SafeAreaTabBar: React.FC<SafeAreaTabBarProps> = ({ children, style }) => {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 

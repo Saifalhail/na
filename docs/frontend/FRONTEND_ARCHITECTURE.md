@@ -1,11 +1,13 @@
 # Frontend Architecture Documentation
 
 ## Overview
+
 The Nutrition AI frontend is built with React Native and TypeScript, providing a cross-platform mobile application for iOS and Android. The application follows a component-based architecture with a focus on reusability, type safety, and performance.
 
 ## Technology Stack
 
 ### Core Technologies
+
 - **React Native**: Cross-platform mobile framework
 - **TypeScript**: Type-safe JavaScript
 - **Expo**: Development platform and tooling
@@ -13,6 +15,7 @@ The Nutrition AI frontend is built with React Native and TypeScript, providing a
 - **React Navigation**: Navigation framework
 
 ### Additional Libraries
+
 - **react-native-mmkv**: Fast, encrypted key-value storage
 - **axios**: HTTP client with interceptors
 - **expo-secure-store**: Secure token storage
@@ -50,21 +53,25 @@ frontend/
 The application uses Zustand for state management with the following stores:
 
 #### authStore
+
 - Manages authentication state and JWT tokens
 - Handles login, logout, and token refresh
 - Persists authentication state
 
 #### userStore
+
 - Manages user profile and preferences
 - Handles dietary restrictions
 - Manages notification settings
 
 #### mealStore
+
 - Manages meal data and operations
 - Handles favorites and filtering
 - Provides meal statistics
 
 #### uiStore
+
 - Manages UI state (theme, loading, modals)
 - Handles toast notifications
 - Tracks navigation state
@@ -72,6 +79,7 @@ The application uses Zustand for state management with the following stores:
 ### 2. API Client
 
 The API client is built with Axios and includes:
+
 - Automatic JWT token management
 - Token refresh on 401 errors
 - Request/response interceptors
@@ -82,6 +90,7 @@ The API client is built with Axios and includes:
 ### 3. Component Library
 
 #### Base Components
+
 - **Button**: Multiple variants (primary, secondary, outline, text, danger)
 - **TextInput**: With validation and error states
 - **Card**: Elevated, outlined, and filled variants
@@ -89,6 +98,7 @@ The API client is built with Axios and includes:
 - **ErrorDisplay**: Error states with retry options
 
 #### Layout Components
+
 - **Container**: Safe area wrapper with padding options
 - **Row/Column**: Flexbox utilities
 - **Spacer**: Consistent spacing
@@ -97,6 +107,7 @@ The API client is built with Axios and includes:
 ### 4. Theme System
 
 The theme system provides:
+
 - Light and dark mode support
 - Consistent color palette
 - Typography scale
@@ -107,17 +118,20 @@ The theme system provides:
 ## Security Features
 
 ### Token Management
+
 - Secure storage using Expo SecureStore
 - Automatic token refresh
 - Token expiry handling
 - Secure logout with token cleanup
 
 ### Error Boundary
+
 - Global error catching
 - Error reporting integration
 - User-friendly error displays
 
 ### Environment Variables
+
 - Secure configuration management
 - Feature flags
 - API endpoint configuration
@@ -125,12 +139,14 @@ The theme system provides:
 ## Development Workflow
 
 ### Code Quality
+
 - ESLint for code linting
 - Prettier for code formatting
 - TypeScript for type safety
 - Husky pre-commit hooks
 
 ### Environment Setup
+
 ```bash
 # Install dependencies
 npm install
@@ -152,7 +168,9 @@ npm run type-check
 ```
 
 ### Environment Variables
+
 Create a `.env` file based on `.env.example`:
+
 ```
 EXPO_PUBLIC_API_URL=http://127.0.0.1:8000
 EXPO_PUBLIC_API_VERSION=v1
@@ -163,17 +181,20 @@ EXPO_PUBLIC_ENVIRONMENT=development
 ## Performance Optimizations
 
 ### Storage
+
 - MMKV for fast key-value storage
 - Selective state persistence
 - Efficient data caching
 
 ### Network
+
 - Request debouncing
 - Offline queue for failed requests
 - Automatic retry with exponential backoff
 - Response caching
 
 ### UI
+
 - Lazy loading of screens
 - Optimized re-renders with Zustand
 - Memoized selectors
@@ -182,11 +203,13 @@ EXPO_PUBLIC_ENVIRONMENT=development
 ## Testing Strategy
 
 ### Unit Tests
+
 - Component testing with React Native Testing Library
 - Hook testing with @testing-library/react-hooks
 - Store testing for Zustand
 
 ### Integration Tests
+
 - API integration tests
 - Navigation flow tests
 - Authentication flow tests
@@ -194,6 +217,7 @@ EXPO_PUBLIC_ENVIRONMENT=development
 ## Deployment
 
 ### Build Process
+
 ```bash
 # Build for production
 npm run build
@@ -206,6 +230,7 @@ eas build --platform android
 ```
 
 ### Release Channels
+
 - Development: Local development
 - Staging: Testing environment
 - Production: Live application
@@ -213,6 +238,7 @@ eas build --platform android
 ## Future Enhancements
 
 ### Planned Features
+
 1. Biometric authentication
 2. Push notifications
 3. Offline mode improvements
@@ -221,6 +247,7 @@ eas build --platform android
 6. Analytics integration
 
 ### Technical Debt
+
 1. Implement comprehensive test coverage
 2. Add Storybook for component documentation
 3. Implement code splitting
@@ -232,11 +259,13 @@ eas build --platform android
 ### Common Issues
 
 1. **Metro bundler issues**
+
    ```bash
    npx react-native start --reset-cache
    ```
 
 2. **iOS build issues**
+
    ```bash
    cd ios && pod install
    ```

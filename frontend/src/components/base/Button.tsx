@@ -1,5 +1,4 @@
 import React from 'react';
-import { borderRadius, rs } from '@/utils/responsive';
 import {
   TouchableOpacity,
   Text,
@@ -15,6 +14,8 @@ import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 import { getButtonAccessibilityProps } from '@/utils/accessibility';
 import { getModernShadow } from '@/theme/shadows';
+import { spacing, layout } from '@/theme/spacing';
+import { textPresets } from '@/theme/typography';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text' | 'danger' | 'ghost';
 export type ButtonSize = 'small' | 'medium' | 'large';
@@ -120,9 +121,10 @@ const createStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: theme.borderRadius.md,
-      paddingHorizontal: theme.spacing.m,
-      minHeight: 44, // Accessibility minimum touch target
+      borderRadius: layout.buttonBorderRadius,
+      borderWidth: 0,
+      minHeight: layout.minTouchTarget,
+      overflow: 'hidden',
     },
 
     // Variants
@@ -134,44 +136,45 @@ const createStyles = (theme: Theme) =>
     },
     outline: {
       backgroundColor: 'transparent',
-      borderWidth: 1,
+      borderWidth: layout.borderWidth.medium,
       borderColor: theme.colors.primary[500],
     },
     text: {
       backgroundColor: 'transparent',
-      paddingHorizontal: theme.spacing.xs,
+      paddingHorizontal: spacing['2'],
     },
     danger: {
       backgroundColor: theme.colors.error[500],
     },
     ghost: {
-      backgroundColor: 'transparent',
-      borderWidth: 1,
-      borderColor: 'transparent',
+      backgroundColor: theme.colors.neutral[100],
+      borderWidth: layout.borderWidth.thin,
+      borderColor: theme.colors.neutral[200],
     },
 
     // Sizes
     smallSize: {
-      paddingVertical: theme.spacing.xs,
-      paddingHorizontal: theme.spacing.s,
-      minHeight: 32,
+      paddingVertical: layout.buttonPadding.small.vertical,
+      paddingHorizontal: layout.buttonPadding.small.horizontal,
+      minHeight: spacing['8'], // 32px
     },
     mediumSize: {
-      paddingVertical: theme.spacing.s,
-      paddingHorizontal: theme.spacing.m,
-      minHeight: 44,
+      paddingVertical: layout.buttonPadding.medium.vertical,
+      paddingHorizontal: layout.buttonPadding.medium.horizontal,
+      minHeight: layout.minTouchTarget,
     },
     largeSize: {
-      paddingVertical: theme.spacing.m,
-      paddingHorizontal: theme.spacing.l,
-      minHeight: 56,
+      paddingVertical: layout.buttonPadding.large.vertical,
+      paddingHorizontal: layout.buttonPadding.large.horizontal,
+      minHeight: spacing['14'], // 56px
     },
 
     // Text
     textBase: {
-      fontFamily: theme.typography.fontFamily.medium,
-      fontWeight: '600',
+      fontFamily: theme.typography.fontFamily.semibold,
+      fontWeight: theme.typography.fontWeight.semibold,
       textAlign: 'center',
+      letterSpacing: 0.25,
     },
     primaryText: {
       color: theme.colors.white,
@@ -189,21 +192,18 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.white,
     },
     ghostText: {
-      color: theme.colors.neutral[700],
+      color: theme.colors.text.primary,
     },
 
-    // Text sizes
+    // Text sizes using textPresets
     smallText: {
-      fontSize: theme.typography.fontSize.sm,
-      lineHeight: theme.typography.fontSize.sm * 1.2,
+      ...textPresets.buttonSmall,
     },
     mediumText: {
-      fontSize: theme.typography.fontSize.base,
-      lineHeight: theme.typography.fontSize.base * 1.2,
+      ...textPresets.button,
     },
     largeText: {
-      fontSize: theme.typography.fontSize.lg,
-      lineHeight: theme.typography.fontSize.lg * 1.2,
+      ...textPresets.buttonLarge,
     },
 
     // States
@@ -211,32 +211,36 @@ const createStyles = (theme: Theme) =>
       width: '100%',
     },
     rounded: {
-      borderRadius: 999,
+      borderRadius: spacing['12'], // 48px for pill shape
     },
     disabled: {
-      opacity: 0.5,
+      opacity: 0.6,
     },
     primaryDisabled: {
-      backgroundColor: theme.colors.neutral[400],
+      backgroundColor: theme.colors.neutral[300],
     },
     secondaryDisabled: {
-      backgroundColor: theme.colors.neutral[400],
+      backgroundColor: theme.colors.neutral[300],
     },
     outlineDisabled: {
-      borderColor: theme.colors.neutral[400],
-    },
-    textDisabled: {},
-    dangerDisabled: {
-      backgroundColor: theme.colors.neutral[400],
-    },
-    ghostDisabled: {
+      borderColor: theme.colors.neutral[300],
       backgroundColor: 'transparent',
     },
+    textDisabled: {
+      backgroundColor: 'transparent',
+    },
+    dangerDisabled: {
+      backgroundColor: theme.colors.neutral[300],
+    },
+    ghostDisabled: {
+      backgroundColor: theme.colors.neutral[50],
+      borderColor: theme.colors.neutral[200],
+    },
     disabledText: {
-      color: theme.colors.neutral[500],
+      color: theme.colors.text.disabled,
     },
 
-    // Elevation
+    // Modern elevation system
     elevation: {
       ...getModernShadow('button'),
     },
@@ -246,12 +250,13 @@ const createStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      gap: spacing['2'], // 8px gap between icon and text
     },
     iconLeft: {
-      marginRight: theme.spacing.xs,
+      marginRight: spacing['2'],
     },
     iconRight: {
-      marginLeft: theme.spacing.xs,
+      marginLeft: spacing['2'],
     },
   });
 

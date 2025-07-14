@@ -1,13 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { rs } from '@/utils/responsive';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
+import { View, Text, StyleSheet, Animated, ViewStyle, TextStyle } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 
@@ -56,7 +49,7 @@ export const NutritionGauge: React.FC<NutritionGaugeProps> = ({
 }) => {
   const { theme } = useTheme();
   const animatedValue = useRef(new Animated.Value(0)).current;
-  
+
   const sizeConfig = {
     small: {
       containerSize: 80,
@@ -77,15 +70,15 @@ export const NutritionGauge: React.FC<NutritionGaugeProps> = ({
       labelTextSize: 14,
     },
   }[size];
-  
+
   const styles = createStyles(theme, size, strokeWidth);
-  
+
   // Calculate the normalized value (0-1)
   const normalizedValue = Math.max(0, Math.min(1, (value - minValue) / (maxValue - minValue)));
-  
+
   // Calculate the rotation angle (0-270 degrees for 3/4 circle)
   const rotationAngle = normalizedValue * 270;
-  
+
   useEffect(() => {
     if (animated) {
       Animated.timing(animatedValue, {
@@ -103,11 +96,11 @@ export const NutritionGauge: React.FC<NutritionGaugeProps> = ({
   const radius = (styles.container.width as number) / 2 - sizeConfig.strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = (circumference * 3) / 4; // 3/4 of the circle
-  
+
   // Calculate the stroke dash offset for the progress (not used in current implementation)
   // const strokeDashoffset = strokeDasharray - (strokeDasharray * normalizedValue);
 
-  const displayValue = showPercentage 
+  const displayValue = showPercentage
     ? `${Math.round(normalizedValue * 100)}%`
     : `${Math.round(value)}${unit ? ` ${unit}` : ''}`;
 
@@ -141,7 +134,7 @@ export const NutritionGauge: React.FC<NutritionGaugeProps> = ({
             },
           ]}
         />
-        
+
         {/* Animated Progress */}
         <Animated.View
           style={[
@@ -150,16 +143,18 @@ export const NutritionGauge: React.FC<NutritionGaugeProps> = ({
             {
               borderColor: gaugeColor,
               borderTopColor: 'transparent',
-              transform: [{
-                rotate: animatedValue.interpolate({
-                  inputRange: [0, 270],
-                  outputRange: ['135deg', '405deg'], // Start from bottom-left
-                })
-              }],
+              transform: [
+                {
+                  rotate: animatedValue.interpolate({
+                    inputRange: [0, 270],
+                    outputRange: ['135deg', '405deg'], // Start from bottom-left
+                  }),
+                },
+              ],
             },
           ]}
         />
-        
+
         {/* Center content */}
         <View style={styles.centerContent}>
           {showValue && (
@@ -178,11 +173,7 @@ export const NutritionGauge: React.FC<NutritionGaugeProps> = ({
   );
 };
 
-const createStyles = (
-  theme: Theme,
-  size: NutritionGaugeSize,
-  customStrokeWidth?: number
-) => {
+const createStyles = (theme: Theme, size: NutritionGaugeSize, customStrokeWidth?: number) => {
   const sizeConfig = {
     small: {
       containerSize: 80,

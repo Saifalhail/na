@@ -170,7 +170,7 @@ export interface ComprehensiveMetadata {
   cuisine?: string;
   locationName?: string;
   notes?: string;
-  
+
   // Enhanced Location & Environmental Context
   latitude?: number;
   longitude?: number;
@@ -178,7 +178,7 @@ export interface ComprehensiveMetadata {
   venueType?: string;
   weatherTemperature?: number;
   weatherHumidity?: number;
-  
+
   // Device & Camera Technical Metadata
   deviceModel?: string;
   deviceOS?: string;
@@ -190,7 +190,7 @@ export interface ComprehensiveMetadata {
   cameraShutterSpeed?: string;
   flashUsed?: boolean;
   whiteBalance?: string;
-  
+
   // Visual Analysis Preprocessing Data
   imageBrightness?: number;
   imageContrast?: number;
@@ -198,24 +198,24 @@ export interface ComprehensiveMetadata {
   colorTemperature?: string;
   hasReferenceObjects?: boolean;
   detectedTableware?: string[];
-  
+
   // User Behavioral & Historical Context
   userDietaryPreferences?: string[];
   typicalPortionSize?: string;
   cookingSkillLevel?: string;
   frequentCuisines?: string[];
-  
+
   // Smart Contextual Hints
   mealSharingContext?: string;
   estimatedMealValue?: number;
   restaurantChain?: string;
   homeCookingIndicators?: string[];
-  
+
   // Multi-Photo Analysis Support
   photoSequenceNumber?: number;
   totalPhotosInSequence?: number;
   photoAngle?: string;
-  
+
   // Real-time Enhancement Metadata
   captureConfidence?: number;
   autoDetectedIssues?: string[];

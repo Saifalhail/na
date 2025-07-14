@@ -227,7 +227,7 @@ class AnalyticsService {
   }
 
   async setExperiment(experimentName: string, variant: string): Promise<void> {
-    const experiments = await this.storage.getString('experiments') || '{}';
+    const experiments = (await this.storage.getString('experiments')) || '{}';
     const parsed = JSON.parse(experiments);
     parsed[experimentName] = variant;
     await this.storage.set('experiments', JSON.stringify(parsed));
@@ -266,9 +266,7 @@ class AnalyticsService {
       // Clear persisted events
       const keys = await this.storage.getAllKeys();
       await Promise.all(
-        keys
-          .filter((key) => key.startsWith('event_queue_'))
-          .map((key) => this.storage.delete(key))
+        keys.filter((key) => key.startsWith('event_queue_')).map((key) => this.storage.delete(key))
       );
 
       this.logDebug('Events flushed:', events.length);

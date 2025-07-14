@@ -24,7 +24,7 @@ interface User {
 }
 
 // ✅ Good: Use type aliases for unions and primitives
-type Status = 'pending' | 'active' | 'inactive';
+type Status = "pending" | "active" | "inactive";
 type UserId = string;
 
 // ❌ Bad: Don't use type for object shapes
@@ -64,7 +64,7 @@ interface ApiResponse<TData> {
 
 // ✅ Good: Constrained generics
 function updateItem<T extends { id: string }>(items: T[], update: T): T[] {
-  return items.map(item => item.id === update.id ? update : item);
+  return items.map((item) => (item.id === update.id ? update : item));
 }
 
 // ❌ Bad: Single letter generics without context
@@ -86,15 +86,15 @@ interface ButtonProps {
   disabled?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-  title, 
-  onPress, 
+export const Button: React.FC<ButtonProps> = ({
+  title,
+  onPress,
   variant = 'primary',
-  disabled = false 
+  disabled = false
 }) => {
   return (
-    <TouchableOpacity 
-      onPress={onPress} 
+    <TouchableOpacity
+      onPress={onPress}
       disabled={disabled}
       style={[styles.button, styles[variant]]}
     >
@@ -116,11 +116,11 @@ class Button extends React.Component {
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     // Load user
   }, []);
-  
+
   return { user, loading };
 };
 
@@ -187,7 +187,9 @@ src/
 // ✅ Good: Descriptive names
 const userProfile = await fetchUserProfile(userId);
 const isEmailValid = validateEmail(email);
-const handleSubmit = () => { /* ... */ };
+const handleSubmit = () => {
+  /* ... */
+};
 
 // ✅ Good: Boolean prefixes
 const isLoading = true;
@@ -198,7 +200,9 @@ const shouldRefresh = false;
 // ❌ Bad: Unclear names
 const data = await fetch(id);
 const valid = check(email);
-const submit = () => { /* ... */ };
+const submit = () => {
+  /* ... */
+};
 ```
 
 ### Constants
@@ -209,10 +213,10 @@ const API_TIMEOUT = 30000;
 const MAX_RETRY_ATTEMPTS = 3;
 
 export const MEAL_TYPES = {
-  BREAKFAST: 'breakfast',
-  LUNCH: 'lunch',
-  DINNER: 'dinner',
-  SNACK: 'snack',
+  BREAKFAST: "breakfast",
+  LUNCH: "lunch",
+  DINNER: "dinner",
+  SNACK: "snack",
 } as const;
 
 // ❌ Bad: Inconsistent naming
@@ -226,24 +230,24 @@ const MaxRetries = 3;
 
 ```typescript
 // 1. React imports
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 
 // 2. Third-party imports
-import axios from 'axios';
-import { useNavigation } from '@react-navigation/native';
+import axios from "axios";
+import { useNavigation } from "@react-navigation/native";
 
 // 3. Internal imports (absolute paths)
-import { Button } from '@components/Button';
-import { useAuth } from '@hooks/useAuth';
-import { formatDate } from '@utils/formatDate';
+import { Button } from "@components/Button";
+import { useAuth } from "@hooks/useAuth";
+import { formatDate } from "@utils/formatDate";
 
 // 4. Relative imports
-import { localHelper } from './helpers';
-import { styles } from './styles';
+import { localHelper } from "./helpers";
+import { styles } from "./styles";
 
 // 5. Type imports
-import type { User } from '@types/models';
+import type { User } from "@types/models";
 ```
 
 ### Component Organization
@@ -263,26 +267,26 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ userId }) => {
   // 4. Hooks
   const navigation = useNavigation();
   const { user, loading } = useUser(userId);
-  
+
   // 5. State
   const [isEditing, setIsEditing] = useState(false);
-  
+
   // 6. Effects
   useEffect(() => {
     // Effect logic
   }, [userId]);
-  
+
   // 7. Handlers
   const handleEdit = () => {
     setIsEditing(true);
   };
-  
+
   // 8. Render helpers
   const renderContent = () => {
     if (loading) return <Loading />;
     return <UserInfo user={user} />;
   };
-  
+
   // 9. Main render
   return (
     <View style={styles.container}>
@@ -339,7 +343,7 @@ const styles = StyleSheet.create({
 // ❌ Bad: Hard-coded values
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     padding: 16,
     borderRadius: 8,
   },
@@ -357,12 +361,12 @@ try {
   setMeals(response.data);
 } catch (error) {
   if (error instanceof NetworkError) {
-    showToast('No internet connection');
+    showToast("No internet connection");
   } else if (error instanceof ApiError) {
     showToast(error.message);
   } else {
-    showToast('An unexpected error occurred');
-    console.error('Unexpected error:', error);
+    showToast("An unexpected error occurred");
+    console.error("Unexpected error:", error);
   }
 } finally {
   setLoading(false);
@@ -404,21 +408,21 @@ describe('Button', () => {
     const { getByText } = render(<Button title="Click me" onPress={jest.fn()} />);
     expect(getByText('Click me')).toBeTruthy();
   });
-  
+
   it('should call onPress when pressed', () => {
     const onPress = jest.fn();
     const { getByText } = render(<Button title="Click me" onPress={onPress} />);
-    
+
     fireEvent.press(getByText('Click me'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
-  
+
   it('should not call onPress when disabled', () => {
     const onPress = jest.fn();
     const { getByText } = render(
       <Button title="Click me" onPress={onPress} disabled />
     );
-    
+
     fireEvent.press(getByText('Click me'));
     expect(onPress).not.toHaveBeenCalled();
   });
@@ -483,7 +487,7 @@ const sortedItems = useMemo(() => {
  */
 export function calculateBMI(weight: number, height: number): number {
   if (weight <= 0 || height <= 0) {
-    throw new Error('Weight and height must be positive values');
+    throw new Error("Weight and height must be positive values");
   }
   return Math.round((weight / (height * height)) * 10) / 10;
 }
@@ -496,7 +500,7 @@ export function calculateBMI(weight: number, height: number): number {
 // Using debounce to prevent API spam while user types
 const debouncedSearch = useMemo(
   () => debounce(searchMeals, 500),
-  [searchMeals]
+  [searchMeals],
 );
 
 // ❌ Bad: Obvious comments

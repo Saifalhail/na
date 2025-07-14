@@ -1,6 +1,6 @@
 /**
  * Comprehensive Metadata Collection Service
- * 
+ *
  * This service collects all available metadata from the device and environment
  * to enhance AI nutritional analysis accuracy.
  */
@@ -47,13 +47,9 @@ export class MetadataCollectionService {
 
     // First collect location metadata to use in environmental collection
     const locationResult = await this.collectLocationMetadata();
-    
+
     // Collect all other metadata categories in parallel for better performance
-    const [
-      deviceMetadata,
-      visualMetadata,
-      environmentalMetadata,
-    ] = await Promise.allSettled([
+    const [deviceMetadata, visualMetadata, environmentalMetadata] = await Promise.allSettled([
       this.collectDeviceMetadata(),
       this.collectVisualMetadata(imageUri),
       this.collectEnvironmentalMetadata(locationResult.latitude, locationResult.longitude),
@@ -161,7 +157,7 @@ export class MetadataCollectionService {
     try {
       // Get image information
       const imageInfo = await manipulateAsync(imageUri, [], { format: 'jpeg' });
-      
+
       if (imageInfo.width && imageInfo.height) {
         metadata.cameraResolutionWidth = imageInfo.width;
         metadata.cameraResolutionHeight = imageInfo.height;
@@ -169,7 +165,7 @@ export class MetadataCollectionService {
 
       // Perform comprehensive image analysis using the preprocessing service
       const imageAnalysis = await imagePreprocessingService.analyzeImage(imageUri);
-      
+
       // Map analysis results to metadata
       metadata.imageBrightness = imageAnalysis.brightness;
       metadata.imageContrast = imageAnalysis.contrast;
@@ -179,7 +175,8 @@ export class MetadataCollectionService {
       metadata.detectedTableware = imageAnalysis.detectedShapes;
 
       // Additional analysis for cooking method indicators
-      const cookingIndicators = await imagePreprocessingService.detectCookingMethodIndicators(imageUri);
+      const cookingIndicators =
+        await imagePreprocessingService.detectCookingMethodIndicators(imageUri);
       if (cookingIndicators.length > 0) {
         // Store cooking indicators in a way that can be used by the AI
         metadata.homeCookingIndicators = cookingIndicators;
@@ -188,7 +185,7 @@ export class MetadataCollectionService {
       // Portion size estimation if reference objects are available
       if (imageAnalysis.hasReferenceObjects) {
         const portionEstimate = await imagePreprocessingService.estimatePortionSize(
-          imageUri, 
+          imageUri,
           imageAnalysis.detectedShapes
         );
         // Store portion estimation confidence as capture confidence factor
@@ -197,7 +194,6 @@ export class MetadataCollectionService {
           portionEstimate.confidence
         );
       }
-
     } catch (error) {
       console.log('Visual metadata collection failed:', error);
     }
@@ -220,14 +216,13 @@ export class MetadataCollectionService {
         latitude,
         longitude
       );
-      
+
       // Merge environmental context into metadata
       Object.assign(metadata, environmentalContext);
 
       // Infer venue type based on environmental factors
       const venueType = await environmentalContextService.inferVenueType(latitude, longitude);
       metadata.venueType = venueType;
-
     } catch (error) {
       console.log('Environmental context collection failed:', error);
     }
@@ -269,15 +264,14 @@ export class MetadataCollectionService {
 
       // Placeholder for image brightness calculation
       metadata.imageBrightness = this.estimateImageBrightness();
-      
+
       // Placeholder for color analysis
       metadata.dominantColors = await this.extractDominantColors(imageUri);
       metadata.colorTemperature = this.assessColorTemperature(metadata.dominantColors || []);
-      
+
       // Simple reference object detection
       metadata.hasReferenceObjects = this.detectReferenceObjects();
       metadata.detectedTableware = this.detectTableware();
-
     } catch (error) {
       console.log('Visual analysis failed:', error);
     }
@@ -296,7 +290,7 @@ export class MetadataCollectionService {
     // - Google Places API
     // - Foursquare API
     // - Apple MapKit
-    
+
     // Placeholder implementation
     return {
       venueType: 'unknown', // Could be 'restaurant', 'home', 'office', etc.
@@ -311,7 +305,7 @@ export class MetadataCollectionService {
     // - OpenWeatherMap
     // - WeatherAPI
     // - AccuWeather
-    
+
     // Placeholder implementation
     return null;
   }
@@ -376,8 +370,8 @@ export class MetadataCollectionService {
    */
   private calculateMetadataCompleteness(metadata: ImageAnalysisMetadata): number {
     const totalFields = Object.keys(metadata).length;
-    const filledFields = Object.values(metadata).filter(value => 
-      value !== null && value !== undefined && value !== ''
+    const filledFields = Object.values(metadata).filter(
+      (value) => value !== null && value !== undefined && value !== ''
     ).length;
 
     return Math.min(filledFields / totalFields, 1.0);
@@ -452,7 +446,7 @@ export class MetadataCollectionService {
     try {
       // Basic quality checks that can be done quickly
       const imageInfo = await manipulateAsync(imageUri, [], { format: 'jpeg' });
-      
+
       // Check resolution
       if (imageInfo.width && imageInfo.height) {
         if (imageInfo.width < 640 || imageInfo.height < 640) {
@@ -473,7 +467,6 @@ export class MetadataCollectionService {
       // - Focus quality
       // - Noise levels
       // - Color balance
-
     } catch (error) {
       console.log('Quality analysis failed:', error);
       issues.push('analysis_failed');

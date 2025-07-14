@@ -125,9 +125,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           max: 100,
           now: clampedProgress,
         }}
-        accessibilityLabel={
-          accessibilityLabel || `Progress: ${Math.round(clampedProgress)}%`
-        }
+        accessibilityLabel={accessibilityLabel || `Progress: ${Math.round(clampedProgress)}%`}
       >
         <Animated.View
           style={[
@@ -142,9 +140,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             barStyle,
           ]}
         >
-          {striped && (
-            <View style={[styles.stripes, stripedAnimated && styles.stripedAnimated]} />
-          )}
+          {striped && <View style={[styles.stripes, stripedAnimated && styles.stripedAnimated]} />}
         </Animated.View>
       </View>
     </View>

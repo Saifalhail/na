@@ -10,6 +10,7 @@
 ### ❌ "Failed to create a new MMKV instance"
 
 **Symptoms:**
+
 ```
 Error: Failed to create a new MMKV instance: The native MMKV Module could not be found.
 ```
@@ -19,6 +20,7 @@ Error: Failed to create a new MMKV instance: The native MMKV Module could not be
 **Solution:** Already fixed! The project now uses AsyncStorage instead.
 
 If you still see this error:
+
 1. Clear Expo Go app data on your phone
 2. Use the correct directory:
    ```bash
@@ -29,6 +31,7 @@ If you still see this error:
 ### ❌ "RNGoogleSignin could not be found"
 
 **Symptoms:**
+
 ```
 Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNGoogleSignin' could not be found
 ```
@@ -38,6 +41,7 @@ Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNGoogleSignin' cou
 **Solution:** Already fixed! Now using `expo-auth-session` for web-based OAuth.
 
 If you still see this error:
+
 1. Clear Expo Go app data on your phone
 2. Make sure you're using the updated code
 3. Run: `npm install` to get the new dependencies
@@ -47,15 +51,18 @@ If you still see this error:
 ### ❌ Dual Directory Confusion
 
 **Symptoms:**
+
 - Changes not reflecting
 - Old errors persisting
 - Different behavior in different terminals
 
 **Root Cause:** Project exists in two locations:
+
 - `/mnt/c/Users/Saif-/OneDrive/Desktop/development/na` (Windows mount)
 - `/home/saifalhail/development/na` (WSL home)
 
 **Solution:**
+
 ```bash
 # Always use Windows mount
 cd /mnt/c/Users/Saif-/OneDrive/Desktop/development/na
@@ -72,6 +79,7 @@ ln -s /mnt/c/Users/Saif-/OneDrive/Desktop/development/na ~/development/na
 ### ❌ "venv/bin/activate: No such file or directory"
 
 **Symptoms:**
+
 ```bash
 ./setup-backend.sh: line 56: venv/bin/activate: No such file or directory
 ```
@@ -79,6 +87,7 @@ ln -s /mnt/c/Users/Saif-/OneDrive/Desktop/development/na ~/development/na
 **Root Cause:** Windows virtual environment copied to WSL (has `Scripts/` instead of `bin/`)
 
 **Solution:**
+
 ```bash
 cd backend
 rm -rf venv
@@ -90,11 +99,13 @@ pip install -r requirements.txt
 ### ❌ Permission Errors in WSL
 
 **Symptoms:**
+
 - `Permission denied` errors
 - Can't create or modify files
 - Scripts won't execute
 
 **Solution:**
+
 ```bash
 # Fix ownership
 sudo chown -R $(whoami):$(whoami) .
@@ -112,11 +123,13 @@ chmod +x scripts/*.sh
 ### ❌ Metro Bundler Cache Issues
 
 **Symptoms:**
+
 - Old code running
 - Changes not reflecting
 - Random module errors
 
 **Solution:**
+
 ```bash
 # Use the cache clearing script
 ./scripts/clear-metro-cache.sh
@@ -145,11 +158,13 @@ npm install [module-name]
 ### ❌ Expo Go Connection Issues
 
 **Symptoms:**
+
 - Can't scan QR code
 - "Network response timed out"
 - Connection refused
 
 **Solution:**
+
 ```bash
 # Always use tunnel mode
 npx expo start --clear --tunnel
@@ -163,10 +178,12 @@ npx expo start --clear --tunnel
 ### ❌ ImportError in Django
 
 **Symptoms:**
+
 - `ModuleNotFoundError`
 - Import errors when running Django
 
 **Solution:**
+
 ```bash
 cd backend
 source venv/bin/activate  # Make sure venv is activated
@@ -177,6 +194,7 @@ python manage.py migrate
 ### ❌ Database Errors
 
 **Solution:**
+
 ```bash
 cd backend
 rm db.sqlite3
@@ -189,17 +207,21 @@ python manage.py createsuperuser  # If needed
 ### ❌ API Connection Failed
 
 **Symptoms:**
+
 - Frontend can't reach backend
 - "Network request failed"
 
 **Solution:**
+
 1. Check backend is running:
+
    ```bash
    cd backend
    python manage.py runserver 0.0.0.0:8000
    ```
 
 2. Update frontend `.env`:
+
    ```bash
    EXPO_PUBLIC_API_URL=http://[YOUR-WSL-IP]:8000
    ```
@@ -212,17 +234,20 @@ python manage.py createsuperuser  # If needed
 ## 🔍 Validation & Debugging
 
 ### Run Complete Validation
+
 ```bash
 ./scripts/validate-project.sh
 ```
 
 ### Check for Native Modules
+
 ```bash
 # In frontend directory
 grep -r "react-native-mmkv\|@react-native-google-signin" src/
 ```
 
 ### View Running Processes
+
 ```bash
 # Check Expo/Metro
 ps aux | grep -E "expo|metro" | grep -v grep
@@ -236,11 +261,13 @@ pkill -f expo
 When something goes wrong, try these in order:
 
 1. ✅ **Correct Directory?**
+
    ```bash
    pwd  # Should be /mnt/c/Users/Saif-/OneDrive/Desktop/development/na
    ```
 
 2. ✅ **Clear Caches**
+
    ```bash
    ./scripts/clear-metro-cache.sh
    ```
@@ -249,6 +276,7 @@ When something goes wrong, try these in order:
    - Settings → Apps → Expo Go → Clear Data
 
 4. ✅ **Reinstall Dependencies**
+
    ```bash
    cd frontend
    rm -rf node_modules package-lock.json
@@ -256,6 +284,7 @@ When something goes wrong, try these in order:
    ```
 
 5. ✅ **Validate Setup**
+
    ```bash
    ./scripts/validate-project.sh
    ```

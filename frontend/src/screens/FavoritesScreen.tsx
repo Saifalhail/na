@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { rs } from '@/utils/responsive';
+import { spacing } from '@/utils/responsive';
 import {
   View,
   Text,
@@ -13,8 +13,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
 import { Card } from '@/components/base/Card';
-import { LoadingOverlay } from '@/components/base/Loading';
+import { LoadingOverlay, ListSkeleton } from '@/components/base/Loading';
 import { ErrorDisplay } from '@/components/base/ErrorDisplay';
+import { EmptyState } from '@/components/base/EmptyState';
+import { AppHeader } from '@/components/navigation/AppHeader';
 import { useTheme } from '@/hooks/useTheme';
 import { useMealStore } from '@/store/mealStore';
 import type { Meal } from '@/types/models';
@@ -170,13 +172,16 @@ export const FavoritesScreen: React.FC = () => {
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Text style={[styles.emptyIcon, { color: theme.colors.textSecondary }]}>♡</Text>
-      <Text style={[styles.emptyTitle, { color: theme.colors.text.primary }]}>No Favorite Meals</Text>
-      <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
-        Mark meals as favorites in your meal history to see them here for quick logging.
-      </Text>
-    </View>
+    <EmptyState
+      image={require('../../assets/logo_cropped.png')}
+      title="No Favorite Meals Yet"
+      subtitle="Mark your frequently eaten meals as favorites for quick and easy logging"
+      actionLabel="Browse Meal History"
+      onAction={() => {
+        // Navigate to history screen
+        // navigation.navigate('History');
+      }}
+    />
   );
 
   if (error) {
@@ -194,13 +199,15 @@ export const FavoritesScreen: React.FC = () => {
   }
 
   return (
-    <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text.primary }]}>Favorite Meals</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-          Quickly log your favorite meals
-        </Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <AppHeader 
+        title="Favorite Meals"
+        subtitle="Quickly log your favorite meals"
+        showLogo={true}
+        showUserInfo={true}
+      />
+      
+      <Container style={styles.contentContainer}>
 
       <FlatList
         data={favoriteMeals}
@@ -222,14 +229,26 @@ export const FavoritesScreen: React.FC = () => {
         ]}
       />
 
-      {isLoading && <LoadingOverlay visible={true} message="Loading favorites..." />}
+      {isLoading && favoriteMeals.length === 0 && (
+        <View style={styles.skeletonContainer}>
+          <ListSkeleton count={3} />
+        </View>
+      )}
       {quickLogging && <LoadingOverlay visible={true} message="Logging meal..." />}
-    </Container>
+      </Container>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  skeletonContainer: {
+    paddingHorizontal: spacing.medium,
+    paddingTop: spacing.medium,
+  },
   container: {
+    flex: 1,
+  },
+  contentContainer: {
     flex: 1,
   },
   header: {

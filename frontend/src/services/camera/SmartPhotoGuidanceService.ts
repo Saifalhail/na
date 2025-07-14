@@ -1,6 +1,6 @@
 /**
  * Smart Photo Guidance Service
- * 
+ *
  * Provides real-time feedback and guidance to users for capturing
  * optimal food photos for AI nutritional analysis.
  */
@@ -75,7 +75,7 @@ export class SmartPhotoGuidanceService {
 
       // Perform quick image analysis
       const imageAnalysis = await imagePreprocessingService.analyzeImage(imageUri);
-      
+
       // Assess various quality factors
       const issues: PhotoIssue[] = [];
       let overallScore = 100;
@@ -95,7 +95,10 @@ export class SmartPhotoGuidanceService {
       }
 
       // Color and exposure assessment
-      const colorIssue = this.assessColorQuality(imageAnalysis.dominantColors, imageAnalysis.colorTemperature);
+      const colorIssue = this.assessColorQuality(
+        imageAnalysis.dominantColors,
+        imageAnalysis.colorTemperature
+      );
       if (colorIssue) {
         issues.push(colorIssue);
         overallScore -= this.getScorePenalty(colorIssue.severity);
@@ -127,7 +130,6 @@ export class SmartPhotoGuidanceService {
 
       this.guidanceState.currentAssessment = assessment;
       return assessment;
-
     } catch (error) {
       console.error('Photo quality assessment failed:', error);
       return this.createDefaultAssessment();
@@ -143,16 +145,16 @@ export class SmartPhotoGuidanceService {
         message: 'Perfect! Great photo quality detected.',
         type: 'success',
         priority: 'low',
-        action: 'capture'
+        action: 'capture',
       };
     }
 
     // Find the highest priority issue
-    const highPriorityIssues = assessment.issues.filter(issue => issue.severity === 'high');
-    const mediumPriorityIssues = assessment.issues.filter(issue => issue.severity === 'medium');
+    const highPriorityIssues = assessment.issues.filter((issue) => issue.severity === 'high');
+    const mediumPriorityIssues = assessment.issues.filter((issue) => issue.severity === 'medium');
 
     let primaryIssue: PhotoIssue | undefined;
-    
+
     if (highPriorityIssues.length > 0) {
       primaryIssue = highPriorityIssues[0];
     } else if (mediumPriorityIssues.length > 0) {
@@ -166,14 +168,14 @@ export class SmartPhotoGuidanceService {
         message: primaryIssue.message,
         type: primaryIssue.severity === 'high' ? 'error' : 'warning',
         priority: primaryIssue.severity === 'high' ? 'high' : 'medium',
-        action: this.getActionFromIssueType(primaryIssue.type)
+        action: this.getActionFromIssueType(primaryIssue.type),
       };
     }
 
     return {
       message: 'Adjusting photo for better analysis...',
       type: 'info',
-      priority: 'low'
+      priority: 'low',
     };
   }
 
@@ -186,28 +188,28 @@ export class SmartPhotoGuidanceService {
         type: 'lighting',
         severity: 'high',
         message: 'Photo is too dark',
-        suggestion: 'Move to better lighting or use flash'
+        suggestion: 'Move to better lighting or use flash',
       };
     } else if (brightness > 0.9) {
       return {
         type: 'lighting',
         severity: 'high',
         message: 'Photo is overexposed',
-        suggestion: 'Reduce lighting or move away from bright light'
+        suggestion: 'Reduce lighting or move away from bright light',
       };
     } else if (brightness < 0.3) {
       return {
         type: 'lighting',
         severity: 'medium',
         message: 'Lighting could be better',
-        suggestion: 'Try to improve lighting for clearer details'
+        suggestion: 'Try to improve lighting for clearer details',
       };
     } else if (contrast < 0.5) {
       return {
         type: 'lighting',
         severity: 'medium',
         message: 'Low contrast detected',
-        suggestion: 'Adjust lighting to improve contrast'
+        suggestion: 'Adjust lighting to improve contrast',
       };
     }
     return null;
@@ -222,14 +224,14 @@ export class SmartPhotoGuidanceService {
         type: 'blur',
         severity: 'high',
         message: 'Image appears blurry',
-        suggestion: 'Hold camera steady and tap to focus'
+        suggestion: 'Hold camera steady and tap to focus',
       };
     } else if (sharpness < 0.5) {
       return {
         type: 'blur',
         severity: 'medium',
         message: 'Image could be sharper',
-        suggestion: 'Ensure camera is focused and steady'
+        suggestion: 'Ensure camera is focused and steady',
       };
     }
     return null;
@@ -238,23 +240,26 @@ export class SmartPhotoGuidanceService {
   /**
    * Assess color quality
    */
-  private assessColorQuality(dominantColors: string[], colorTemperature: string): PhotoIssue | null {
+  private assessColorQuality(
+    dominantColors: string[],
+    colorTemperature: string
+  ): PhotoIssue | null {
     if (dominantColors.length === 0) {
       return {
         type: 'lighting',
         severity: 'medium',
         message: 'Color detection issues',
-        suggestion: 'Improve lighting for better color accuracy'
+        suggestion: 'Improve lighting for better color accuracy',
       };
     }
 
     // Check for extreme color temperatures that might indicate poor lighting
-    if (colorTemperature === 'cool' && dominantColors.every(color => color.startsWith('#0'))) {
+    if (colorTemperature === 'cool' && dominantColors.every((color) => color.startsWith('#0'))) {
       return {
         type: 'lighting',
         severity: 'medium',
         message: 'Colors appear washed out',
-        suggestion: 'Try warmer lighting conditions'
+        suggestion: 'Try warmer lighting conditions',
       };
     }
 
@@ -270,21 +275,21 @@ export class SmartPhotoGuidanceService {
         type: 'distance',
         severity: 'high',
         message: 'Food appears too small in frame',
-        suggestion: 'Move closer to the food'
+        suggestion: 'Move closer to the food',
       };
     } else if (foodArea > 0.95) {
       return {
         type: 'distance',
         severity: 'medium',
         message: 'Food fills entire frame',
-        suggestion: 'Move back slightly to show context'
+        suggestion: 'Move back slightly to show context',
       };
     } else if (foodArea < 0.5) {
       return {
         type: 'framing',
         severity: 'medium',
         message: 'Center the food better in frame',
-        suggestion: 'Adjust framing to focus on the food'
+        suggestion: 'Adjust framing to focus on the food',
       };
     }
     return null;
@@ -299,7 +304,7 @@ export class SmartPhotoGuidanceService {
         type: 'framing',
         severity: 'low',
         message: 'No size references detected',
-        suggestion: 'Include utensils or other objects for better portion estimation'
+        suggestion: 'Include utensils or other objects for better portion estimation',
       };
     }
     return null;
@@ -310,7 +315,7 @@ export class SmartPhotoGuidanceService {
    */
   private generateSuggestions(issues: PhotoIssue[]): string[] {
     const suggestions: string[] = [];
-    const issueTypes = new Set(issues.map(issue => issue.type));
+    const issueTypes = new Set(issues.map((issue) => issue.type));
 
     if (issueTypes.has('lighting')) {
       suggestions.push('Improve lighting conditions');
@@ -341,10 +346,14 @@ export class SmartPhotoGuidanceService {
    */
   private getScorePenalty(severity: 'low' | 'medium' | 'high'): number {
     switch (severity) {
-      case 'low': return 5;
-      case 'medium': return 15;
-      case 'high': return 30;
-      default: return 10;
+      case 'low':
+        return 5;
+      case 'medium':
+        return 15;
+      case 'high':
+        return 30;
+      default:
+        return 10;
     }
   }
 
@@ -353,13 +362,20 @@ export class SmartPhotoGuidanceService {
    */
   private getActionFromIssueType(type: PhotoIssue['type']): RealTimeGuidance['action'] {
     switch (type) {
-      case 'lighting': return 'improve_lighting';
-      case 'blur': return 'wait';
-      case 'distance': return 'move_closer';
-      case 'framing': return 'adjust_angle';
-      case 'angle': return 'adjust_angle';
-      case 'obstruction': return 'adjust_angle';
-      default: return 'wait';
+      case 'lighting':
+        return 'improve_lighting';
+      case 'blur':
+        return 'wait';
+      case 'distance':
+        return 'move_closer';
+      case 'framing':
+        return 'adjust_angle';
+      case 'angle':
+        return 'adjust_angle';
+      case 'obstruction':
+        return 'adjust_angle';
+      default:
+        return 'wait';
     }
   }
 
@@ -397,7 +413,9 @@ export class SmartPhotoGuidanceService {
       return false;
     }
 
-    return assessment.isOptimal && assessment.overallScore >= this.guidanceState.confidenceThreshold;
+    return (
+      assessment.isOptimal && assessment.overallScore >= this.guidanceState.confidenceThreshold
+    );
   }
 
   /**
@@ -410,7 +428,7 @@ export class SmartPhotoGuidanceService {
       'Check that lighting is even across the plate',
       'Include utensils or other objects for size reference',
       'Keep the camera steady and tap to focus',
-      'Wait for the green indicator before capturing'
+      'Wait for the green indicator before capturing',
     ];
 
     return steps.slice(0, currentStep + 1);
@@ -428,11 +446,14 @@ export class SmartPhotoGuidanceService {
   }> {
     try {
       const analysis = await imagePreprocessingService.analyzeImage(imageUri);
-      
+
       return {
         foodCoverage: analysis.estimatedFoodArea,
         angleOptimality: this.calculateAngleOptimality(analysis),
-        lightingUniformity: this.calculateLightingUniformity(analysis.brightness, analysis.contrast),
+        lightingUniformity: this.calculateLightingUniformity(
+          analysis.brightness,
+          analysis.contrast
+        ),
         colorAccuracy: this.calculateColorAccuracy(analysis.dominantColors),
         portionVisibility: analysis.hasReferenceObjects ? 0.9 : 0.6,
       };
@@ -462,11 +483,13 @@ export class SmartPhotoGuidanceService {
    */
   private calculateLightingUniformity(brightness: number, contrast: number): number {
     // Optimal lighting: brightness 0.4-0.7, contrast 0.8-1.5
-    const brightnessScore = brightness >= 0.4 && brightness <= 0.7 ? 1.0 : 
-                           Math.max(0, 1 - Math.abs(brightness - 0.55) * 2);
-    const contrastScore = contrast >= 0.8 && contrast <= 1.5 ? 1.0 :
-                         Math.max(0, 1 - Math.abs(contrast - 1.15) * 0.7);
-    
+    const brightnessScore =
+      brightness >= 0.4 && brightness <= 0.7
+        ? 1.0
+        : Math.max(0, 1 - Math.abs(brightness - 0.55) * 2);
+    const contrastScore =
+      contrast >= 0.8 && contrast <= 1.5 ? 1.0 : Math.max(0, 1 - Math.abs(contrast - 1.15) * 0.7);
+
     return (brightnessScore + contrastScore) / 2;
   }
 
@@ -475,17 +498,15 @@ export class SmartPhotoGuidanceService {
    */
   private calculateColorAccuracy(colors: string[]): number {
     if (colors.length === 0) return 0;
-    
+
     // More colors usually indicate better color capture
     const colorDiversityScore = Math.min(1, colors.length / 5);
-    
+
     // Check for realistic food colors (browns, greens, reds, yellows)
-    const realisticColors = colors.filter(color => 
-      this.isRealisticFoodColor(color)
-    ).length;
-    
+    const realisticColors = colors.filter((color) => this.isRealisticFoodColor(color)).length;
+
     const realismScore = realisticColors / colors.length;
-    
+
     return (colorDiversityScore + realismScore) / 2;
   }
 
@@ -498,7 +519,7 @@ export class SmartPhotoGuidanceService {
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
-    
+
     // Avoid pure blues and purples which are rare in food
     return !(r < 100 && g < 100 && b > 150);
   }

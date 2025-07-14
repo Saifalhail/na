@@ -223,12 +223,7 @@ interface TabPanelProps {
   style?: ViewStyle;
 }
 
-export const TabPanel: React.FC<TabPanelProps> = ({
-  isActive,
-  children,
-  lazy = true,
-  style,
-}) => {
+export const TabPanel: React.FC<TabPanelProps> = ({ isActive, children, lazy = true, style }) => {
   const [hasBeenActive, setHasBeenActive] = useState(isActive);
 
   useEffect(() => {

@@ -72,7 +72,7 @@ class CrashReportingService {
     this.setupErrorHandlers();
 
     // Load persisted breadcrumbs
-    this.loadPersistedBreadcrumbs().catch(error => {
+    this.loadPersistedBreadcrumbs().catch((error) => {
       console.error('[CrashReporting] Failed to load persisted breadcrumbs:', error);
     });
 
@@ -133,7 +133,7 @@ class CrashReportingService {
     }
 
     // Persist breadcrumbs
-    this.persistBreadcrumbs().catch(error => {
+    this.persistBreadcrumbs().catch((error) => {
       console.error('[CrashReporting] Failed to persist breadcrumbs:', error);
     });
   }

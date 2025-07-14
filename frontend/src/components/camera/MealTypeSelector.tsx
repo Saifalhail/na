@@ -124,7 +124,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
 
   const renderMealType = (meal: MealTypeOption) => {
     const isSelected = selectedType === meal.type;
-    
+
     return (
       <TouchableOpacity
         key={meal.type}
@@ -191,11 +191,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
     );
   };
 
-  const containerStyle = [
-    styles.container,
-    horizontal && styles.horizontalContainer,
-    style,
-  ];
+  const containerStyle = [styles.container, horizontal && styles.horizontalContainer, style];
 
   if (horizontal) {
     return (

@@ -28,7 +28,15 @@ import { useAuthStore } from '@/store/authStore';
 import { MainStackParamList } from '@/navigation/types';
 import { formatCalories, formatMacros } from '@/utils/formatting';
 import { LOADING_MESSAGES } from '@/constants';
-import { rs, rTouchTarget, scale, moderateScale, layout, dimensions, fontScale } from '@/utils/responsive';
+import {
+  rs,
+  rTouchTarget,
+  scale,
+  moderateScale,
+  layout,
+  dimensions,
+  fontScale,
+} from '@/utils/responsive';
 import { MealType, Meal } from '@/types/models';
 import { aiApi } from '@/services/api/endpoints/ai';
 import { getModernShadow } from '@/theme/shadows';
@@ -103,54 +111,198 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
     setIsAnalyzing(true);
 
     try {
-      // Convert image URI to base64
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      const reader = new FileReader();
-
-      reader.onloadend = async () => {
-        const base64 = reader.result?.toString().split(',')[1];
-
-        if (base64) {
-          // Call AI analysis API
-          const result = await aiApi.analyzeImage({
-            image: base64,
-            imageUri: imageUri,
-            metadata: {
-              mealType: getMealType(),
+      // Check if in demo mode or API is unreachable
+      const isDemoUser = user?.id === 'demo-user';
+      
+      if (isDemoUser) {
+        // Use mock data for demo mode
+        const mockData: AnalysisData = {
+          total_calories: 450,
+          protein: 25,
+          carbs: 45,
+          fat: 18,
+          fiber: 8,
+          sugar: 12,
+          sodium: 680,
+          items: [
+            {
+              id: 'item-0',
+              name: 'Mixed Salad',
+              calories: 180,
+              protein: 12,
+              carbs: 15,
+              fat: 8,
+              fiber: 5,
+              sugar: 4,
+              sodium: 320,
+              quantity: 1,
+              unit: 'serving',
+              confidence: 0.92,
             },
-          });
+            {
+              id: 'item-1',
+              name: 'Grilled Chicken',
+              calories: 150,
+              protein: 10,
+              carbs: 5,
+              fat: 6,
+              fiber: 0,
+              sugar: 1,
+              sodium: 180,
+              quantity: 1,
+              unit: 'piece',
+              confidence: 0.88,
+            },
+            {
+              id: 'item-2',
+              name: 'Whole Wheat Bread',
+              calories: 120,
+              protein: 3,
+              carbs: 25,
+              fat: 4,
+              fiber: 3,
+              sugar: 7,
+              sodium: 180,
+              quantity: 1,
+              unit: 'slice',
+              confidence: 0.85,
+            },
+          ],
+          meal_type: getMealType(),
+          cuisine_type: 'Mixed',
+        };
 
-          // Transform API response to our format
-          const transformedData: AnalysisData = {
-            total_calories: result.total_calories || 0,
-            protein: result.macronutrients?.protein || 0,
-            carbs: result.macronutrients?.carbs || 0,
-            fat: result.macronutrients?.fat || 0,
-            fiber: result.macronutrients?.fiber || 0,
-            sugar: result.macronutrients?.sugar || 0,
-            sodium: result.micronutrients?.sodium || 0,
-            items: (result.items || []).map((item: any, index: number) => ({
-              id: `item-${index}`,
-              name: item.name,
-              calories: item.calories,
-              protein: item.protein,
-              carbs: item.carbs,
-              fat: item.fat,
-              fiber: item.fiber || 0,
-              sugar: item.sugar || 0,
-              sodium: item.sodium || 0,
-              quantity: item.quantity || 1,
-              unit: item.unit || 'serving',
-              confidence: item.confidence,
-            })),
-            meal_type: result.meal_type,
-            cuisine_type: result.cuisine_type,
+        setAnalysisData(mockData);
+        setMealName(generateMealName(mockData));
+
+        // Animate in results
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        
+        return;
+      }
+
+      // Try actual API call for non-demo users
+      try {
+        // Convert image URI to base64
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        const reader = new FileReader();
+
+        reader.onloadend = async () => {
+          const base64 = reader.result?.toString().split(',')[1];
+
+          if (base64) {
+            // Call AI analysis API
+            const result = await aiApi.analyzeImage({
+              image: base64,
+              imageUri: imageUri,
+              metadata: {
+                mealType: getMealType(),
+              },
+            });
+
+            // Transform API response to our format
+            const transformedData: AnalysisData = {
+              total_calories: result.total_calories || 0,
+              protein: result.macronutrients?.protein || 0,
+              carbs: result.macronutrients?.carbs || 0,
+              fat: result.macronutrients?.fat || 0,
+              fiber: result.macronutrients?.fiber || 0,
+              sugar: result.macronutrients?.sugar || 0,
+              sodium: result.micronutrients?.sodium || 0,
+              items: (result.items || []).map((item: any, index: number) => ({
+                id: `item-${index}`,
+                name: item.name,
+                calories: item.calories,
+                protein: item.protein,
+                carbs: item.carbs,
+                fat: item.fat,
+                fiber: item.fiber || 0,
+                sugar: item.sugar || 0,
+                sodium: item.sodium || 0,
+                quantity: item.quantity || 1,
+                unit: item.unit || 'serving',
+                confidence: item.confidence,
+              })),
+              meal_type: result.meal_type,
+              cuisine_type: result.cuisine_type,
+            };
+
+            setAnalysisData(transformedData);
+            setMealName(generateMealName(transformedData));
+
+            // Animate in results
+            Animated.parallel([
+              Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+              }),
+              Animated.spring(scaleAnim, {
+                toValue: 1,
+                friction: 8,
+                tension: 40,
+                useNativeDriver: true,
+              }),
+            ]).start();
+          }
+        };
+
+        reader.readAsDataURL(blob);
+      } catch (apiError: any) {
+        console.error('API Error:', apiError);
+        
+        // If network error, use offline mode with generic data
+        if (apiError.message?.includes('Network') || apiError.message?.includes('Failed to fetch')) {
+          const offlineData: AnalysisData = {
+            total_calories: 350,
+            protein: 20,
+            carbs: 40,
+            fat: 15,
+            fiber: 5,
+            sugar: 8,
+            sodium: 500,
+            items: [
+              {
+                id: 'item-0',
+                name: 'Meal (Unable to analyze - offline mode)',
+                calories: 350,
+                protein: 20,
+                carbs: 40,
+                fat: 15,
+                fiber: 5,
+                sugar: 8,
+                sodium: 500,
+                quantity: 1,
+                unit: 'serving',
+                confidence: 0.5,
+              },
+            ],
+            meal_type: getMealType(),
+            cuisine_type: 'Unknown',
           };
 
-          setAnalysisData(transformedData);
-          setMealName(generateMealName(transformedData));
-
+          setAnalysisData(offlineData);
+          setMealName('Offline Meal Entry');
+          
+          Alert.alert(
+            'Offline Mode',
+            'Unable to connect to the server. Using estimated nutritional values. You can edit them manually.',
+            [{ text: 'OK' }]
+          );
+          
           // Animate in results
           Animated.parallel([
             Animated.timing(fadeAnim, {
@@ -165,10 +317,10 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
               useNativeDriver: true,
             }),
           ]).start();
+        } else {
+          throw apiError;
         }
-      };
-
-      reader.readAsDataURL(blob);
+      }
     } catch (error) {
       console.error('Error analyzing image:', error);
       Alert.alert('Analysis Failed', 'Unable to analyze the image. Please try again.', [
@@ -387,7 +539,7 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
           fiber: item.fiber || 0,
           sugar: item.sugar || 0,
           sodium: item.sodium || 0,
-          order: index
+          order: index,
         })),
         notes: notes,
       } as unknown as Partial<Meal>);
@@ -429,201 +581,203 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
   }
 
   return (
-    <SafeAreaContainer style={styles.container} scrollable scrollViewProps={{ showsVerticalScrollIndicator: false }}>
+    <SafeAreaContainer
+      style={styles.container}
+      scrollable
+      scrollViewProps={{ showsVerticalScrollIndicator: false }}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('HomeTabs')}
-              accessible={true}
-              accessibilityLabel="Go back to home screen"
-              accessibilityRole="button"
-            >
-              <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Home</Text>
-            </TouchableOpacity>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('HomeTabs')}
+            accessible={true}
+            accessibilityLabel="Go back to home screen"
+            accessibilityRole="button"
+          >
+            <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Home</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity 
-              onPress={() => setShowAddItemModal(true)}
-              accessible={true}
-              accessibilityLabel="Add new food item to meal"
-              accessibilityRole="button"
-            >
-              <Text style={[styles.addButton, { color: theme.colors.primary[500] }]}>
-                + Add Item
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => setShowAddItemModal(true)}
+            accessible={true}
+            accessibilityLabel="Add new food item to meal"
+            accessibilityRole="button"
+          >
+            <Text style={[styles.addButton, { color: theme.colors.primary[500] }]}>+ Add Item</Text>
+          </TouchableOpacity>
+        </View>
 
-          <Spacer size="lg" />
+        <Spacer size="lg" />
 
-          {/* Image with overlay */}
-          <Animated.View
+        {/* Image with overlay */}
+        <Animated.View
+          style={[
+            styles.imageContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          <Image source={{ uri: imageUri }} style={styles.mealImage} />
+          {analysisData.cuisine_type && (
+            <View style={[styles.cuisineTag, { backgroundColor: theme.colors.primary[500] }]}>
+              <Text style={styles.cuisineText}>{analysisData.cuisine_type}</Text>
+            </View>
+          )}
+        </Animated.View>
+
+        <Spacer size="xl" />
+
+        {/* Meal Name Input */}
+        <Card style={styles.mealNameCard}>
+          <TextInput
+            style={[styles.mealNameInput, { color: theme.colors.text.primary }]}
+            value={mealName}
+            onChangeText={setMealName}
+            placeholder="Name your meal"
+            placeholderTextColor={theme.colors.textSecondary}
+          />
+        </Card>
+
+        <Spacer size="lg" />
+
+        {/* Total Calories with animated bubbles */}
+        <Card style={[styles.caloriesCard, getModernShadow('card')]}>
+          <Text style={[styles.caloriesTitle, { color: theme.colors.textSecondary }]}>
+            Total Calories
+          </Text>
+          <Animated.Text
             style={[
-              styles.imageContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }],
-              },
+              styles.caloriesValue,
+              { color: theme.colors.primary[500] },
+              isRecalculating && styles.recalculatingValue,
             ]}
           >
-            <Image source={{ uri: imageUri }} style={styles.mealImage} />
-            {analysisData.cuisine_type && (
-              <View style={[styles.cuisineTag, { backgroundColor: theme.colors.primary[500] }]}>
-                <Text style={styles.cuisineText}>{analysisData.cuisine_type}</Text>
-              </View>
-            )}
-          </Animated.View>
+            {formatCalories(analysisData.total_calories)}
+          </Animated.Text>
 
-          <Spacer size="xl" />
-
-          {/* Meal Name Input */}
-          <Card style={styles.mealNameCard}>
-            <TextInput
-              style={[styles.mealNameInput, { color: theme.colors.text.primary }]}
-              value={mealName}
-              onChangeText={setMealName}
-              placeholder="Name your meal"
-              placeholderTextColor={theme.colors.textSecondary}
-            />
-          </Card>
-
-          <Spacer size="lg" />
-
-          {/* Total Calories with animated bubbles */}
-          <Card style={[styles.caloriesCard, getModernShadow('card')]}>
-            <Text style={[styles.caloriesTitle, { color: theme.colors.textSecondary }]}>
-              Total Calories
+          {/* Confidence indicator */}
+          <View style={styles.confidenceContainer}>
+            <View style={[styles.confidenceDot, { backgroundColor: theme.colors.success[500] }]} />
+            <Text style={[styles.confidenceText, { color: theme.colors.textSecondary }]}>
+              High confidence analysis
             </Text>
-            <Animated.Text
-              style={[
-                styles.caloriesValue,
-                { color: theme.colors.primary[500] },
-                isRecalculating && styles.recalculatingValue,
-              ]}
-            >
-              {formatCalories(analysisData.total_calories)}
-            </Animated.Text>
-
-            {/* Confidence indicator */}
-            <View style={styles.confidenceContainer}>
-              <View style={[styles.confidenceDot, { backgroundColor: theme.colors.success[500] }]} />
-              <Text style={[styles.confidenceText, { color: theme.colors.textSecondary }]}>
-                High confidence analysis
-              </Text>
-            </View>
-          </Card>
-
-          <Spacer size="lg" />
-
-          {/* Interactive Macros Bubbles */}
-          <Card style={[styles.macrosCard, getModernShadow('card')]}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Macronutrients</Text>
-
-            <Spacer size="md" />
-
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.bubblesScrollContainer}
-              style={styles.bubblesScroll}
-            >
-              <MacroBubble
-                label="Protein"
-                value={analysisData.protein}
-                color={theme.colors.success[500]}
-                theme={theme}
-                isAnimating={isRecalculating}
-              />
-              <MacroBubble
-                label="Carbs"
-                value={analysisData.carbs}
-                color={theme.colors.secondary[500]}
-                theme={theme}
-                isAnimating={isRecalculating}
-              />
-              <MacroBubble
-                label="Fat"
-                value={analysisData.fat}
-                color={theme.colors.warning[500]}
-                theme={theme}
-                isAnimating={isRecalculating}
-              />
-            </ScrollView>
-
-            {/* Additional nutrients */}
-            <View style={styles.additionalNutrients}>
-              <NutrientRow label="Fiber" value={analysisData.fiber} unit="g" theme={theme} />
-              <NutrientRow label="Sugar" value={analysisData.sugar} unit="g" theme={theme} />
-              <NutrientRow label="Sodium" value={analysisData.sodium} unit="mg" theme={theme} />
-            </View>
-          </Card>
-
-          <Spacer size="lg" />
-
-          {/* Interactive Food Items */}
-          <Card style={[styles.itemsCard, getModernShadow('card')]}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-              Detected Items ({analysisData.items.length})
-            </Text>
-
-            <Spacer size="md" />
-
-            {analysisData.items.map((item, index) => (
-              <InteractiveFoodItem
-                key={item.id}
-                item={item}
-                theme={theme}
-                onEdit={() => handlePortionEdit(item)}
-                onRemove={() => handleItemRemove(item.id)}
-                isLast={index === analysisData.items.length - 1}
-              />
-            ))}
-          </Card>
-
-          <Spacer size="lg" />
-
-          {/* Notes */}
-          <Card style={styles.notesCard}>
-            <Text style={[styles.notesLabel, { color: theme.colors.text.primary }]}>Notes (optional)</Text>
-            <TextInput
-              style={[styles.notesInput, { color: theme.colors.text.primary }]}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Add notes about this meal..."
-              placeholderTextColor={theme.colors.textSecondary}
-              multiline
-              numberOfLines={3}
-            />
-          </Card>
-
-          <Spacer size="xl" />
-
-          {/* Actions */}
-          <View style={styles.actions}>
-            <Button
-              onPress={handleSaveMeal}
-              variant="primary"
-              disabled={isSaving || isRecalculating}
-              style={styles.saveButton}
-            >
-              {isSaving ? 'Saving...' : 'Save Meal'}
-            </Button>
-
-            <Spacer size="md" />
-
-            <Button
-              onPress={handleRetakePhoto}
-              variant="outline"
-              style={styles.retakeButton}
-            >
-              Retake Photo
-            </Button>
           </View>
+        </Card>
 
-          <Spacer size="xxl" />
+        <Spacer size="lg" />
+
+        {/* Interactive Macros Bubbles */}
+        <Card style={[styles.macrosCard, getModernShadow('card')]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+            Macronutrients
+          </Text>
+
+          <Spacer size="md" />
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.bubblesScrollContainer}
+            style={styles.bubblesScroll}
+          >
+            <MacroBubble
+              label="Protein"
+              value={analysisData.protein}
+              color={theme.colors.success[500]}
+              theme={theme}
+              isAnimating={isRecalculating}
+            />
+            <MacroBubble
+              label="Carbs"
+              value={analysisData.carbs}
+              color={theme.colors.secondary[500]}
+              theme={theme}
+              isAnimating={isRecalculating}
+            />
+            <MacroBubble
+              label="Fat"
+              value={analysisData.fat}
+              color={theme.colors.warning[500]}
+              theme={theme}
+              isAnimating={isRecalculating}
+            />
+          </ScrollView>
+
+          {/* Additional nutrients */}
+          <View style={styles.additionalNutrients}>
+            <NutrientRow label="Fiber" value={analysisData.fiber} unit="g" theme={theme} />
+            <NutrientRow label="Sugar" value={analysisData.sugar} unit="g" theme={theme} />
+            <NutrientRow label="Sodium" value={analysisData.sodium} unit="mg" theme={theme} />
+          </View>
+        </Card>
+
+        <Spacer size="lg" />
+
+        {/* Interactive Food Items */}
+        <Card style={[styles.itemsCard, getModernShadow('card')]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+            Detected Items ({analysisData.items.length})
+          </Text>
+
+          <Spacer size="md" />
+
+          {analysisData.items.map((item, index) => (
+            <InteractiveFoodItem
+              key={item.id}
+              item={item}
+              theme={theme}
+              onEdit={() => handlePortionEdit(item)}
+              onRemove={() => handleItemRemove(item.id)}
+              isLast={index === analysisData.items.length - 1}
+            />
+          ))}
+        </Card>
+
+        <Spacer size="lg" />
+
+        {/* Notes */}
+        <Card style={styles.notesCard}>
+          <Text style={[styles.notesLabel, { color: theme.colors.text.primary }]}>
+            Notes (optional)
+          </Text>
+          <TextInput
+            style={[styles.notesInput, { color: theme.colors.text.primary }]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Add notes about this meal..."
+            placeholderTextColor={theme.colors.textSecondary}
+            multiline
+            numberOfLines={3}
+          />
+        </Card>
+
+        <Spacer size="xl" />
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <Button
+            onPress={handleSaveMeal}
+            variant="primary"
+            disabled={isSaving || isRecalculating}
+            style={styles.saveButton}
+          >
+            {isSaving ? 'Saving...' : 'Save Meal'}
+          </Button>
+
+          <Spacer size="md" />
+
+          <Button onPress={handleRetakePhoto} variant="outline" style={styles.retakeButton}>
+            Retake Photo
+          </Button>
+        </View>
+
+        <Spacer size="xxl" />
         {/* Portion Edit Modal */}
         <Modal
           visible={showPortionModal}
@@ -659,7 +813,9 @@ export const AnalysisResultsScreen: React.FC<Props> = ({ navigation, route }) =>
 
               <Spacer size="lg" />
 
-              <Button onPress={handlePortionUpdate} variant="primary" fullWidth>Update</Button>
+              <Button onPress={handlePortionUpdate} variant="primary" fullWidth>
+                Update
+              </Button>
             </View>
           )}
         </Modal>
@@ -738,17 +894,19 @@ const MacroBubble: React.FC<MacroBubbleProps> = ({ label, value, color, theme, i
   }, [isAnimating]);
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
-        styles.macroBubble, 
-        { 
+        styles.macroBubble,
+        {
           transform: [{ scale: scaleAnim }],
-        }
+        },
       ]}
     >
       <View style={[styles.macroBubbleInner, { backgroundColor: color + '15' }]}>
         <View style={[styles.macroIndicator, { backgroundColor: color }]} />
-        <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>{formatMacros(value)}</Text>
+        <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
+          {formatMacros(value)}
+        </Text>
         <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
       </View>
     </Animated.View>
@@ -791,9 +949,9 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
 }) => {
   return (
     <View style={styles.foodItemContainer}>
-      <TouchableOpacity 
-        style={styles.foodItemTouchable} 
-        onPress={onEdit} 
+      <TouchableOpacity
+        style={styles.foodItemTouchable}
+        onPress={onEdit}
         activeOpacity={0.7}
         accessible={true}
         accessibilityLabel={`Edit ${item.name}, ${item.quantity} ${item.unit}, ${formatCalories(item.calories)}`}
@@ -801,9 +959,13 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
       >
         <View style={styles.foodItemContent}>
           <View style={styles.foodItemHeader}>
-            <Text style={[styles.foodItemName, { color: theme.colors.text.primary }]}>{item.name}</Text>
+            <Text style={[styles.foodItemName, { color: theme.colors.text.primary }]}>
+              {item.name}
+            </Text>
             {item.confidence && item.confidence > 0.8 && (
-              <View style={[styles.confidenceBadge, { backgroundColor: theme.colors.success[500] }]}>
+              <View
+                style={[styles.confidenceBadge, { backgroundColor: theme.colors.success[500] }]}
+              >
                 <Text style={styles.confidenceBadgeText}>✓</Text>
               </View>
             )}
@@ -821,8 +983,8 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
             {formatCalories(item.calories)}
           </Text>
           <Row gap={8}>
-            <TouchableOpacity 
-              onPress={onEdit} 
+            <TouchableOpacity
+              onPress={onEdit}
               style={styles.actionButton}
               accessible={true}
               accessibilityLabel={`Edit ${item.name} portion`}
@@ -830,8 +992,8 @@ const InteractiveFoodItem: React.FC<InteractiveFoodItemProps> = ({
             >
               <Text style={styles.actionIcon}>✏️</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={onRemove} 
+            <TouchableOpacity
+              onPress={onRemove}
               style={[styles.actionButton, { backgroundColor: theme.colors.error[100] }]}
               accessible={true}
               accessibilityLabel={`Remove ${item.name} from meal`}

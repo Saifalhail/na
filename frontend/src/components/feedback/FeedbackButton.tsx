@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/IconFallback';
 import { useTheme } from '@/hooks/useTheme';
 import { useFeedback } from '@/hooks/useFeedback';
 import { rs } from '@/utils/responsive';

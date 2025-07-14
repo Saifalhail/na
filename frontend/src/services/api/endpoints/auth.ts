@@ -31,12 +31,25 @@ export const authApi = {
    * Login with email and password
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>(API_ENDPOINTS.auth.login, credentials);
+    try {
+      const response = await api.post<AuthResponse>(API_ENDPOINTS.auth.login, credentials);
 
-    // Save tokens
-    await TokenStorage.saveTokens(response.tokens);
+      // Save tokens if login successful
+      if (response.tokens) {
+        await TokenStorage.saveTokens(response.tokens);
+      }
 
-    return response;
+      return response;
+    } catch (error: any) {
+      // Provide more specific error messages for common auth failures
+      if (error?.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      } else if (error?.message?.includes('Network')) {
+        throw new Error('Unable to connect to authentication server. Please check your internet connection.');
+      } else {
+        throw new Error('Login failed. Please check your credentials and try again.');
+      }
+    }
   },
 
   /**

@@ -41,18 +41,14 @@ describe('SocialLoginButton', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock WebBrowser
     (WebBrowser.maybeCompleteAuthSession as jest.Mock).mockReturnValue(undefined);
-    
+
     // Mock AuthSession hooks
     (AuthSession.useAutoDiscovery as jest.Mock).mockReturnValue({});
     (AuthSession.makeRedirectUri as jest.Mock).mockReturnValue('exp://localhost:8081');
-    (AuthSession.useAuthRequest as jest.Mock).mockReturnValue([
-      mockRequest,
-      null,
-      mockPromptAsync,
-    ]);
+    (AuthSession.useAuthRequest as jest.Mock).mockReturnValue([mockRequest, null, mockPromptAsync]);
   });
 
   it('renders Google sign-in button correctly', () => {
@@ -75,7 +71,7 @@ describe('SocialLoginButton', () => {
     };
 
     mockPromptAsync.mockResolvedValue(mockResponse);
-    
+
     // Mock successful auth flow
     (AuthSession.useAuthRequest as jest.Mock).mockReturnValue([
       mockRequest,
@@ -152,10 +148,7 @@ describe('SocialLoginButton', () => {
     );
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Login Failed',
-        'Something went wrong'
-      );
+      expect(Alert.alert).toHaveBeenCalledWith('Login Failed', 'Something went wrong');
       expect(mockOnError).toHaveBeenCalledWith('Something went wrong');
     });
   });

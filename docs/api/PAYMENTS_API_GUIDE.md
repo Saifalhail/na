@@ -5,6 +5,7 @@ Complete guide for integrating with the Nutrition AI payments and subscription s
 ## Overview
 
 The payments API provides:
+
 - Subscription management for premium features
 - Payment method storage and management
 - Invoice generation and history
@@ -16,6 +17,7 @@ The payments API provides:
 ## Authentication
 
 All payment endpoints require authenticated users:
+
 ```http
 Authorization: Bearer <access_token>
 ```
@@ -23,11 +25,13 @@ Authorization: Bearer <access_token>
 ## Subscription Plans
 
 ### List Available Plans
+
 **GET** `/payments/plans/`
 
 Get all available subscription plans.
 
 **Response (200):**
+
 ```json
 {
   "plans": [
@@ -35,7 +39,7 @@ Get all available subscription plans.
       "id": 1,
       "name": "Free",
       "description": "Basic nutrition tracking for everyone",
-      "price": 0.00,
+      "price": 0.0,
       "currency": "USD",
       "interval": "month",
       "interval_count": 1,
@@ -77,8 +81,8 @@ Get all available subscription plans.
         "Advanced meal planning"
       ],
       "limits": {
-        "ai_analyses_per_month": -1,  // unlimited
-        "meal_history_months": -1,    // unlimited
+        "ai_analyses_per_month": -1, // unlimited
+        "meal_history_months": -1, // unlimited
         "export_formats": ["csv", "pdf", "json", "excel"]
       },
       "is_active": true,
@@ -116,11 +120,13 @@ Get all available subscription plans.
 ```
 
 ### Get Plan Details
+
 **GET** `/payments/plans/{id}/`
 
 Get detailed information about a specific plan.
 
 **Response (200):**
+
 ```json
 {
   "id": 2,
@@ -164,11 +170,13 @@ Get detailed information about a specific plan.
 ## Current Subscription
 
 ### Get User's Subscription
+
 **GET** `/payments/subscription/`
 
 Get current subscription details for the authenticated user.
 
 **Response (200) - Active Subscription:**
+
 ```json
 {
   "id": 123,
@@ -195,8 +203,8 @@ Get current subscription details for the authenticated user.
   "billing_info": {
     "next_billing_date": "2024-02-01T00:00:00Z",
     "next_billing_amount": 9.99,
-    "proration_amount": 0.00,
-    "tax_amount": 0.00
+    "proration_amount": 0.0,
+    "tax_amount": 0.0
   },
   "stripe_subscription_id": "sub_1234567890",
   "stripe_customer_id": "cus_1234567890",
@@ -206,6 +214,7 @@ Get current subscription details for the authenticated user.
 ```
 
 **Response (200) - No Subscription:**
+
 ```json
 {
   "id": null,
@@ -213,7 +222,7 @@ Get current subscription details for the authenticated user.
   "plan": {
     "id": 1,
     "name": "Free",
-    "price": 0.00
+    "price": 0.0
   },
   "usage_stats": {
     "ai_analyses_used": 8,
@@ -230,17 +239,19 @@ Get current subscription details for the authenticated user.
 ```
 
 ### Create Subscription
+
 **POST** `/payments/subscription/`
 
 Create a new subscription for the user.
 
 **Request:**
+
 ```json
 {
   "plan_id": 2,
-  "payment_method_id": "pm_1234567890",  // Stripe payment method ID
-  "trial_from_plan": true,  // Use plan's default trial period
-  "promotional_code": "WELCOME20",  // Optional promo code
+  "payment_method_id": "pm_1234567890", // Stripe payment method ID
+  "trial_from_plan": true, // Use plan's default trial period
+  "promotional_code": "WELCOME20", // Optional promo code
   "billing_address": {
     "line1": "123 Main St",
     "line2": "Apt 4B",
@@ -253,6 +264,7 @@ Create a new subscription for the user.
 ```
 
 **Response (201) - Success:**
+
 ```json
 {
   "subscription": {
@@ -270,7 +282,7 @@ Create a new subscription for the user.
   "payment_intent": {
     "id": "pi_1234567890",
     "status": "succeeded",
-    "amount": 999,  // Amount in cents
+    "amount": 999, // Amount in cents
     "currency": "usd"
   },
   "invoice": {
@@ -282,6 +294,7 @@ Create a new subscription for the user.
 ```
 
 **Response (402) - Payment Required:**
+
 ```json
 {
   "error": "payment_required",
@@ -298,20 +311,23 @@ Create a new subscription for the user.
 ```
 
 ### Update Subscription
+
 **PUT** `/payments/subscription/`
 
 Update existing subscription (change plan, payment method, etc.).
 
 **Request:**
+
 ```json
 {
-  "plan_id": 3,  // Change to annual plan
-  "proration_behavior": "create_prorations",  // always_invoice|create_prorations|none
-  "billing_cycle_anchor": "unchanged"  // unchanged|now
+  "plan_id": 3, // Change to annual plan
+  "proration_behavior": "create_prorations", // always_invoice|create_prorations|none
+  "billing_cycle_anchor": "unchanged" // unchanged|now
 }
 ```
 
 **Response (200):**
+
 ```json
 {
   "subscription": {
@@ -323,39 +339,42 @@ Update existing subscription (change plan, payment method, etc.).
       "price": 99.99
     },
     "proration_details": {
-      "credit_amount": 6.66,  // Unused portion of current plan
+      "credit_amount": 6.66, // Unused portion of current plan
       "charge_amount": 99.99,
       "net_amount": 93.33
     }
   },
   "invoice": {
     "id": "in_upgrade_1234567890",
-    "amount_due": 9333,  // Amount in cents
+    "amount_due": 9333, // Amount in cents
     "invoice_url": "https://pay.stripe.com/invoice/..."
   }
 }
 ```
 
 ### Cancel Subscription
+
 **DELETE** `/payments/subscription/`
 
 Cancel the user's subscription.
 
 **Request:**
+
 ```json
 {
-  "cancel_at_period_end": true,  // Cancel at period end or immediately
-  "cancellation_reason": "too_expensive",  // Optional: too_expensive|missing_features|switching_service|other
-  "feedback": "The app is great but I need to cut expenses right now"  // Optional feedback
+  "cancel_at_period_end": true, // Cancel at period end or immediately
+  "cancellation_reason": "too_expensive", // Optional: too_expensive|missing_features|switching_service|other
+  "feedback": "The app is great but I need to cut expenses right now" // Optional feedback
 }
 ```
 
 **Response (200):**
+
 ```json
 {
   "subscription": {
     "id": 123,
-    "status": "active",  // Still active until period end
+    "status": "active", // Still active until period end
     "cancel_at_period_end": true,
     "canceled_at": "2024-01-20T15:30:00Z",
     "current_period_end": "2024-02-01T00:00:00Z"
@@ -364,18 +383,20 @@ Cancel the user's subscription.
   "access_until": "2024-02-01T00:00:00Z",
   "refund_info": {
     "eligible_for_refund": false,
-    "refund_amount": 0.00,
+    "refund_amount": 0.0,
     "refund_reason": "cancellation_after_trial"
   }
 }
 ```
 
 ### Reactivate Subscription
+
 **POST** `/payments/subscription/reactivate/`
 
 Reactivate a cancelled subscription (before it ends).
 
 **Response (200):**
+
 ```json
 {
   "subscription": {
@@ -391,11 +412,13 @@ Reactivate a cancelled subscription (before it ends).
 ## Payment Methods
 
 ### List Payment Methods
+
 **GET** `/payments/methods/`
 
 Get user's saved payment methods.
 
 **Response (200):**
+
 ```json
 {
   "payment_methods": [
@@ -431,14 +454,16 @@ Get user's saved payment methods.
 ```
 
 ### Add Payment Method
+
 **POST** `/payments/methods/`
 
 Add a new payment method to the user's account.
 
 **Request:**
+
 ```json
 {
-  "payment_method_id": "pm_1234567890",  // Created via Stripe.js on frontend
+  "payment_method_id": "pm_1234567890", // Created via Stripe.js on frontend
   "set_as_default": true,
   "billing_details": {
     "name": "John Doe",
@@ -455,6 +480,7 @@ Add a new payment method to the user's account.
 ```
 
 **Response (201):**
+
 ```json
 {
   "payment_method": {
@@ -473,11 +499,13 @@ Add a new payment method to the user's account.
 ```
 
 ### Update Payment Method
+
 **PUT** `/payments/methods/{id}/`
 
 Update payment method details.
 
 **Request:**
+
 ```json
 {
   "set_as_default": true,
@@ -495,6 +523,7 @@ Update payment method details.
 ```
 
 **Response (200):**
+
 ```json
 {
   "payment_method": {
@@ -510,6 +539,7 @@ Update payment method details.
 ```
 
 ### Delete Payment Method
+
 **DELETE** `/payments/methods/{id}/`
 
 Remove a payment method from the user's account.
@@ -517,6 +547,7 @@ Remove a payment method from the user's account.
 **Response (204):** No content.
 
 **Error Response (400) - Cannot Delete Default:**
+
 ```json
 {
   "error": "cannot_delete_default",
@@ -527,11 +558,13 @@ Remove a payment method from the user's account.
 ## Payment History & Invoices
 
 ### Get Payment History
+
 **GET** `/payments/history/`
 
 Get user's payment and invoice history.
 
 **Query Parameters:**
+
 - `page` (integer): Page number
 - `page_size` (integer): Items per page (max 100)
 - `status` (string): Filter by status (`succeeded`, `pending`, `failed`)
@@ -539,6 +572,7 @@ Get user's payment and invoice history.
 - `date_to` (date): Filter to date (YYYY-MM-DD)
 
 **Response (200):**
+
 ```json
 {
   "count": 24,
@@ -568,7 +602,7 @@ Get user's payment and invoice history.
       },
       "stripe_payment_intent_id": "pi_1234567890",
       "refunded": false,
-      "refund_amount": 0.00
+      "refund_amount": 0.0
     },
     {
       "id": 455,
@@ -593,17 +627,19 @@ Get user's payment and invoice history.
 ```
 
 ### Get Invoice Details
+
 **GET** `/payments/invoices/{id}/`
 
 Get detailed information about a specific invoice.
 
 **Response (200):**
+
 ```json
 {
   "id": "in_1234567890",
   "number": "NAI-0001",
   "status": "paid",
-  "amount_due": 999,  // Amount in cents
+  "amount_due": 999, // Amount in cents
   "amount_paid": 999,
   "amount_remaining": 0,
   "currency": "usd",
@@ -654,28 +690,34 @@ Get detailed information about a specific invoice.
 ```
 
 ### Download Invoice
+
 **GET** `/payments/invoices/{id}/download/`
 
 Download invoice as PDF.
 
 **Query Parameters:**
+
 - `format` (string): `pdf` (default) or `html`
 
 **Response (200):**
+
 - Content-Type: `application/pdf` or `text/html`
 - Content-Disposition: `attachment; filename="invoice-NAI-0001.pdf"`
 
 ## Usage Analytics
 
 ### Get Usage Statistics
+
 **GET** `/payments/usage/`
 
 Get detailed usage statistics for the current billing period.
 
 **Query Parameters:**
+
 - `period` (string): `current` (default), `previous`, `all_time`
 
 **Response (200):**
+
 ```json
 {
   "billing_period": {
@@ -690,7 +732,7 @@ Get detailed usage statistics for the current billing period.
   "usage": {
     "ai_analyses": {
       "used": 45,
-      "limit": -1,  // unlimited
+      "limit": -1, // unlimited
       "percentage": null,
       "breakdown": {
         "food_recognition": 40,
@@ -716,7 +758,7 @@ Get detailed usage statistics for the current billing period.
     },
     "support_requests": {
       "used": 2,
-      "limit": -1,  // unlimited for premium
+      "limit": -1, // unlimited for premium
       "average_response_time": "4 hours"
     }
   },
@@ -737,28 +779,31 @@ Get detailed usage statistics for the current billing period.
 ## Promotional Codes & Discounts
 
 ### Validate Promotional Code
+
 **POST** `/payments/promocodes/validate/`
 
 Validate a promotional code before applying it.
 
 **Request:**
+
 ```json
 {
   "code": "WELCOME20",
-  "plan_id": 2  // Optional: specific plan to apply to
+  "plan_id": 2 // Optional: specific plan to apply to
 }
 ```
 
 **Response (200) - Valid Code:**
+
 ```json
 {
   "valid": true,
   "code": "WELCOME20",
   "discount": {
-    "type": "percentage",  // percentage|fixed_amount
+    "type": "percentage", // percentage|fixed_amount
     "value": 20,
     "currency": "USD",
-    "duration": "once",  // once|repeating|forever
+    "duration": "once", // once|repeating|forever
     "duration_in_months": null
   },
   "applicable_plans": [2, 3],
@@ -771,12 +816,13 @@ Validate a promotional code before applying it.
   "preview": {
     "original_price": 9.99,
     "discounted_price": 7.99,
-    "savings": 2.00
+    "savings": 2.0
   }
 }
 ```
 
 **Response (400) - Invalid Code:**
+
 ```json
 {
   "valid": false,
@@ -786,19 +832,22 @@ Validate a promotional code before applying it.
 ```
 
 ### Apply Promotional Code
+
 **POST** `/payments/promocodes/apply/`
 
 Apply a promotional code to the user's subscription.
 
 **Request:**
+
 ```json
 {
   "code": "WELCOME20",
-  "subscription_id": 123  // Optional: defaults to current subscription
+  "subscription_id": 123 // Optional: defaults to current subscription
 }
 ```
 
 **Response (200):**
+
 ```json
 {
   "applied": true,
@@ -806,11 +855,11 @@ Apply a promotional code to the user's subscription.
   "discount_applied": {
     "type": "percentage",
     "value": 20,
-    "amount_saved": 2.00
+    "amount_saved": 2.0
   },
   "next_invoice_preview": {
     "amount_due": 7.99,
-    "discount_amount": 2.00,
+    "discount_amount": 2.0,
     "total": 7.99
   }
 }
@@ -819,11 +868,13 @@ Apply a promotional code to the user's subscription.
 ## Webhooks
 
 ### Stripe Webhook Endpoint
+
 **POST** `/webhooks/stripe/`
 
 Webhook endpoint for Stripe events.
 
 **Supported Events:**
+
 - `invoice.payment_succeeded`
 - `invoice.payment_failed`
 - `customer.subscription.created`
@@ -833,6 +884,7 @@ Webhook endpoint for Stripe events.
 - `payment_method.detached`
 
 **Event Processing:**
+
 ```json
 {
   "id": "evt_1234567890",
@@ -883,9 +935,7 @@ Webhook endpoint for Stripe events.
 {
   "error": "plan_not_available",
   "message": "The selected plan is no longer available",
-  "suggested_plans": [
-    {"id": 2, "name": "Premium", "price": 9.99}
-  ]
+  "suggested_plans": [{ "id": 2, "name": "Premium", "price": 9.99 }]
 }
 ```
 
@@ -894,60 +944,60 @@ Webhook endpoint for Stripe events.
 ### Frontend Integration (React)
 
 ```javascript
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe } from "@stripe/stripe-js";
 
-const stripePromise = loadStripe('pk_test_...');
+const stripePromise = loadStripe("pk_test_...");
 
 // Create subscription
 const createSubscription = async (planId, paymentMethodId) => {
   try {
-    const response = await fetch('/api/v1/payments/subscription/', {
-      method: 'POST',
+    const response = await fetch("/api/v1/payments/subscription/", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         plan_id: planId,
-        payment_method_id: paymentMethodId
-      })
+        payment_method_id: paymentMethodId,
+      }),
     });
-    
+
     const result = await response.json();
-    
-    if (result.payment_intent?.status === 'requires_action') {
+
+    if (result.payment_intent?.status === "requires_action") {
       // Handle 3D Secure authentication
       const stripe = await stripePromise;
       const { error } = await stripe.confirmCardPayment(
-        result.payment_intent.client_secret
+        result.payment_intent.client_secret,
       );
-      
+
       if (error) {
         throw new Error(error.message);
       }
     }
-    
+
     return result.subscription;
   } catch (error) {
-    console.error('Subscription creation failed:', error);
+    console.error("Subscription creation failed:", error);
     throw error;
   }
 };
 
 // Add payment method
 const addPaymentMethod = async (paymentMethod) => {
-  const response = await fetch('/api/v1/payments/methods/', {
-    method: 'POST',
+  const response = await fetch("/api/v1/payments/methods/", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({
       payment_method_id: paymentMethod.id,
-      set_as_default: true
-    })
+      set_as_default: true,
+    }),
   });
-  
+
   return response.json();
 };
 ```
@@ -955,33 +1005,36 @@ const addPaymentMethod = async (paymentMethod) => {
 ### Mobile Integration (React Native)
 
 ```javascript
-import { initPaymentSheet, presentPaymentSheet } from '@stripe/stripe-react-native';
+import {
+  initPaymentSheet,
+  presentPaymentSheet,
+} from "@stripe/stripe-react-native";
 
 // Setup payment sheet
 const setupPaymentSheet = async (planId) => {
-  const response = await fetch('/api/v1/payments/setup-intent/', {
-    method: 'POST',
+  const response = await fetch("/api/v1/payments/setup-intent/", {
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ plan_id: planId })
+    body: JSON.stringify({ plan_id: planId }),
   });
-  
+
   const { client_secret, ephemeral_key, customer_id } = await response.json();
-  
+
   const { error } = await initPaymentSheet({
-    merchantDisplayName: 'Nutrition AI',
+    merchantDisplayName: "Nutrition AI",
     customerId: customer_id,
     customerEphemeralKeySecret: ephemeral_key,
     paymentIntentClientSecret: client_secret,
     allowsDelayedPaymentMethods: true,
     defaultBillingDetails: {
-      name: 'John Doe',
-      email: 'john@example.com'
-    }
+      name: "John Doe",
+      email: "john@example.com",
+    },
   });
-  
+
   if (error) {
     throw new Error(error.message);
   }
@@ -990,11 +1043,11 @@ const setupPaymentSheet = async (planId) => {
 // Present payment sheet
 const handleSubscription = async () => {
   const { error } = await presentPaymentSheet();
-  
+
   if (error) {
-    console.error('Payment failed:', error.message);
+    console.error("Payment failed:", error.message);
   } else {
-    console.log('Payment succeeded');
+    console.log("Payment succeeded");
     // Refresh user subscription status
   }
 };

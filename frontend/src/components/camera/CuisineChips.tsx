@@ -84,10 +84,10 @@ export const CuisineChips: React.FC<CuisineChipsProps> = ({
     if (disabled) return;
 
     let newSelection: string[];
-    
+
     if (multiple) {
       if (selectedCuisines.includes(cuisineId)) {
-        newSelection = selectedCuisines.filter(id => id !== cuisineId);
+        newSelection = selectedCuisines.filter((id) => id !== cuisineId);
       } else {
         if (selectedCuisines.length >= maxSelections) {
           // Remove the first selected item if at max
@@ -106,10 +106,10 @@ export const CuisineChips: React.FC<CuisineChipsProps> = ({
 
   const handleAddCustom = () => {
     if (customCuisine.trim() && !selectedCuisines.includes(customCuisine.trim())) {
-      const newSelection = multiple 
+      const newSelection = multiple
         ? [...selectedCuisines, customCuisine.trim()].slice(-maxSelections)
         : [customCuisine.trim()];
-      
+
       setSelectedCuisines(newSelection);
       onChange?.(newSelection);
       setCustomCuisine('');
@@ -118,27 +118,24 @@ export const CuisineChips: React.FC<CuisineChipsProps> = ({
   };
 
   const handleRemoveCustom = (cuisine: string) => {
-    const newSelection = selectedCuisines.filter(c => c !== cuisine);
+    const newSelection = selectedCuisines.filter((c) => c !== cuisine);
     setSelectedCuisines(newSelection);
     onChange?.(newSelection);
   };
 
   const isCustomCuisine = (cuisine: string) => {
-    return !allCuisines.some(c => c.id === cuisine);
+    return !allCuisines.some((c) => c.id === cuisine);
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={style}
-    >
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={style}>
       <View testID={testID}>
         {/* Selected custom cuisines */}
         {selectedCuisines.filter(isCustomCuisine).length > 0 && (
           <View style={styles.customSection}>
             <Text style={styles.sectionTitle}>Selected:</Text>
             <View style={styles.chipContainer}>
-              {selectedCuisines.filter(isCustomCuisine).map(cuisine => (
+              {selectedCuisines.filter(isCustomCuisine).map((cuisine) => (
                 <Chip
                   key={cuisine}
                   label={cuisine}
@@ -162,7 +159,7 @@ export const CuisineChips: React.FC<CuisineChipsProps> = ({
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
           >
-            {popularCuisines.map(cuisine => (
+            {popularCuisines.map((cuisine) => (
               <TouchableOpacity
                 key={cuisine.id}
                 onPress={() => handleSelect(cuisine.id)}
@@ -186,7 +183,7 @@ export const CuisineChips: React.FC<CuisineChipsProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>More Cuisines:</Text>
             <View style={styles.chipContainer}>
-              {moreCuisines.map(cuisine => (
+              {moreCuisines.map((cuisine) => (
                 <TouchableOpacity
                   key={cuisine.id}
                   onPress={() => handleSelect(cuisine.id)}
@@ -224,9 +221,7 @@ export const CuisineChips: React.FC<CuisineChipsProps> = ({
               style={styles.actionButton}
               disabled={disabled}
             >
-              <Text style={[styles.actionText, disabled && styles.disabledText]}>
-                Add Custom +
-              </Text>
+              <Text style={[styles.actionText, disabled && styles.disabledText]}>Add Custom +</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -247,7 +242,10 @@ export const CuisineChips: React.FC<CuisineChipsProps> = ({
             />
             <TouchableOpacity
               onPress={handleAddCustom}
-              style={[styles.addButton, (!customCuisine.trim() || disabled) && styles.disabledButton]}
+              style={[
+                styles.addButton,
+                (!customCuisine.trim() || disabled) && styles.disabledButton,
+              ]}
               disabled={!customCuisine.trim() || disabled}
             >
               <Text style={styles.addButtonText}>Add</Text>

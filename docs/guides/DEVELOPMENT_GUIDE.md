@@ -33,6 +33,7 @@ cd /home/saifalhail/development/na
 ## 📊 Project Overview
 
 ### Architecture
+
 - **Frontend**: React Native with Expo (TypeScript)
 - **Backend**: Django REST Framework (Python)
 - **Database**: SQLite (development), PostgreSQL (production)
@@ -41,6 +42,7 @@ cd /home/saifalhail/development/na
 - **Real-time**: WebSocket support for notifications
 
 ### Key Features
+
 - 📸 AI-powered food image analysis
 - 🎯 Interactive nutritional results
 - 👆 Guided camera capture
@@ -51,6 +53,7 @@ cd /home/saifalhail/development/na
 ## 🛠️ Development Environment
 
 ### File Structure
+
 ```
 /home/saifalhail/development/na/
 ├── backend/                 # Django REST API
@@ -72,66 +75,76 @@ cd /home/saifalhail/development/na
 
 ### Development Scripts
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `setup-backend.sh` | Python environment setup | First time + dependency changes |
-| `setup-android.sh` | Android emulator configuration | If using emulator |
-| `setup-network.sh` | Network optimization for WSL | Network connectivity issues |
-| `dev-start.sh` | Start both frontend + backend | Daily development |
-| `setup-everything.sh` | Complete environment setup | New machines |
+| Script                | Purpose                        | Usage                           |
+| --------------------- | ------------------------------ | ------------------------------- |
+| `setup-backend.sh`    | Python environment setup       | First time + dependency changes |
+| `setup-android.sh`    | Android emulator configuration | If using emulator               |
+| `setup-network.sh`    | Network optimization for WSL   | Network connectivity issues     |
+| `dev-start.sh`        | Start both frontend + backend  | Daily development               |
+| `setup-everything.sh` | Complete environment setup     | New machines                    |
 
 ## 📱 Development Options
 
 ### Option 1: Phone Development (Recommended)
+
 ```bash
 ./dev-start.sh phone
 ```
 
 **Benefits:**
+
 - ✅ Real device testing
 - ✅ No network configuration needed (tunnel mode)
 - ✅ Best for UX testing
 - ✅ Works from any internet connection
 
 **How to use:**
+
 1. Install Expo Go from app store
 2. Run the command above
 3. Scan QR code with Expo Go
 
 ### Option 2: Android Emulator
+
 ```bash
 ./setup-android.sh      # One-time setup
 ./dev-start.sh emulator
 ```
 
 **Benefits:**
+
 - ✅ No phone needed
 - ✅ Debugging tools available
 - ✅ Consistent test environment
 - ✅ Fast development cycle
 
 **Prerequisites:**
+
 - Android Studio installed on Windows
 - At least one AVD (Android Virtual Device) created
 
 ### Option 3: Web Browser
+
 ```bash
 ./dev-start.sh web
 ```
 
 **Benefits:**
+
 - ✅ Fastest reload cycle
 - ✅ Browser dev tools
 - ✅ Good for UI development
 - ✅ No device setup needed
 
 **Limitations:**
+
 - ❌ No native features (camera, etc.)
 - ❌ Different styling behavior
 
 ## 🔄 Daily Development Workflow
 
 ### Starting Development
+
 ```bash
 # Open WSL terminal
 wsl
@@ -146,22 +159,26 @@ cd /home/saifalhail/development/na
 ### Making Changes
 
 **Frontend Development:**
+
 - Edit files in `frontend/src/`
 - Changes auto-reload in Metro bundler
 - TypeScript compilation happens automatically
 
 **Backend Development:**
+
 - Edit files in `backend/`
 - Django auto-reloads on file changes
 - Database migrations: `python3 manage.py makemigrations && python3 manage.py migrate`
 
 ### Stopping Development
+
 - Press `Ctrl+C` in the terminal running `dev-start.sh`
 - Both frontend and backend servers stop automatically
 
 ## 🧪 Testing & Debugging
 
 ### Backend Testing
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -172,6 +189,7 @@ python3 -m pytest --cov=. --cov-report=html
 ```
 
 ### Frontend Testing
+
 ```bash
 cd frontend
 npm test
@@ -186,11 +204,13 @@ npm run test:coverage
 ### Debugging
 
 **Backend Debugging:**
+
 - Check logs: `tail -f /tmp/backend.log`
 - Django admin: http://localhost:8000/admin/
 - API documentation: http://localhost:8000/api/docs/
 
 **Frontend Debugging:**
+
 - Metro bundler: http://localhost:8081
 - Expo DevTools: http://localhost:19002
 - React Native Debugger (if installed)
@@ -198,11 +218,13 @@ npm run test:coverage
 ## 🌐 Development URLs
 
 ### Frontend (Expo)
+
 - **Metro Bundler**: http://localhost:8081
 - **Expo DevTools**: http://localhost:19002
 - **Web Version**: http://localhost:8081 (when using web mode)
 
 ### Backend (Django)
+
 - **API Server**: http://localhost:8000
 - **Admin Panel**: http://localhost:8000/admin/
 - **API Documentation**: http://localhost:8000/api/docs/
@@ -213,6 +235,7 @@ npm run test:coverage
 ### Environment Variables
 
 **Backend (.env):**
+
 ```env
 SECRET_KEY=your-secret-key
 DEBUG=True
@@ -223,6 +246,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:8081,http://localhost:19006
 ```
 
 **Frontend (.env):**
+
 ```env
 EXPO_PUBLIC_API_URL=http://localhost:8000/api/v1
 EXPO_PUBLIC_API_VERSION=v1
@@ -234,6 +258,7 @@ EXPO_PUBLIC_ENABLE_CRASH_REPORTING=true
 ### Package Management
 
 **Backend Dependencies:**
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -242,6 +267,7 @@ pip freeze > requirements.txt
 ```
 
 **Frontend Dependencies:**
+
 ```bash
 cd frontend
 npm install package-name
@@ -254,12 +280,14 @@ npm install package-name --save-dev  # for dev dependencies
 ### Common Issues
 
 **1. Virtual Environment Issues**
+
 ```bash
 # Fix: Recreate environment
 ./setup-backend.sh
 ```
 
 **2. Port Conflicts**
+
 ```bash
 # Kill existing processes
 pkill -f "python3.*manage.py.*runserver"
@@ -267,12 +295,14 @@ pkill -f "expo.*start"
 ```
 
 **3. Phone Connection Issues**
+
 ```bash
 # Use tunnel mode (bypasses network issues)
 ./dev-start.sh phone
 ```
 
 **4. Node Modules Issues**
+
 ```bash
 cd frontend
 rm -rf node_modules package-lock.json
@@ -280,6 +310,7 @@ npm install
 ```
 
 **5. Database Issues**
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -287,6 +318,7 @@ python3 manage.py migrate
 ```
 
 ### Detailed Troubleshooting
+
 See `TROUBLESHOOTING.md` for comprehensive troubleshooting guide with solutions to specific error messages.
 
 ## 🎯 Performance Tips
@@ -304,12 +336,14 @@ See `TROUBLESHOOTING.md` for comprehensive troubleshooting guide with solutions 
 ## 🔐 Security Considerations
 
 ### Development Security
+
 - Keep `.env` files out of version control
 - Use development API keys (not production)
 - Backend runs on localhost only by default
 - JWT tokens have reasonable expiry times
 
 ### Production Considerations
+
 - Use environment-specific configurations
 - Enable HTTPS in production
 - Configure proper CORS origins
@@ -318,12 +352,14 @@ See `TROUBLESHOOTING.md` for comprehensive troubleshooting guide with solutions 
 ## 📚 Additional Resources
 
 ### Documentation
+
 - **API Reference**: `docs/api/README.md`
 - **Frontend Architecture**: `docs/frontend/FRONTEND_ARCHITECTURE.md`
 - **Component Library**: `docs/frontend/COMPONENT_LIBRARY.md`
 - **Testing Guide**: `docs/testing/README.md`
 
 ### External Resources
+
 - [Expo Documentation](https://docs.expo.dev/)
 - [React Native Documentation](https://reactnative.dev/docs/getting-started)
 - [Django REST Framework](https://www.django-rest-framework.org/)
@@ -332,6 +368,7 @@ See `TROUBLESHOOTING.md` for comprehensive troubleshooting guide with solutions 
 ## 🆘 Getting Help
 
 ### Quick Diagnostics
+
 ```bash
 ./network-test.sh        # Network connectivity check
 tail -f /tmp/backend.log  # Backend logs
@@ -339,6 +376,7 @@ tail -f /tmp/frontend.log # Frontend logs
 ```
 
 ### Support
+
 1. Check `TROUBLESHOOTING.md` for common issues
 2. Review logs for specific error messages
 3. Ensure all prerequisites are installed

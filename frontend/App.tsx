@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, InteractionManager } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -11,16 +11,13 @@ import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useAppOptimization } from '@/hooks/useAppOptimization';
 import LoadingComponents from '@/components/base/Loading';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
+import { SplashScreen } from '@/components/SplashScreen';
+import { debugApiConfig, testApiConnectivity } from '@/config/api';
 
-// Simple loading component that doesn't require theme context
-const InitialLoadingScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffff' }}>
-    <ActivityIndicator size="large" color="#007AFF" />
-  </View>
-);
 
 function ThemedAppContent() {
   const { checkAuthStatus, isLoading } = useAuthStore();
+  const [appIsReady, setAppIsReady] = useState(false);
 
   // Enable app-wide performance optimizations
   useAppOptimization({
@@ -30,11 +27,33 @@ function ThemedAppContent() {
   });
 
   useEffect(() => {
-    checkAuthStatus();
+    async function prepare() {
+      try {
+        // Debug API configuration at startup
+        console.log('🚀 [STARTUP] Initializing app...');
+        debugApiConfig();
+        
+        // Test API connectivity before proceeding
+        const isConnected = await testApiConnectivity();
+        if (!isConnected) {
+          console.warn('⚠️ [STARTUP] API connectivity test failed - authentication may not work');
+        }
+        
+        // Check auth status
+        await checkAuthStatus();
+      } catch (e) {
+        console.error('App initialization error:', e);
+      } finally {
+        // Tell the application to render
+        setAppIsReady(true);
+      }
+    }
+
+    prepare();
   }, [checkAuthStatus]);
 
-  if (isLoading) {
-    return <LoadingComponents.LoadingOverlay visible={true} />;
+  if (!appIsReady || isLoading) {
+    return <SplashScreen />;
   }
 
   return (
@@ -60,6 +79,14 @@ function AppContent() {
 
 export default function App() {
   const { reportError } = useErrorHandler();
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    // Defer non-critical initialization
+    InteractionManager.runAfterInteractions(() => {
+      setIsInitialized(true);
+    });
+  }, []);
 
   return (
     <ErrorBoundary
@@ -67,7 +94,7 @@ export default function App() {
         reportError({ error, errorInfo });
       }}
     >
-      <AppContent />
+      {isInitialized ? <AppContent /> : <SplashScreen />}
     </ErrorBoundary>
   );
 }

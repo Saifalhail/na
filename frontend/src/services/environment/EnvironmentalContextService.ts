@@ -1,6 +1,6 @@
 /**
  * Environmental Context Service
- * 
+ *
  * Collects environmental data to enhance AI nutritional analysis accuracy.
  * This includes weather, lighting conditions, seasonal factors, and more.
  */
@@ -56,17 +56,14 @@ export class EnvironmentalContextService {
 
     try {
       // Collect various environmental factors in parallel
-      const [
-        timeContext,
-        weatherData,
-        lightingContext,
-        seasonalFactors
-      ] = await Promise.allSettled([
-        this.getTimeContext(),
-        this.getWeatherData(latitude, longitude),
-        this.analyzeLightingContext(),
-        this.getSeasonalFactors()
-      ]);
+      const [timeContext, weatherData, lightingContext, seasonalFactors] = await Promise.allSettled(
+        [
+          this.getTimeContext(),
+          this.getWeatherData(latitude, longitude),
+          this.analyzeLightingContext(),
+          this.getSeasonalFactors(),
+        ]
+      );
 
       // Map successful results to metadata
       if (timeContext.status === 'fulfilled') {
@@ -85,7 +82,6 @@ export class EnvironmentalContextService {
       if (seasonalFactors.status === 'fulfilled') {
         this.mapSeasonalFactorsToMetadata(metadata, seasonalFactors.value);
       }
-
     } catch (error) {
       console.error('Environmental context collection failed:', error);
     }
@@ -130,17 +126,14 @@ export class EnvironmentalContextService {
       dayOfWeek: now.toLocaleDateString('en-US', { weekday: 'long' }),
       isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
       isHoliday: await this.checkIfHoliday(now),
-      mealTimeCategory
+      mealTimeCategory,
     };
   }
 
   /**
    * Get weather data for location
    */
-  private async getWeatherData(
-    latitude?: number,
-    longitude?: number
-  ): Promise<WeatherData | null> {
+  private async getWeatherData(latitude?: number, longitude?: number): Promise<WeatherData | null> {
     if (!latitude || !longitude) {
       return null;
     }
@@ -157,20 +150,20 @@ export class EnvironmentalContextService {
       // - OpenWeatherMap
       // - WeatherAPI
       // - AccuWeather
-      
+
       // Mock weather data for demonstration
       const mockWeatherData: WeatherData = {
         temperature: Math.random() * 30 + 5, // 5-35°C
         humidity: Math.random() * 60 + 30, // 30-90%
         condition: ['sunny', 'cloudy', 'partly_cloudy', 'rainy'][Math.floor(Math.random() * 4)],
         uvIndex: Math.random() * 10,
-        windSpeed: Math.random() * 20
+        windSpeed: Math.random() * 20,
       };
 
       // Cache the result
       this.weatherCache[cacheKey] = {
         data: mockWeatherData,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       return mockWeatherData;
@@ -194,7 +187,7 @@ export class EnvironmentalContextService {
     let ambientLightLevel: LightingContext['ambientLightLevel'];
     if (hour >= 7 && hour < 17) {
       ambientLightLevel = 'bright';
-    } else if (hour >= 17 && hour < 19 || hour >= 6 && hour < 7) {
+    } else if ((hour >= 17 && hour < 19) || (hour >= 6 && hour < 7)) {
       ambientLightLevel = 'normal';
     } else if (hour >= 19 && hour < 22) {
       ambientLightLevel = 'dim';
@@ -209,7 +202,7 @@ export class EnvironmentalContextService {
       isDaylight,
       ambientLightLevel,
       primaryLightSource,
-      sunAngle: this.calculateSunAngle(now)
+      sunAngle: this.calculateSunAngle(now),
     };
   }
 
@@ -229,23 +222,23 @@ export class EnvironmentalContextService {
       spring: {
         ingredients: ['asparagus', 'peas', 'lettuce', 'spinach', 'radishes'],
         cuisines: ['mediterranean', 'light_salads', 'fresh_vegetables'],
-        preferences: ['fresh', 'light', 'crisp']
+        preferences: ['fresh', 'light', 'crisp'],
       },
       summer: {
         ingredients: ['tomatoes', 'corn', 'berries', 'stone_fruits', 'herbs'],
         cuisines: ['bbq', 'grilled', 'fresh_fruits', 'cold_soups'],
-        preferences: ['cold', 'refreshing', 'grilled']
+        preferences: ['cold', 'refreshing', 'grilled'],
       },
       autumn: {
         ingredients: ['pumpkin', 'apples', 'squash', 'root_vegetables', 'nuts'],
         cuisines: ['comfort_food', 'hearty_stews', 'roasted_vegetables'],
-        preferences: ['warm', 'hearty', 'spiced']
+        preferences: ['warm', 'hearty', 'spiced'],
       },
       winter: {
         ingredients: ['citrus', 'preserved_foods', 'root_vegetables', 'dried_fruits'],
         cuisines: ['soups', 'stews', 'hot_beverages', 'comfort_food'],
-        preferences: ['hot', 'warming', 'rich']
-      }
+        preferences: ['hot', 'warming', 'rich'],
+      },
     };
 
     let season: keyof typeof seasonalData;
@@ -257,7 +250,7 @@ export class EnvironmentalContextService {
     return {
       availableIngredients: seasonalData[season].ingredients,
       typicalCuisines: seasonalData[season].cuisines,
-      temperaturePreferences: seasonalData[season].preferences
+      temperaturePreferences: seasonalData[season].preferences,
     };
   }
 
@@ -277,12 +270,12 @@ export class EnvironmentalContextService {
     const hour = date.getHours();
     const minute = date.getMinutes();
     const timeDecimal = hour + minute / 60;
-    
+
     // Simplified sun angle calculation (0-90 degrees)
     // Peak at noon (12:00), 0 at sunrise/sunset
     const noonOffset = Math.abs(timeDecimal - 12);
     const maxAngle = 90;
-    return Math.max(0, maxAngle - (noonOffset * 15));
+    return Math.max(0, maxAngle - noonOffset * 15);
   }
 
   /**
@@ -298,8 +291,10 @@ export class EnvironmentalContextService {
       `Season: ${timeContext.season}`,
       `Time: ${timeContext.timeOfDay}`,
       `Meal time: ${timeContext.mealTimeCategory}`,
-      timeContext.isWeekend ? 'Weekend' : 'Weekday'
-    ].filter(Boolean).join(', ');
+      timeContext.isWeekend ? 'Weekend' : 'Weekday',
+    ]
+      .filter(Boolean)
+      .join(', ');
   }
 
   /**
@@ -313,7 +308,7 @@ export class EnvironmentalContextService {
     const lightingInfo = [
       `Light: ${lightingContext.ambientLightLevel}`,
       `Source: ${lightingContext.primaryLightSource}`,
-      lightingContext.isDaylight ? 'Daylight' : 'Artificial light'
+      lightingContext.isDaylight ? 'Daylight' : 'Artificial light',
     ].join(', ');
 
     metadata.notes = [metadata.notes, lightingInfo].filter(Boolean).join(', ');
@@ -329,7 +324,7 @@ export class EnvironmentalContextService {
     // Seasonal information helps with ingredient identification
     metadata.frequentCuisines = [
       ...(metadata.frequentCuisines || []),
-      ...seasonalFactors.typicalCuisines
+      ...seasonalFactors.typicalCuisines,
     ];
   }
 
@@ -344,7 +339,7 @@ export class EnvironmentalContextService {
     try {
       // This would use location services and POI data to determine venue type
       // For now, provide intelligent guessing based on time and context
-      
+
       if (!timeContext) {
         timeContext = await this.getTimeContext();
       }
@@ -412,7 +407,7 @@ export class EnvironmentalContextService {
     return {
       socialContext,
       atmosphereFactors,
-      experienceFactors
+      experienceFactors,
     };
   }
 }

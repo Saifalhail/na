@@ -183,4 +183,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

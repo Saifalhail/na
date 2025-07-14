@@ -99,7 +99,9 @@ export const useAuthStore = create<AuthState>()(
           await authApi.logout();
         } catch (error) {
           // Continue with logout even if API call fails
-          console.error('Logout API call failed:', error);
+          if (__DEV__) {
+            console.error('Logout API call failed:', error);
+          }
         }
 
         // Clear tokens from storage
@@ -162,32 +164,86 @@ export const useAuthStore = create<AuthState>()(
           const storedTokens = await TokenStorage.getTokens();
 
           if (storedTokens?.access) {
-            // Verify token is still valid
-            const isValid = await authApi.verifyToken();
+            // Check if this is a demo session (demo tokens)
+            const isDemoSession = storedTokens.access === 'demo-access-token';
+            
+            if (isDemoSession) {
+              if (__DEV__) {
+                console.log('🎭 [DEMO] Restoring demo session...');
+              }
+              
+              // For demo sessions, restore from stored state without API calls
+              const { user } = get();
+              if (user && user.id === 'demo-user') {
+                set({
+                  user,
+                  tokens: storedTokens,
+                  isAuthenticated: true,
+                  isLoading: false,
+                });
+                if (__DEV__) {
+                  console.log('🎭 [DEMO] Demo session restored successfully');
+                }
+                return;
+              } else {
+                // Demo tokens but no user - recreate demo session
+                if (__DEV__) {
+                  console.log('🎭 [DEMO] Demo tokens found but no user data, recreating...');
+                }
+                await get().demoLogin();
+                return;
+              }
+            }
 
-            if (isValid) {
-              // Get current user profile
-              const profile = await authApi.getProfile();
+            // For real user sessions, verify with API
+            try {
+              const isValid = await authApi.verifyToken();
 
-              set({
-                user: profile.user,
-                tokens: storedTokens,
-                isAuthenticated: true,
-                isLoading: false,
-              });
-            } else {
-              // Token invalid, try to refresh
-              if (storedTokens.refresh) {
-                await get().refreshTokens();
+              if (isValid) {
+                // Get current user profile
                 const profile = await authApi.getProfile();
 
                 set({
                   user: profile.user,
+                  tokens: storedTokens,
                   isAuthenticated: true,
                   isLoading: false,
                 });
               } else {
-                // No valid tokens, logout
+                // Token invalid, try to refresh
+                if (storedTokens.refresh) {
+                  await get().refreshTokens();
+                  const profile = await authApi.getProfile();
+
+                  set({
+                    user: profile.user,
+                    isAuthenticated: true,
+                    isLoading: false,
+                  });
+                } else {
+                  // No valid tokens, logout
+                  await get().logout();
+                }
+              }
+            } catch (networkError) {
+              if (__DEV__) {
+                console.error('Network error during auth check:', networkError);
+              }
+              // If network fails, try to maintain existing session if user data is available
+              const { user } = get();
+              if (user && storedTokens) {
+                if (__DEV__) {
+                  console.log('🔄 [OFFLINE] Maintaining offline session due to network error');
+                }
+                set({
+                  user,
+                  tokens: storedTokens,
+                  isAuthenticated: true,
+                  isLoading: false,
+                  error: 'Working offline - some features may be limited',
+                });
+              } else {
+                // No user data available, logout
                 await get().logout();
               }
             }
@@ -199,7 +255,9 @@ export const useAuthStore = create<AuthState>()(
             });
           }
         } catch (error) {
-          console.error('Auth status check failed:', error);
+          if (__DEV__) {
+            console.error('Auth status check failed:', error);
+          }
           set({
             isAuthenticated: false,
             isLoading: false,
@@ -222,29 +280,81 @@ export const useAuthStore = create<AuthState>()(
       // Demo login for testing/preview
       demoLogin: async () => {
         set({ isLoading: true, error: null });
+        
+        if (__DEV__) {
+          console.log('🎭 [DEMO] Starting demo login...');
+        }
+        
+        // First, test if the API is even reachable
+        let useOfflineMode = false;
         try {
-          // For demo mode, we'll use a special demo account
-          const demoCredentials = {
-            email: 'demo@nutritionai.com',
-            password: 'demo123456',
-          };
-
-          const response = await authApi.login(demoCredentials);
-
-          // Save tokens to SecureStore
-          if (response.tokens) {
-            await TokenStorage.saveTokens(response.tokens);
-          }
-
-          set({
-            user: response.user,
-            tokens: response.tokens,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
+          // Quick connectivity test with short timeout
+          const connectivityTest = await fetch(`${process.env.EXPO_PUBLIC_API_URL || 'http://127.0.0.1:8000'}/api/v1/health/`, {
+            method: 'GET',
+            timeout: 3000,
           });
-        } catch (error: any) {
-          // If demo account doesn't exist, create a mock session
+          
+          if (!connectivityTest.ok) {
+            useOfflineMode = true;
+            if (__DEV__) {
+              console.log('🎭 [DEMO] API not reachable, using offline mode');
+            }
+          }
+        } catch (connectivityError) {
+          useOfflineMode = true;
+          if (__DEV__) {
+            console.log('🎭 [DEMO] Network error detected, using offline mode:', connectivityError.message);
+          }
+        }
+
+        // If API is not reachable, skip trying the real login and go straight to mock
+        if (useOfflineMode) {
+          if (__DEV__) {
+            console.log('🎭 [DEMO] Creating offline demo session...');
+          }
+        } else {
+          try {
+            // Try real demo account login
+            if (__DEV__) {
+              console.log('🎭 [DEMO] Attempting real demo account login...');
+            }
+            const demoCredentials = {
+              email: 'demo@nutritionai.com',
+              password: 'demo123456',
+            };
+
+            const response = await authApi.login(demoCredentials);
+
+            // Save tokens to SecureStore
+            if (response.tokens) {
+              await TokenStorage.saveTokens(response.tokens);
+            }
+
+            set({
+              user: response.user,
+              tokens: response.tokens,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+            
+            if (__DEV__) {
+              console.log('🎭 [DEMO] Real demo login successful!');
+            }
+            return; // Exit early on success
+          } catch (error: any) {
+            if (__DEV__) {
+              console.log('🎭 [DEMO] Real demo login failed, falling back to offline mode:', error.message);
+            }
+          }
+        }
+
+        // Create mock session (offline mode or fallback)
+        try {
+          if (__DEV__) {
+            console.log('🎭 [DEMO] Creating mock demo session...');
+          }
+          
           const mockUser: User = {
             id: 'demo-user',
             email: 'demo@nutritionai.com',
@@ -272,6 +382,19 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
             error: null,
+          });
+          
+          if (__DEV__) {
+            console.log('🎭 [DEMO] Mock demo session created successfully!');
+            console.log('🎭 [DEMO] Demo user has premium access and full app functionality');
+          }
+        } catch (mockError: any) {
+          if (__DEV__) {
+            console.error('🎭 [DEMO] Failed to create mock session:', mockError);
+          }
+          set({
+            isLoading: false,
+            error: 'Demo mode initialization failed. Please try again.',
           });
         }
       },

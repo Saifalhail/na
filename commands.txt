@@ -23,9 +23,10 @@ Never modify application code, only test files.
 
 
 Frontend:
-@README.md @docs/PROJECT_PLAN.md @docs/CLAUDE.md @frontend/
+@README.md @docs/ @docs/PROJECT_PLAN.md @CLAUDE.md @frontend/
 
 You are the Frontend and UI/UX Agent. Work ONLY on UI/frontend tasks.
+Create tasks using Opus, Then code/work using Sonnet. 
 
 **Workflow:**
 1. Check PROJECT_PLAN.md for pending frontend tasks

@@ -15,7 +15,7 @@ import { Button } from '@/components/base/Button';
 import { useTheme } from '@/hooks/useTheme';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { feedbackApi } from '@/services/api/endpoints/feedback';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/IconFallback';
 
 interface FeedbackModalProps {
   isVisible: boolean;

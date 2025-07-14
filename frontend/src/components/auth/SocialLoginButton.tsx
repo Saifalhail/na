@@ -7,7 +7,8 @@ import { GradientButton } from '@/components/base/GradientButton';
 import { useTwoFactorStore } from '@/store/twoFactorStore';
 import { useAuthStore } from '@/store/authStore';
 import { googleOAuthClientId } from '@/config/env';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/IconFallback';
+import { GoogleLogo } from '@/components/icons/GoogleLogo';
 
 // Ensure web browser sessions complete properly
 WebBrowser.maybeCompleteAuthSession();
@@ -28,7 +29,7 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
 
   // Google OAuth configuration using expo-auth-session
   const discovery = AuthSession.useAutoDiscovery('https://accounts.google.com');
-  
+
   const redirectUri = AuthSession.makeRedirectUri({
     scheme: 'nutritionai', // You can customize this scheme
     preferLocalhost: true,
@@ -58,7 +59,8 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
         handleGoogleAuthResponse(response.authentication);
       }
     } else if (response?.type === 'error') {
-      const errorMessage = response.error?.message || response.params?.error_description || 'Google login failed';
+      const errorMessage =
+        response.error?.message || response.params?.error_description || 'Google login failed';
       console.error('Google OAuth Error:', response.error, response.params);
       onError?.(errorMessage);
       Alert.alert('Login Failed', errorMessage);
@@ -102,14 +104,11 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
       }
 
       // Get user info from Google
-      const userInfoResponse = await fetch(
-        'https://www.googleapis.com/oauth2/v2/userinfo',
-        {
-          headers: {
-            Authorization: `Bearer ${authentication.accessToken}`,
-          },
-        }
-      );
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: {
+          Authorization: `Bearer ${authentication.accessToken}`,
+        },
+      });
 
       if (!userInfoResponse.ok) {
         throw new Error('Failed to get user info from Google');
@@ -179,16 +178,7 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
   };
 
   const getGoogleIcon = () => (
-    <View style={styles.iconContainer}>
-      <View style={styles.googleIconBorder}>
-        <View style={styles.googleIconInner}>
-          <View style={[styles.googleSection, styles.googleBlue]} />
-          <View style={[styles.googleSection, styles.googleRed]} />
-          <View style={[styles.googleSection, styles.googleYellow]} />
-          <View style={[styles.googleSection, styles.googleGreen]} />
-        </View>
-      </View>
-    </View>
+    <GoogleLogo size={20} />
   );
 
   const isDisabled = isSocialLoading || !request || !discovery;
@@ -224,57 +214,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 3.84,
     elevation: 3,
-  },
-  iconContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  googleIconBorder: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#dadce0',
-  },
-  googleIconInner: {
-    width: 16,
-    height: 16,
-    position: 'relative',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  googleSection: {
-    position: 'absolute',
-    width: 8,
-    height: 8,
-  },
-  googleBlue: {
-    backgroundColor: '#4285F4',
-    top: 0,
-    right: 0,
-    borderTopRightRadius: 8,
-  },
-  googleRed: {
-    backgroundColor: '#EA4335',
-    top: 0,
-    left: 0,
-    borderTopLeftRadius: 8,
-  },
-  googleYellow: {
-    backgroundColor: '#FBBC04',
-    bottom: 0,
-    left: 0,
-    borderBottomLeftRadius: 8,
-  },
-  googleGreen: {
-    backgroundColor: '#34A853',
-    bottom: 0,
-    right: 0,
-    borderBottomRightRadius: 8,
   },
 });

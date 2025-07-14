@@ -68,11 +68,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
           <Spacer size="xxl" />
 
-          <Button
-            onPress={handleBackToLogin}
-            variant="primary"
-            style={styles.button}
-          >
+          <Button onPress={handleBackToLogin} variant="primary" style={styles.button}>
             Back to Sign In
           </Button>
         </View>
@@ -83,8 +79,8 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
-        <Image 
-          source={require('../../assets/logo_cropped.png')} 
+        <Image
+          source={require('../../assets/logo_cropped.png')}
           style={styles.headerLogo}
           resizeMode="contain"
         />

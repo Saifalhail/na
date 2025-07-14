@@ -1,17 +1,10 @@
 import React, { useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Animated, 
-  ViewStyle,
-  TouchableOpacity
-} from 'react-native';
+import { View, Text, StyleSheet, Animated, ViewStyle, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/hooks/useTheme';
 import { getModernShadow } from '@/theme/shadows';
 import { rs, moderateScale, fontScale } from '@/utils/responsive';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@/components/IconFallback';
 import * as Haptics from 'expo-haptics';
 
 export type AchievementLevel = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
@@ -49,24 +42,24 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0.8)).current;
-  
-  const getLevelColors = (): string[] => {
+
+  const getLevelColors = (): readonly [string, string, ...string[]] => {
     switch (level) {
       case 'bronze':
-        return ['#CD7F32', '#B87333', '#A0522D'];
+        return ['#CD7F32', '#B87333', '#A0522D'] as const;
       case 'silver':
-        return ['#C0C0C0', '#A8A8A8', '#808080'];
+        return ['#C0C0C0', '#A8A8A8', '#808080'] as const;
       case 'gold':
-        return ['#FFD700', '#FFC107', '#FFA000'];
+        return ['#FFD700', '#FFC107', '#FFA000'] as const;
       case 'platinum':
-        return ['#E5E4E2', '#BFC1C2', '#A8A9AD'];
+        return ['#E5E4E2', '#BFC1C2', '#A8A9AD'] as const;
       case 'diamond':
-        return ['#B9F2FF', '#00D4FF', '#00A8E8'];
+        return ['#B9F2FF', '#00D4FF', '#00A8E8'] as const;
       default:
-        return ['#CD7F32', '#B87333', '#A0522D'];
+        return ['#CD7F32', '#B87333', '#A0522D'] as const;
     }
   };
-  
+
   const getBadgeSize = () => {
     switch (size) {
       case 'small':
@@ -77,7 +70,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         return moderateScale(80);
     }
   };
-  
+
   useEffect(() => {
     if (animated && unlocked) {
       // Entry animation
@@ -94,7 +87,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       // Glow animation
       Animated.loop(
         Animated.sequence([
@@ -114,11 +107,11 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
       scaleAnim.setValue(1);
     }
   }, [animated, unlocked]);
-  
+
   const handlePress = async () => {
     if (onPress && unlocked) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
+
       // Bounce animation
       Animated.sequence([
         Animated.timing(scaleAnim, {
@@ -133,15 +126,15 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       onPress();
     }
   };
-  
+
   const badgeSize = getBadgeSize();
   const colors = getLevelColors();
   const progressPercentage = maxProgress > 0 ? (progress / maxProgress) * 100 : 0;
-  
+
   const content = (
     <Animated.View
       style={[
@@ -176,43 +169,48 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
             start={{ x: 0.5, y: 0.5 }}
             end={{ x: 0, y: 0 }}
             locations={[0, 0.5, 1]}
-            style={[
-              styles.glow,
-              { width: badgeSize * 1.3, height: badgeSize * 1.3 },
-            ]}
+            style={[styles.glow, { width: badgeSize * 1.3, height: badgeSize * 1.3 }]}
           />
         </Animated.View>
       )}
-      
+
       {/* Badge background */}
       <View style={[styles.badge, { width: badgeSize, height: badgeSize }]}>
         <LinearGradient
-          colors={unlocked ? colors : [theme.colors.neutral[300], theme.colors.neutral[400], theme.colors.neutral[500]]}
+          colors={
+            unlocked
+              ? colors
+              : [theme.colors.neutral[300], theme.colors.neutral[400], theme.colors.neutral[500]] as const
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
-        
+
         {/* Inner decoration */}
         <View style={[styles.innerRing, { width: badgeSize * 0.9, height: badgeSize * 0.9 }]} />
-        
+
         {/* Icon */}
         <View style={styles.iconContainer}>
-          {iconComponent || (
-            icon ? (
-              <Text style={[styles.iconText, { fontSize: fontScale(size === 'small' ? 24 : size === 'large' ? 40 : 32) }]}>
+          {iconComponent ||
+            (icon ? (
+              <Text
+                style={[
+                  styles.iconText,
+                  { fontSize: fontScale(size === 'small' ? 24 : size === 'large' ? 40 : 32) },
+                ]}
+              >
                 {icon}
               </Text>
             ) : (
-              <Ionicons 
-                name="trophy" 
-                size={moderateScale(size === 'small' ? 24 : size === 'large' ? 40 : 32)} 
+              <Ionicons
+                name="trophy"
+                size={moderateScale(size === 'small' ? 24 : size === 'large' ? 40 : 32)}
                 color={unlocked ? '#FFFFFF' : theme.colors.textSecondary}
               />
-            )
-          )}
+            ))}
         </View>
-        
+
         {/* Progress ring */}
         {maxProgress > 0 && !unlocked && (
           <View style={[StyleSheet.absoluteFillObject, styles.progressContainer]}>
@@ -250,50 +248,56 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
             </View>
           </View>
         )}
-        
+
         {/* Lock overlay */}
         {!unlocked && (
           <View style={[StyleSheet.absoluteFillObject, styles.lockOverlay]}>
-            <Ionicons 
-              name="lock-closed" 
-              size={moderateScale(size === 'small' ? 16 : size === 'large' ? 24 : 20)} 
+            <Ionicons
+              name="lock-closed"
+              size={moderateScale(size === 'small' ? 16 : size === 'large' ? 24 : 20)}
               color={theme.colors.textSecondary}
             />
           </View>
         )}
       </View>
-      
+
       {/* Title and description */}
       {(title || description) && (
         <View style={styles.textContainer}>
-          <Text style={[
-            styles.title, 
-            { 
-              color: unlocked ? theme.colors.text.primary : theme.colors.textSecondary,
-              fontSize: fontScale(size === 'small' ? 12 : size === 'large' ? 16 : 14),
-            }
-          ]}>
+          <Text
+            style={[
+              styles.title,
+              {
+                color: unlocked ? theme.colors.text.primary : theme.colors.textSecondary,
+                fontSize: fontScale(size === 'small' ? 12 : size === 'large' ? 16 : 14),
+              },
+            ]}
+          >
             {title}
           </Text>
           {description && (
-            <Text style={[
-              styles.description, 
-              { 
-                color: theme.colors.textSecondary,
-                fontSize: fontScale(size === 'small' ? 10 : size === 'large' ? 14 : 12),
-              }
-            ]}>
+            <Text
+              style={[
+                styles.description,
+                {
+                  color: theme.colors.textSecondary,
+                  fontSize: fontScale(size === 'small' ? 10 : size === 'large' ? 14 : 12),
+                },
+              ]}
+            >
               {description}
             </Text>
           )}
           {!unlocked && maxProgress > 0 && (
-            <Text style={[
-              styles.progress,
-              { 
-                color: theme.colors.primary[500],
-                fontSize: fontScale(size === 'small' ? 10 : size === 'large' ? 14 : 12),
-              }
-            ]}>
+            <Text
+              style={[
+                styles.progress,
+                {
+                  color: theme.colors.primary[500],
+                  fontSize: fontScale(size === 'small' ? 10 : size === 'large' ? 14 : 12),
+                },
+              ]}
+            >
               {progress}/{maxProgress}
             </Text>
           )}
@@ -301,7 +305,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
       )}
     </Animated.View>
   );
-  
+
   if (onPress && unlocked) {
     return (
       <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
@@ -309,7 +313,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
       </TouchableOpacity>
     );
   }
-  
+
   return content;
 };
 

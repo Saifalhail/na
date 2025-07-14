@@ -1,13 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { borderRadius, rs } from '@/utils/responsive';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Dimensions,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
@@ -45,13 +38,13 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
 }) => {
   const { theme } = useTheme();
   const styles = createStyles(theme);
-  
+
   // Animation values
   const frameCornerAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const feedbackAnim = useRef(new Animated.Value(0)).current;
   const checkmarkAnim = useRef(new Animated.Value(0)).current;
-  
+
   const [captureReadiness, setCaptureReadiness] = useState(0);
   const [hasTriggeredOptimal, setHasTriggeredOptimal] = useState(false);
 
@@ -67,7 +60,8 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
       label: 'Distance',
       value: distance === 'optimal' ? 100 : distance === 'too_close' ? 30 : 50,
       optimal: distance === 'optimal',
-      message: distance === 'too_close' ? 'Move back' : distance === 'too_far' ? 'Move closer' : 'Perfect',
+      message:
+        distance === 'too_close' ? 'Move back' : distance === 'too_far' ? 'Move closer' : 'Perfect',
     },
     {
       label: 'Angle',
@@ -79,7 +73,7 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
 
   // Calculate overall readiness
   useEffect(() => {
-    const optimalCount = metrics.filter(m => m.optimal).length;
+    const optimalCount = metrics.filter((m) => m.optimal).length;
     const readiness = (optimalCount / metrics.length) * 100;
     setCaptureReadiness(readiness);
 
@@ -88,7 +82,7 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onOptimalPosition?.();
       setHasTriggeredOptimal(true);
-      
+
       // Animate checkmark
       Animated.spring(checkmarkAnim, {
         toValue: 1,
@@ -144,11 +138,12 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
 
   if (!showGuidance) return null;
 
-  const frameColor = captureReadiness === 100 
-    ? theme.colors.success[500]
-    : captureReadiness > 66 
-    ? theme.colors.warning[500]
-    : theme.colors.neutral[300];
+  const frameColor =
+    captureReadiness === 100
+      ? theme.colors.success[500]
+      : captureReadiness > 66
+        ? theme.colors.warning[500]
+        : theme.colors.neutral[300];
 
   return (
     <Container safe={false} padding="none" style={[styles.container, style]} pointerEvents="none">
@@ -177,7 +172,7 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
           </ProgressRing>
         </View>
       </Row>
-      
+
       <Spacer size="small" />
 
       {/* Main Camera Frame Area */}
@@ -203,7 +198,7 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
             <View style={[styles.corner, styles.cornerBottomRight, { borderColor: frameColor }]} />
           </View>
         </Animated.View>
-        
+
         {/* Subtle grid overlay */}
         <View style={styles.gridContainer}>
           <View style={[styles.gridLine, styles.gridVertical1]} />
@@ -221,27 +216,24 @@ export const SmartCameraOverlay: React.FC<SmartCameraOverlayProps> = ({
         <Row justify="center" gap={12} style={styles.metricsRow}>
           {metrics.map((metric) => (
             <View key={metric.label} style={styles.compactMetric}>
-              <Badge
-                variant={metric.optimal ? 'success' : 'warning'}
-                size="small"
-              >
+              <Badge variant={metric.optimal ? 'success' : 'warning'} size="small">
                 {metric.optimal ? '✓' : '!'}
               </Badge>
               <Text style={styles.compactMetricLabel}>{metric.label}</Text>
             </View>
           ))}
         </Row>
-        
+
         <Spacer size="xs" />
-        
+
         {/* Status Message */}
         <View style={styles.statusContainer}>
           <Text style={styles.statusText}>
             {captureReadiness === 100
               ? 'Perfect! Tap to capture'
               : captureReadiness > 66
-              ? 'Almost there...'
-              : 'Adjust position for best results'}
+                ? 'Almost there...'
+                : 'Adjust position for best results'}
           </Text>
         </View>
       </Column>

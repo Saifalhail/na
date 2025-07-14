@@ -14,7 +14,10 @@ export const AppNavigator: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { theme } = useTheme();
 
+  console.log('🧭 [Navigation] AppNavigator render - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+
   if (isLoading) {
+    console.log('🧭 [Navigation] Showing loading overlay');
     return <LoadingOverlay visible={true} />;
   }
 
@@ -49,12 +52,34 @@ export const AppNavigator: React.FC = () => {
           },
         },
       }}
+      onStateChange={(state) => {
+        console.log('🧭 [Navigation] State changed:', state?.routeNames?.[state?.index || 0]);
+      }}
+      fallback={<LoadingOverlay visible={true} />}
     >
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator 
+        key={isAuthenticated ? 'authenticated' : 'unauthenticated'}
+        screenOptions={{ headerShown: false }}
+        initialRouteName={isAuthenticated ? 'Main' : 'Auth'}
+      >
         {isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
+          <Stack.Screen 
+            name="Main" 
+            component={MainNavigator}
+            options={{ 
+              gestureEnabled: false,
+              animationTypeForReplace: 'push'
+            }}
+          />
         ) : (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
+          <Stack.Screen 
+            name="Auth" 
+            component={AuthNavigator}
+            options={{ 
+              gestureEnabled: false,
+              animationTypeForReplace: 'push'
+            }}
+          />
         )}
       </Stack.Navigator>
     </NavigationContainer>

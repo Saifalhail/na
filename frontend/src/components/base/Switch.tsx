@@ -1,5 +1,4 @@
 import React from 'react';
-import { borderRadius, rs } from '@/utils/responsive';
 import {
   View,
   Text,
@@ -8,13 +7,17 @@ import {
   StyleSheet,
   ViewStyle,
   SwitchProps as RNSwitchProps,
+  Platform,
 } from 'react-native';
-import { useTheme } from '@theme/ThemeContext';
-import { Theme } from '@theme/index';
+import { useTheme } from '@/hooks/useTheme';
+import { Theme } from '@/theme';
+import { spacing, layout } from '@/theme/spacing';
+import { textPresets } from '@/theme/typography';
+import { getModernShadow } from '@/theme/shadows';
 
 interface SwitchProps extends Omit<RNSwitchProps, 'value' | 'onValueChange'> {
-  value: boolean;
-  onValueChange: (value: boolean) => void;
+  value?: boolean;
+  onValueChange?: (value: boolean) => void;
   label?: string;
   description?: string;
   disabled?: boolean;
@@ -25,7 +28,7 @@ interface SwitchProps extends Omit<RNSwitchProps, 'value' | 'onValueChange'> {
 }
 
 export const Switch: React.FC<SwitchProps> = ({
-  value,
+  value = false,
   onValueChange,
   label,
   description,
@@ -40,7 +43,7 @@ export const Switch: React.FC<SwitchProps> = ({
   const styles = createStyles(theme);
 
   const handlePress = () => {
-    if (!disabled) {
+    if (!disabled && onValueChange) {
       onValueChange(!value);
     }
   };
@@ -51,11 +54,19 @@ export const Switch: React.FC<SwitchProps> = ({
       onValueChange={onValueChange}
       disabled={disabled}
       trackColor={{
-        false: theme.colors.neutral[300],
-        true: theme.colors.primary[500],
+        false: theme.isDark ? theme.colors.neutral[600] : theme.colors.neutral[300],
+        true: theme.isDark ? theme.colors.primary[600] : theme.colors.primary[500],
       }}
-      thumbColor={theme.colors.surface}
-      ios_backgroundColor={theme.colors.neutral[300]}
+      thumbColor={
+        Platform.OS === 'ios' 
+          ? theme.colors.white 
+          : value 
+            ? theme.colors.white 
+            : theme.isDark 
+              ? theme.colors.neutral[300] 
+              : theme.colors.neutral[50]
+      }
+      ios_backgroundColor={theme.isDark ? theme.colors.neutral[600] : theme.colors.neutral[300]}
       style={[styles.switch, styles[`${size}Switch`]]}
       {...props}
     />
@@ -131,22 +142,22 @@ export const SwitchGroup: React.FC<SwitchGroupProps> = ({ children, title, style
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
-      marginVertical: theme.spacing.xs,
+      marginVertical: spacing['1'], // 4px
     },
     touchable: {
-      borderRadius: theme.borderRadius.md,
+      borderRadius: layout.buttonBorderRadius,
     },
     content: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: theme.spacing.s,
+      paddingVertical: spacing['2'], // 8px
     },
     cardContainer: {
       backgroundColor: theme.colors.surface,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing.m,
-      ...theme.shadows.sm,
+      borderRadius: layout.cardBorderRadius,
+      padding: spacing['4'], // 16px
+      ...getModernShadow('card'),
     },
     cardContent: {
       flexDirection: 'row',
@@ -155,21 +166,32 @@ const createStyles = (theme: Theme) =>
     },
     textContainer: {
       flex: 1,
-      marginRight: theme.spacing.m,
+      marginRight: spacing['4'], // 16px
     },
     label: {
-      fontSize: theme.typography.fontSize.base,
-      fontWeight: '600',
+      ...textPresets.body,
       color: theme.colors.text.primary,
-      marginBottom: theme.spacing.xs,
+      fontWeight: theme.typography.fontWeight.medium,
+      marginBottom: spacing['1'], // 4px
     },
     description: {
-      fontSize: theme.typography.fontSize.xs,
+      ...textPresets.caption,
       color: theme.colors.text.secondary,
-      lineHeight: 18,
     },
+    disabledText: {
+      color: theme.colors.text.disabled,
+    },
+    disabled: {
+      opacity: 0.6,
+    },
+    error: {
+      ...textPresets.caption,
+      color: theme.colors.error[500],
+      marginTop: spacing['1'], // 4px
+    },
+    // Switch sizes
     switch: {
-      // Default switch styles
+      alignSelf: 'center',
     },
     smallSwitch: {
       transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
@@ -180,28 +202,18 @@ const createStyles = (theme: Theme) =>
     largeSwitch: {
       transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
     },
-    disabled: {
-      opacity: 0.5,
-    },
-    disabledText: {
-      opacity: 0.5,
-    },
-    error: {
-      fontSize: theme.typography.fontSize.xs,
-      color: theme.colors.error[500],
-      marginTop: theme.spacing.xs,
-    },
+    // Group styles
     group: {
-      marginBottom: theme.spacing.m,
+      marginVertical: spacing['2'], // 8px
     },
     groupTitle: {
-      fontSize: theme.typography.fontSize.lg,
-      fontWeight: theme.typography.fontWeight.semibold,
+      ...textPresets.body,
       color: theme.colors.text.primary,
-      marginBottom: theme.spacing.s,
+      fontWeight: theme.typography.fontWeight.semibold,
+      marginBottom: spacing['3'], // 12px
     },
     groupContent: {
-      gap: theme.spacing.xs,
+      gap: spacing['2'], // 8px
     },
   });
 

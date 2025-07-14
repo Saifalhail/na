@@ -1,25 +1,39 @@
 import React from 'react';
 import { View, ViewProps, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { useTheme } from '@theme/ThemeContext';
-import { Theme } from '@theme/index';
+import { useTheme } from '@/hooks/useTheme';
+import { Theme } from '@/theme';
 import { getModernShadow } from '@/theme/shadows';
-import { borderRadius, rs } from '@/utils/responsive';
+import { spacing, layout } from '@/theme/spacing';
+
+export type CardVariant = 'elevated' | 'outlined' | 'filled' | 'glass' | 'gradient';
+export type CardPadding = 'none' | 'small' | 'medium' | 'large' | 'xl';
+export type CardRadius = 'none' | 'small' | 'medium' | 'large' | 'xl' | 'full';
 
 interface CardProps extends ViewProps {
-  variant?: 'elevated' | 'outlined' | 'filled';
-  padding?: 'none' | 'small' | 'medium' | 'large';
+  variant?: CardVariant;
+  padding?: CardPadding;
+  radius?: CardRadius;
   onPress?: () => void;
   disabled?: boolean;
   children: React.ReactNode;
+  pressable?: boolean;
+  elevated?: boolean;
+  borderColor?: string;
+  backgroundColor?: string;
 }
 
 export const Card: React.FC<CardProps> = ({
   variant = 'elevated',
   padding = 'medium',
+  radius = 'medium',
   onPress,
   disabled = false,
   children,
   style,
+  pressable = false,
+  elevated = true,
+  borderColor,
+  backgroundColor,
   ...props
 }) => {
   const { theme } = useTheme();
@@ -29,17 +43,23 @@ export const Card: React.FC<CardProps> = ({
     styles.base,
     styles[variant],
     styles[`${padding}Padding`],
-    ...(disabled ? [styles.disabled] : []),
-    ...(style ? [style as ViewStyle] : []),
-  ];
+    styles[`${radius}Radius`],
+    elevated && variant === 'elevated' && styles.elevation,
+    disabled && styles.disabled,
+    borderColor && { borderColor },
+    backgroundColor && { backgroundColor },
+    style as ViewStyle,
+  ].filter(Boolean);
 
-  if (onPress) {
+  const isInteractive = onPress || pressable;
+
+  if (isInteractive) {
     return (
       <TouchableOpacity
         style={cardStyle}
         onPress={onPress}
         disabled={disabled}
-        activeOpacity={0.7}
+        activeOpacity={0.95}
         {...props}
       >
         {children}
@@ -57,39 +77,80 @@ export const Card: React.FC<CardProps> = ({
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     base: {
-      borderRadius: theme.borderRadius.md,
       backgroundColor: theme.colors.surface,
+      overflow: 'hidden',
     },
 
     // Variants
     elevated: {
-      ...getModernShadow('card'),
+      backgroundColor: theme.isDark ? theme.colors.neutral[100] : theme.colors.white,
+      borderWidth: 0,
     },
     outlined: {
-      borderWidth: 1,
-      borderColor: theme.colors.neutral[300],
+      backgroundColor: theme.colors.surface,
+      borderWidth: layout.borderWidth.thin,
+      borderColor: theme.colors.border,
     },
     filled: {
-      backgroundColor: theme.colors.neutral[100],
+      backgroundColor: theme.isDark ? theme.colors.neutral[200] : theme.colors.neutral[50],
+      borderWidth: 0,
+    },
+    glass: {
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderWidth: layout.borderWidth.thin,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      backdropFilter: 'blur(10px)',
+    },
+    gradient: {
+      backgroundColor: 'transparent',
+      borderWidth: 0,
     },
 
-    // Padding
+    // Padding variants
     nonePadding: {
       padding: 0,
     },
     smallPadding: {
-      padding: theme.spacing.s,
+      padding: spacing['3'], // 12px
     },
     mediumPadding: {
-      padding: theme.spacing.m,
+      padding: layout.cardPadding, // 16px
     },
     largePadding: {
-      padding: theme.spacing.l,
+      padding: layout.cardPaddingLarge, // 24px
+    },
+    xlPadding: {
+      padding: spacing['8'], // 32px
+    },
+
+    // Border radius variants
+    noneRadius: {
+      borderRadius: 0,
+    },
+    smallRadius: {
+      borderRadius: spacing['1'], // 4px
+    },
+    mediumRadius: {
+      borderRadius: layout.cardBorderRadius, // 8px
+    },
+    largeRadius: {
+      borderRadius: layout.cardBorderRadiusLarge, // 12px
+    },
+    xlRadius: {
+      borderRadius: spacing['4'], // 16px
+    },
+    fullRadius: {
+      borderRadius: spacing['12'], // 48px
+    },
+
+    // Elevation
+    elevation: {
+      ...getModernShadow('card'),
     },
 
     // States
     disabled: {
-      opacity: 0.5,
+      opacity: 0.6,
     },
   });
 

@@ -3,15 +3,19 @@
 ## 🚀 Quick Start Options
 
 ### Option 1: Full Stack (WSL/Linux/Mac)
+
 ```bash
 ./start.sh
 ```
+
 This starts both backend and frontend together.
 
 ### Option 2: Hybrid Mode (Recommended for Windows)
+
 Best for Android development and Windows users.
 
 **Step 1: Start Backend in WSL**
+
 ```bash
 # In WSL terminal
 cd /mnt/c/Users/[username]/Desktop/na
@@ -19,6 +23,7 @@ cd /mnt/c/Users/[username]/Desktop/na
 ```
 
 **Step 2: Start Frontend in PowerShell**
+
 ```powershell
 # In PowerShell (as Administrator first time)
 cd C:\Users\[username]\Desktop\na
@@ -57,6 +62,7 @@ na/
 ## ⚡ Common Commands
 
 ### Using Main Script
+
 ```bash
 # Start everything
 ./start.sh
@@ -64,7 +70,7 @@ na/
 # Backend only
 ./start.sh backend
 
-# Frontend only  
+# Frontend only
 ./start.sh frontend
 
 # Clean restart
@@ -72,6 +78,7 @@ na/
 ```
 
 ### Hybrid Mode Commands
+
 ```bash
 # Backend (WSL)
 ./scripts/backend-wsl.sh
@@ -83,13 +90,16 @@ na/
 ## 🛠️ First Time Setup
 
 ### Prerequisites
+
 - Python 3.8+ (WSL/Linux)
 - Node.js 18+ (Windows)
 - Git
 - Android Studio (optional, for emulator)
 
 ### Environment Setup
+
 The scripts automatically:
+
 - Create virtual environment
 - Install dependencies
 - Setup database
@@ -99,6 +109,7 @@ The scripts automatically:
 ## 🆘 Troubleshooting
 
 ### Permission Errors (Windows)
+
 ```powershell
 # Remove WSL artifacts
 Remove-Item -Recurse -Force frontend\node_modules
@@ -107,11 +118,13 @@ Remove-Item -Recurse -Force frontend\node_modules
 ```
 
 ### Backend Connection Failed
+
 1. Check WSL is running: `wsl --status`
 2. Verify backend is running on port 8000
 3. Frontend script auto-detects WSL IP
 
 ### Port Already in Use
+
 ```bash
 # WSL
 pkill -f "manage.py runserver"
@@ -122,6 +135,7 @@ taskkill /PID [PID] /F
 ```
 
 ### Metro Bundler Issues
+
 ```powershell
 # Clear cache
 npx expo start -c

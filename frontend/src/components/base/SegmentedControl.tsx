@@ -80,12 +80,14 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
     selectedTextColor
   );
 
-  const selectedIndex = options.findIndex(option => option.value === selectedValue);
+  const selectedIndex = options.findIndex((option) => option.value === selectedValue);
 
   useEffect(() => {
     if (segmentWidths.length === options.length && selectedIndex >= 0) {
-      const targetPosition = segmentWidths.slice(0, selectedIndex).reduce((sum, width) => sum + width, 0);
-      
+      const targetPosition = segmentWidths
+        .slice(0, selectedIndex)
+        .reduce((sum, width) => sum + width, 0);
+
       Animated.spring(animatedValue, {
         toValue: targetPosition,
         friction: 8,
@@ -101,10 +103,12 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
 
   const onSegmentLayout = (index: number) => (event: LayoutChangeEvent) => {
     segmentWidths[index] = event.nativeEvent.layout.width;
-    
+
     // If this is the last segment to measure and we have a selection, animate
     if (segmentWidths.filter(Boolean).length === options.length && selectedIndex >= 0) {
-      const targetPosition = segmentWidths.slice(0, selectedIndex).reduce((sum, width) => sum + width, 0);
+      const targetPosition = segmentWidths
+        .slice(0, selectedIndex)
+        .reduce((sum, width) => sum + width, 0);
       animatedValue.setValue(targetPosition);
     }
   };
@@ -147,9 +151,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
       >
         <View style={styles.segmentContent}>
           {option.icon && (
-            <Text style={[styles.icon, isSelected && styles.selectedIcon]}>
-              {option.icon}
-            </Text>
+            <Text style={[styles.icon, isSelected && styles.selectedIcon]}>{option.icon}</Text>
           )}
           <Text
             style={[
@@ -186,7 +188,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
           },
         ]}
       />
-      
+
       {/* Segments */}
       {options.map((option, index) => renderSegment(option, index))}
     </View>

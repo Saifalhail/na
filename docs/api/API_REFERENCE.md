@@ -23,11 +23,13 @@ Complete reference for all API endpoints with request/response schemas.
 ## Authentication
 
 ### Register User
+
 **POST** `/auth/registration/`
 
 Register a new user account.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -39,6 +41,7 @@ Register a new user account.
 ```
 
 **Response (201):**
+
 ```json
 {
   "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
@@ -54,11 +57,13 @@ Register a new user account.
 ```
 
 ### Login
+
 **POST** `/auth/login/`
 
 Authenticate user and get access tokens.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -67,6 +72,7 @@ Authenticate user and get access tokens.
 ```
 
 **Response (200):**
+
 ```json
 {
   "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
@@ -82,11 +88,13 @@ Authenticate user and get access tokens.
 ```
 
 ### Refresh Token
+
 **POST** `/auth/token/refresh/`
 
 Get new access token using refresh token.
 
 **Request:**
+
 ```json
 {
   "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
@@ -94,6 +102,7 @@ Get new access token using refresh token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
@@ -101,6 +110,7 @@ Get new access token using refresh token.
 ```
 
 ### Logout
+
 **POST** `/auth/logout/`
 
 Logout user and blacklist refresh token.
@@ -108,6 +118,7 @@ Logout user and blacklist refresh token.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
@@ -115,6 +126,7 @@ Logout user and blacklist refresh token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "detail": "Successfully logged out."
@@ -122,11 +134,13 @@ Logout user and blacklist refresh token.
 ```
 
 ### Password Reset
+
 **POST** `/auth/password/reset/`
 
 Request password reset email.
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com"
@@ -134,6 +148,7 @@ Request password reset email.
 ```
 
 **Response (200):**
+
 ```json
 {
   "detail": "Password reset e-mail has been sent."
@@ -145,6 +160,7 @@ Request password reset email.
 ## User Management
 
 ### List Users (Admin Only)
+
 **GET** `/users/`
 
 Get paginated list of all users.
@@ -152,12 +168,14 @@ Get paginated list of all users.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Query Parameters:**
+
 - `page` (integer): Page number
 - `page_size` (integer): Items per page (max 100)
 - `search` (string): Search in email, name
 - `is_premium` (boolean): Filter by premium status
 
 **Response (200):**
+
 ```json
 {
   "count": 150,
@@ -182,6 +200,7 @@ Get paginated list of all users.
 ```
 
 ### Search Users (Admin Only)
+
 **GET** `/users/search/`
 
 Search users by email or name.
@@ -189,10 +208,12 @@ Search users by email or name.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Query Parameters:**
+
 - `q` (string, required): Search query
 - `limit` (integer): Max results (default 20)
 
 **Response (200):**
+
 ```json
 {
   "results": [
@@ -209,6 +230,7 @@ Search users by email or name.
 ```
 
 ### Get User Details (Admin Only)
+
 **GET** `/users/{id}/`
 
 Get detailed information about a specific user.
@@ -216,6 +238,7 @@ Get detailed information about a specific user.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "id": 1,
@@ -246,6 +269,7 @@ Get detailed information about a specific user.
 ```
 
 ### Update User (Admin Only)
+
 **PUT/PATCH** `/users/{id}/`
 
 Update user information.
@@ -253,6 +277,7 @@ Update user information.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "first_name": "John",
@@ -264,6 +289,7 @@ Update user information.
 **Response (200):** Returns updated user object.
 
 ### Delete User (Admin Only)
+
 **DELETE** `/users/{id}/`
 
 Soft delete a user account.
@@ -273,6 +299,7 @@ Soft delete a user account.
 **Response (204):** No content.
 
 ### Get User Profile
+
 **GET** `/users/{id}/profile/`
 
 Get user's profile information. Users can only access their own profile.
@@ -280,6 +307,7 @@ Get user's profile information. Users can only access their own profile.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "user": {
@@ -308,6 +336,7 @@ Get user's profile information. Users can only access their own profile.
 ```
 
 ### Get User Meals
+
 **GET** `/users/{id}/meals/`
 
 Get user's meal history with pagination.
@@ -315,12 +344,14 @@ Get user's meal history with pagination.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Query Parameters:**
+
 - `page` (integer): Page number
 - `page_size` (integer): Items per page
 - `date_from` (date): Filter from date (YYYY-MM-DD)
 - `date_to` (date): Filter to date (YYYY-MM-DD)
 
 **Response (200):**
+
 ```json
 {
   "count": 25,
@@ -350,6 +381,7 @@ Get user's meal history with pagination.
 ```
 
 ### Get User Statistics
+
 **GET** `/users/{id}/statistics/`
 
 Get user's nutrition and activity statistics.
@@ -357,9 +389,11 @@ Get user's nutrition and activity statistics.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Query Parameters:**
+
 - `period` (string): `week`, `month`, `year` (default: `month`)
 
 **Response (200):**
+
 ```json
 {
   "period": "month",
@@ -389,21 +423,25 @@ Get user's nutrition and activity statistics.
 ## Meals & Analysis
 
 ### Analyze Food Image
+
 **POST** `/ai/analyze/`
 
 Analyze a food image and get nutritional information.
 
-**Headers:** 
+**Headers:**
+
 - `Authorization: Bearer <access_token>`
 - `Content-Type: multipart/form-data`
 
 **Request (Form Data):**
+
 - `image` (file): Food image (JPEG, PNG, WebP, HEIF)
 - `meal_type` (string, optional): `breakfast`, `lunch`, `dinner`, `snack`
 - `cuisine_type` (string, optional): e.g., `italian`, `chinese`, `mexican`
 - `context` (JSON string, optional): Additional context data
 
 **Response (200):**
+
 ```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -456,6 +494,7 @@ Analyze a food image and get nutritional information.
 ```
 
 ### Get Analysis Progress
+
 **GET** `/ai/analyze/{session_id}/`
 
 Get progress of an ongoing analysis.
@@ -463,6 +502,7 @@ Get progress of an ongoing analysis.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -470,16 +510,17 @@ Get progress of an ongoing analysis.
   "current_stage": "nutritional_analysis",
   "status": "processing",
   "stages": {
-    "image_preprocessing": {"status": "completed", "progress": 100},
-    "food_detection": {"status": "completed", "progress": 100},
-    "portion_estimation": {"status": "completed", "progress": 100},
-    "nutritional_analysis": {"status": "processing", "progress": 75},
-    "result_compilation": {"status": "pending", "progress": 0}
+    "image_preprocessing": { "status": "completed", "progress": 100 },
+    "food_detection": { "status": "completed", "progress": 100 },
+    "portion_estimation": { "status": "completed", "progress": 100 },
+    "nutritional_analysis": { "status": "processing", "progress": 75 },
+    "result_compilation": { "status": "pending", "progress": 0 }
   }
 }
 ```
 
 ### Create Meal from Analysis
+
 **POST** `/meals/`
 
 Create a new meal from analysis results.
@@ -487,6 +528,7 @@ Create a new meal from analysis results.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "name": "Lunch - Chicken & Rice",
@@ -509,6 +551,7 @@ Create a new meal from analysis results.
 ```
 
 **Response (201):**
+
 ```json
 {
   "id": 123,
@@ -537,6 +580,7 @@ Create a new meal from analysis results.
 ```
 
 ### List Meals
+
 **GET** `/meals/`
 
 Get user's meals with filtering and pagination.
@@ -544,6 +588,7 @@ Get user's meals with filtering and pagination.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Query Parameters:**
+
 - `page` (integer): Page number
 - `page_size` (integer): Items per page
 - `meal_type` (string): Filter by meal type
@@ -553,6 +598,7 @@ Get user's meals with filtering and pagination.
 - `search` (string): Search in meal names
 
 **Response (200):**
+
 ```json
 {
   "count": 45,
@@ -573,6 +619,7 @@ Get user's meals with filtering and pagination.
 ```
 
 ### Get Meal Details
+
 **GET** `/meals/{id}/`
 
 Get detailed information about a specific meal.
@@ -580,6 +627,7 @@ Get detailed information about a specific meal.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "id": 123,
@@ -616,6 +664,7 @@ Get detailed information about a specific meal.
 ```
 
 ### Update Meal
+
 **PUT/PATCH** `/meals/{id}/`
 
 Update meal information.
@@ -623,6 +672,7 @@ Update meal information.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "name": "Updated Breakfast Bowl",
@@ -634,6 +684,7 @@ Update meal information.
 **Response (200):** Returns updated meal object.
 
 ### Delete Meal
+
 **DELETE** `/meals/{id}/`
 
 Delete a meal.
@@ -643,6 +694,7 @@ Delete a meal.
 **Response (204):** No content.
 
 ### Add/Remove Favorite
+
 **POST** `/meals/{id}/favorite/`
 **DELETE** `/meals/{id}/favorite/`
 
@@ -651,6 +703,7 @@ Add or remove meal from favorites.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "is_favorite": true,
@@ -663,6 +716,7 @@ Add or remove meal from favorites.
 ## Notifications
 
 ### List Notifications
+
 **GET** `/notifications/`
 
 Get user's notifications with pagination.
@@ -670,6 +724,7 @@ Get user's notifications with pagination.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Query Parameters:**
+
 - `page` (integer): Page number
 - `page_size` (integer): Items per page
 - `status` (string): `pending`, `sent`, `read`
@@ -677,6 +732,7 @@ Get user's notifications with pagination.
 - `priority` (string): `low`, `medium`, `high`
 
 **Response (200):**
+
 ```json
 {
   "count": 25,
@@ -703,6 +759,7 @@ Get user's notifications with pagination.
 ```
 
 ### Get Notification Details
+
 **GET** `/notifications/{id}/`
 
 Get detailed information about a specific notification.
@@ -710,6 +767,7 @@ Get detailed information about a specific notification.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -732,6 +790,7 @@ Get detailed information about a specific notification.
 ```
 
 ### Mark Notification as Read
+
 **POST** `/notifications/{id}/read/`
 
 Mark a notification as read.
@@ -739,6 +798,7 @@ Mark a notification as read.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -748,6 +808,7 @@ Mark a notification as read.
 ```
 
 ### Mark All Notifications as Read
+
 **POST** `/notifications/mark-all-read/`
 
 Mark all user's notifications as read.
@@ -755,6 +816,7 @@ Mark all user's notifications as read.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "updated_count": 15,
@@ -763,6 +825,7 @@ Mark all user's notifications as read.
 ```
 
 ### Get Notification Statistics
+
 **GET** `/notifications/stats/`
 
 Get user's notification statistics.
@@ -770,6 +833,7 @@ Get user's notification statistics.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "total_count": 125,
@@ -790,6 +854,7 @@ Get user's notification statistics.
 ```
 
 ### Get Notification Preferences
+
 **GET** `/notifications/preferences/`
 
 Get user's notification preferences.
@@ -797,6 +862,7 @@ Get user's notification preferences.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "receive_email_notifications": true,
@@ -817,6 +883,7 @@ Get user's notification preferences.
 ```
 
 ### Update Notification Preferences
+
 **PUT/PATCH** `/notifications/preferences/`
 
 Update user's notification preferences.
@@ -824,6 +891,7 @@ Update user's notification preferences.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "receive_email_notifications": true,
@@ -838,6 +906,7 @@ Update user's notification preferences.
 ```
 
 **Response (200):**
+
 ```json
 {
   "message": "Notification preferences updated successfully",
@@ -852,4 +921,4 @@ Update user's notification preferences.
 
 ---
 
-*[Continued in next part due to length limits...]*
+_[Continued in next part due to length limits...]_

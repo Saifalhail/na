@@ -5,15 +5,17 @@ import { SafeAreaContainer, Container, Spacer } from '@/components/layout';
 import { TextInput } from '@/components/base/TextInput';
 import { Button } from '@/components/base/Button';
 import { Card } from '@/components/base/Card';
-import { LoadingOverlay } from '@/components/base/Loading';
+import { LoadingOverlay, ListSkeleton } from '@/components/base/Loading';
 import { ErrorDisplay } from '@/components/base/ErrorDisplay';
+import { EmptyState } from '@/components/base/EmptyState';
 import { OptimizedList } from '@/components/base/OptimizedList';
 import { OptimizedImage } from '@/components/base/OptimizedImage';
+import { AppHeader } from '@/components/navigation/AppHeader';
 import { useTheme } from '@/hooks/useTheme';
 import { useMealStore } from '@/store/mealStore';
 import { useDebounce, usePerformanceMonitor } from '@/utils/performance';
 import type { Meal } from '@/types/models';
-import { rs, rTouchTarget, scale, moderateScale, layout } from '@/utils/responsive';
+import { rTouchTarget, scale, moderateScale, layout, spacing } from '@/utils/responsive';
 
 interface MealCardProps {
   meal: Meal;
@@ -223,19 +225,20 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <Text style={[styles.emptyTitle, { color: theme.colors.text.primary }]}>No meals found</Text>
-      <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
-        {filters.search
+    <EmptyState
+      image={require('../../assets/logo_cropped.png')}
+      title={filters.search ? "No meals found" : "Your meal history is empty"}
+      subtitle={
+        filters.search
           ? 'Try adjusting your search or filters'
-          : 'Start logging your meals to see them here'}
-      </Text>
-      {filters.search && (
-        <Button onPress={handleClearSearch} variant="outline" style={styles.clearButton}>
-          Clear Filters
-        </Button>
-      )}
-    </View>
+          : 'Start tracking your meals to see nutritional insights and progress over time'
+      }
+      actionLabel={filters.search ? "Clear Filters" : "Log Your First Meal"}
+      onAction={filters.search ? handleClearSearch : () => {
+        // Navigate to camera screen
+        // navigation.navigate('Camera');
+      }}
+    />
   );
 
   if (error) {
@@ -253,9 +256,16 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
   }
 
   return (
-    <SafeAreaContainer style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text.primary }]}>Meal History</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <AppHeader 
+        title="Meal History"
+        subtitle="Track your nutrition journey"
+        showLogo={true}
+        showUserInfo={true}
+      />
+      
+      <SafeAreaContainer style={styles.contentContainer} edges={['bottom']}>
+        <View style={styles.header}>
 
         <Spacer size="md" />
 
@@ -306,24 +316,38 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
         initialNumToRender={7}
         onEndReached={() => {
           // TODO: Implement pagination
-          console.log('Load more meals');
+          if (__DEV__) {
+            console.log('Load more meals');
+          }
         }}
         onEndReachedThreshold={0.5}
       />
 
-      {isLoading && <LoadingOverlay visible={true} message="Loading meals..." />}
-    </SafeAreaContainer>
+      {isLoading && meals.length === 0 && (
+        <View style={styles.skeletonContainer}>
+          <ListSkeleton count={5} />
+        </View>
+      )}
+      </SafeAreaContainer>
+    </View>
   );
 });
 
 const styles = StyleSheet.create({
+  skeletonContainer: {
+    paddingHorizontal: layout.containerPadding,
+    paddingTop: spacing.medium,
+  },
   container: {
+    flex: 1,
+  },
+  contentContainer: {
     flex: 1,
   },
   header: {
     paddingHorizontal: layout.containerPadding,
-    paddingTop: rs.medium,
-    paddingBottom: rs.medium,
+    paddingTop: spacing.medium,
+    paddingBottom: spacing.medium,
   },
   title: {
     fontSize: moderateScale(28),
@@ -336,19 +360,19 @@ const styles = StyleSheet.create({
   },
   searchInputWrapper: {
     flex: 1,
-    marginRight: rs.small,
+    marginRight: spacing.small,
   },
   searchInput: {
     width: '100%',
   },
   searchButton: {
-    paddingHorizontal: rs.large,
+    paddingHorizontal: spacing.large,
   },
   activeFilters: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: rs.medium,
+    marginTop: spacing.medium,
   },
   activeFiltersText: {
     fontSize: moderateScale(14),
@@ -358,7 +382,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: layout.containerPadding,
-    paddingBottom: rs.xlarge,
+    paddingBottom: spacing.xlarge,
   },
   emptyListContent: {
     flexGrow: 1,
@@ -384,8 +408,8 @@ const styles = StyleSheet.create({
   },
   // Meal Card Styles
   mealCard: {
-    marginVertical: rs.small,
-    padding: rs.medium,
+    marginVertical: spacing.small,
+    padding: spacing.medium,
   },
   mealHeader: {
     flexDirection: 'row',
@@ -399,12 +423,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   favoriteButton: {
-    padding: rs.small,
+    padding: spacing.small,
     minWidth: rTouchTarget.minimum,
     minHeight: rTouchTarget.minimum,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: rs.small,
+    marginLeft: spacing.small,
   },
   favoriteIcon: {
     fontSize: moderateScale(24),
@@ -439,11 +463,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   actionButton: {
-    paddingHorizontal: rs.medium,
-    paddingVertical: rs.small,
-    borderRadius: rs.small,
+    paddingHorizontal: spacing.medium,
+    paddingVertical: spacing.small,
+    borderRadius: spacing.small,
     flex: 1,
-    marginHorizontal: rs.tiny,
+    marginHorizontal: spacing.tiny,
     minHeight: rTouchTarget.minimum,
     justifyContent: 'center',
   },

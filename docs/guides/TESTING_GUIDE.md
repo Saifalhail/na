@@ -13,6 +13,7 @@ pip install -r requirements.txt
 ```
 
 Key testing dependencies include:
+
 - `pytest==8.3.4` - Core testing framework
 - `pytest-django==4.10.0` - Django integration for pytest
 - `pytest-cov==6.0.0` - Coverage reporting
@@ -23,6 +24,7 @@ Key testing dependencies include:
 ### 2. Environment Setup
 
 The test runner automatically sets up the Django environment for testing:
+
 - Sets `DJANGO_SETTINGS_MODULE` to `core.settings.testing`
 - Sets `DJANGO_ENVIRONMENT` to `testing`
 - Configures the test database (SQLite in-memory by default)
@@ -78,6 +80,7 @@ python run_tests.py --coverage --xml
 ```
 
 Coverage reports will be generated in:
+
 - Terminal output (with missing lines)
 - `htmlcov/` directory (HTML report)
 - `coverage.xml` (XML report)
@@ -163,7 +166,7 @@ python_files = test_*.py
 python_classes = Test*
 python_functions = test_*
 testpaths = api/tests
-addopts = 
+addopts =
     --reuse-db
     --nomigrations
     --strict-markers
@@ -217,6 +220,7 @@ def test_meal_with_user():
 ### Issue: Import Errors
 
 If you encounter import errors, ensure:
+
 1. You're using absolute imports (`from api.models import ...`)
 2. The `api/tests/__init__.py` file is empty
 3. Your PYTHONPATH includes the backend directory
@@ -224,6 +228,7 @@ If you encounter import errors, ensure:
 ### Issue: Database Errors
 
 If you encounter database errors:
+
 1. Use `--create-db` to force recreate the test database
 2. Check that migrations are up to date
 3. Ensure PostgreSQL is running (if using PostgreSQL for tests)
@@ -231,6 +236,7 @@ If you encounter database errors:
 ### Issue: Slow Tests
 
 To speed up tests:
+
 1. Use `--parallel` for parallel execution
 2. Mark slow tests with `@pytest.mark.slow` and skip them with `-m "not slow"`
 3. Use `--reuse-db` (default) to avoid recreating the database

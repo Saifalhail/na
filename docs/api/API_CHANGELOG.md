@@ -13,10 +13,12 @@ The API follows [Semantic Versioning](https://semver.org/) principles:
 ## Current Version: v1.0.0
 
 ### Base URL
+
 - **Development:** `http://127.0.0.1:8000/api/v1/`
 - **Production:** `https://api.nutritionai.com/v1/`
 
 ### API Documentation
+
 - **Swagger UI:** `/api/docs/`
 - **ReDoc:** `/api/redoc/`
 - **OpenAPI Schema:** `/api/schema/`
@@ -28,6 +30,7 @@ The API follows [Semantic Versioning](https://semver.org/) principles:
 ### v1.0.0 (2025-01-10) - Initial Release
 
 #### Added
+
 - **Image Analysis Endpoint**
   - `POST /api/v1/analyze-image/`
   - Accepts food images and returns nutritional analysis using Google Gemini Pro Vision
@@ -55,6 +58,7 @@ The API follows [Semantic Versioning](https://semver.org/) principles:
   - Useful for recipe-based calculations
 
 #### Features
+
 - **AI-Powered Analysis:** Google Gemini Pro Vision integration for accurate food recognition
 - **Comprehensive Nutrition Data:** Calories, protein, carbohydrates, fat, fiber, sugar, and sodium
 - **Per-Ingredient Breakdown:** Individual nutritional analysis for each detected ingredient
@@ -64,17 +68,20 @@ The API follows [Semantic Versioning](https://semver.org/) principles:
 - **API Documentation:** Auto-generated OpenAPI 3.0 documentation
 
 #### Security
+
 - **CORS Configuration:** Secure cross-origin resource sharing
 - **Input Validation:** Comprehensive request validation and sanitization
 - **File Upload Security:** Size limits and format restrictions for image uploads
 - **Environment-based Configuration:** Separate settings for development, testing, and production
 
 #### Performance
+
 - **Retry Logic:** Automatic retry with exponential backoff for AI service calls
 - **Response Validation:** Structured validation of AI service responses
 - **Optimized Database Schema:** Efficient models with proper relationships and indexes
 
 #### Infrastructure
+
 - **Multi-Environment Support:** Development, testing, and production configurations
 - **Structured Logging:** Comprehensive logging with request tracking
 - **Health Checks:** System health monitoring endpoints
@@ -85,6 +92,7 @@ The API follows [Semantic Versioning](https://semver.org/) principles:
 ## Upcoming Releases
 
 ### v1.1.0 (Planned)
+
 - **Authentication System**
   - User registration and login
   - JWT token-based authentication
@@ -97,6 +105,7 @@ The API follows [Semantic Versioning](https://semver.org/) principles:
   - Meal search and filtering
 
 ### v1.2.0 (Planned)
+
 - **Enhanced AI Features**
   - Context-aware analysis (meal type, cuisine)
   - Confidence scores for ingredient detection
@@ -108,6 +117,7 @@ The API follows [Semantic Versioning](https://semver.org/) principles:
   - Daily summary generation
 
 ### v2.0.0 (Planned)
+
 - **Breaking Changes**
   - Updated response format for better consistency
   - Enhanced authentication requirements
@@ -123,9 +133,11 @@ The API follows [Semantic Versioning](https://semver.org/) principles:
 ## Migration Guides
 
 ### From Development to v1.0.0
+
 This is the initial release, so no migration is required.
 
 ### Future Migrations
+
 Migration guides will be provided for each major version change that includes breaking changes.
 
 ---
@@ -133,9 +145,11 @@ Migration guides will be provided for each major version change that includes br
 ## Deprecation Notices
 
 ### Current Deprecations
+
 None at this time.
 
 ### Future Deprecations
+
 Deprecation notices will be announced at least 6 months before removal of any features.
 
 ---
@@ -143,6 +157,7 @@ Deprecation notices will be announced at least 6 months before removal of any fe
 ## Error Code Changes
 
 ### v1.0.0
+
 - Introduced standardized error code system
 - All errors now include `error_code`, `timestamp`, and `request_id`
 - See [API Error Codes](./API_ERROR_CODES.md) for complete reference
@@ -152,6 +167,7 @@ Deprecation notices will be announced at least 6 months before removal of any fe
 ## Rate Limiting
 
 ### v1.0.0
+
 - **Anonymous Users:** 100 requests per hour
 - **Authenticated Users:** 1000 requests per hour (v1.1.0+)
 - **Image Analysis:** 50 requests per hour per user
@@ -181,4 +197,4 @@ For questions about API changes or migration assistance:
 
 ---
 
-*Last Updated: January 10, 2025*
+_Last Updated: January 10, 2025_

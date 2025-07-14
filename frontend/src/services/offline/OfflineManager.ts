@@ -283,9 +283,7 @@ export class OfflineManager {
     // Clear from storage
     const keys = await this.storage.getAllKeys();
     await Promise.all(
-      keys
-        .filter((key) => key.startsWith(this.CACHE_PREFIX))
-        .map((key) => this.storage.delete(key))
+      keys.filter((key) => key.startsWith(this.CACHE_PREFIX)).map((key) => this.storage.delete(key))
     );
   }
 

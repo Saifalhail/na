@@ -1,12 +1,12 @@
 import React, { useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Animated, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
   ViewStyle,
   TouchableOpacity,
-  Dimensions
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/hooks/useTheme';
@@ -48,7 +48,7 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
   const floatAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0.8)).current;
-  
+
   const getBubbleSize = () => {
     switch (size) {
       case 'small':
@@ -61,18 +61,14 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
         return moderateScale(110);
     }
   };
-  
+
   const getColors = (): string[] => {
     if (gradientColors) return gradientColors;
-    
+
     const baseColor = color || theme.colors.primary[500];
-    return [
-      baseColor + 'FF',
-      baseColor + 'CC',
-      baseColor + '99',
-    ];
+    return [baseColor + 'FF', baseColor + 'CC', baseColor + '99'];
   };
-  
+
   useEffect(() => {
     if (animated) {
       // Entry animation
@@ -82,7 +78,7 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
         friction: 5,
         useNativeDriver: true,
       }).start();
-      
+
       // Glow animation
       Animated.loop(
         Animated.sequence([
@@ -102,7 +98,7 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
       scaleAnim.setValue(1);
     }
   }, [animated, scaleAnim, glowAnim]);
-  
+
   useEffect(() => {
     if (floatingAnimation && animated) {
       // Floating animation
@@ -120,7 +116,7 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
           }),
         ])
       );
-      
+
       // Rotation animation
       const rotateAnimation = Animated.loop(
         Animated.timing(rotateAnim, {
@@ -129,21 +125,23 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
           useNativeDriver: true,
         })
       );
-      
+
       floatAnimation.start();
       rotateAnimation.start();
-      
+
       return () => {
         floatAnimation.stop();
         rotateAnimation.stop();
       };
     }
+    // No cleanup needed when animation is disabled
+    return undefined;
   }, [floatingAnimation, animated, floatAnim, rotateAnim]);
-  
+
   const handlePress = async () => {
     if (onPress) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
+
       // Bounce animation
       Animated.sequence([
         Animated.timing(scaleAnim, {
@@ -158,14 +156,14 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
-      
+
       onPress();
     }
   };
-  
+
   const bubbleSize = getBubbleSize();
   const colors = getColors();
-  
+
   const animatedStyle = {
     transform: [
       { scale: scaleAnim },
@@ -183,15 +181,10 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
       },
     ],
   };
-  
+
   const content = (
     <Animated.View
-      style={[
-        styles.container,
-        { width: bubbleSize, height: bubbleSize },
-        animatedStyle,
-        style,
-      ]}
+      style={[styles.container, { width: bubbleSize, height: bubbleSize }, animatedStyle, style]}
     >
       {/* Outer glow */}
       <Animated.View
@@ -208,22 +201,19 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
           start={{ x: 0.5, y: 0.5 }}
           end={{ x: 0, y: 0 }}
           locations={[0, 0.5, 1]}
-          style={[
-            styles.glow,
-            { width: bubbleSize * 1.3, height: bubbleSize * 1.3 },
-          ]}
+          style={[styles.glow, { width: bubbleSize * 1.3, height: bubbleSize * 1.3 }]}
         />
       </Animated.View>
-      
+
       {/* Main bubble */}
       <View style={[styles.bubble, { width: bubbleSize, height: bubbleSize }]}>
         <LinearGradient
-          colors={colors}
+          colors={colors as unknown as readonly [string, string, ...string[]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
-        
+
         {/* Inner light reflection */}
         <LinearGradient
           colors={['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.1)', 'transparent']}
@@ -231,10 +221,15 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
           end={{ x: 0.7, y: 0.7 }}
           style={styles.reflection}
         />
-        
+
         {/* Content */}
         <View style={styles.content}>
-          <Text style={[styles.value, { fontSize: fontScale(size === 'small' ? 20 : size === 'large' ? 32 : 26) }]}>
+          <Text
+            style={[
+              styles.value,
+              { fontSize: fontScale(size === 'small' ? 20 : size === 'large' ? 32 : 26) },
+            ]}
+          >
             {value}
           </Text>
           <Text style={[styles.unit, { fontSize: fontScale(size === 'small' ? 12 : 14) }]}>
@@ -249,13 +244,13 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
             </Text>
           )}
         </View>
-        
+
         {/* Bottom shadow for 3D effect */}
         <View style={[styles.bottomShadow, getModernShadow('high')]} />
       </View>
     </Animated.View>
   );
-  
+
   if (onPress) {
     return (
       <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
@@ -263,7 +258,7 @@ export const NutritionBubble: React.FC<NutritionBubbleProps> = ({
       </TouchableOpacity>
     );
   }
-  
+
   return content;
 };
 

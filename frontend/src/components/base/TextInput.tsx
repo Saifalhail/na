@@ -1,5 +1,4 @@
-import React, { useState, forwardRef } from 'react';
-import { borderRadius, rs } from '@/utils/responsive';
+import React, { useState, forwardRef, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,9 +8,16 @@ import {
   TouchableOpacity,
   ViewStyle,
   TextStyle,
+  Animated,
 } from 'react-native';
-import { useTheme } from '@theme/ThemeContext';
-import { Theme } from '@theme/index';
+import { useTheme } from '@/hooks/useTheme';
+import { Theme } from '@/theme';
+import { spacing, layout } from '@/theme/spacing';
+import { textPresets } from '@/theme/typography';
+import { getModernShadow } from '@/theme/shadows';
+
+export type TextInputVariant = 'outlined' | 'filled' | 'underlined' | 'floating';
+export type TextInputSize = 'small' | 'medium' | 'large';
 
 interface TextInputProps extends RNTextInputProps {
   label?: string;
@@ -23,7 +29,12 @@ interface TextInputProps extends RNTextInputProps {
   onRightIconPress?: () => void;
   containerStyle?: ViewStyle;
   inputStyle?: TextStyle;
-  variant?: 'outlined' | 'filled';
+  variant?: TextInputVariant;
+  size?: TextInputSize;
+  floatingLabel?: boolean;
+  animated?: boolean;
+  success?: boolean;
+  disabled?: boolean;
 }
 
 export const TextInput = forwardRef<RNTextInput, TextInputProps>(
@@ -39,29 +50,91 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
       containerStyle,
       inputStyle,
       variant = 'outlined',
-      editable = true,
+      size = 'medium',
+      floatingLabel = false,
+      animated = true,
+      success = false,
+      disabled = false,
+      value,
       ...props
     },
     ref
   ) => {
     const { theme } = useTheme();
     const [isFocused, setIsFocused] = useState(false);
+    const [hasValue, setHasValue] = useState(!!value);
+    const labelAnimation = useRef(new Animated.Value(hasValue || isFocused ? 1 : 0)).current;
     const styles = createStyles(theme);
 
     const hasError = !!error;
+    const isDisabled = disabled || props.editable === false;
+    const shouldFloatLabel = floatingLabel && (isFocused || hasValue);
+
+    useEffect(() => {
+      setHasValue(!!value);
+    }, [value]);
+
+    useEffect(() => {
+      if (animated && floatingLabel) {
+        Animated.timing(labelAnimation, {
+          toValue: shouldFloatLabel ? 1 : 0,
+          duration: 200,
+          useNativeDriver: false,
+        }).start();
+      }
+    }, [shouldFloatLabel, animated, floatingLabel, labelAnimation]);
+
+    const handleFocus = (e: any) => {
+      setIsFocused(true);
+      props.onFocus?.(e);
+    };
+
+    const handleBlur = (e: any) => {
+      setIsFocused(false);
+      props.onBlur?.(e);
+    };
+
+    const handleChangeText = (text: string) => {
+      setHasValue(!!text);
+      props.onChangeText?.(text);
+    };
 
     const inputContainerStyle: ViewStyle[] = [
       styles.inputContainer,
       styles[variant],
-      ...(isFocused ? [styles.focused] : []),
-      ...(hasError ? [styles.error] : []),
-      ...(!editable ? [styles.disabled] : []),
-    ];
+      styles[`${size}Size`],
+      isFocused && styles.focused,
+      hasError && styles.error,
+      success && !hasError && styles.success,
+      isDisabled && styles.disabled,
+    ].filter(Boolean);
+
+    const labelStyle = floatingLabel
+      ? [
+          styles.floatingLabel,
+          {
+            transform: [
+              {
+                translateY: labelAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -spacing['6']],
+                }),
+              },
+              {
+                scale: labelAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 0.85],
+                }),
+              },
+            ],
+          },
+        ]
+      : styles.label;
 
     return (
       <View style={[styles.container, containerStyle]}>
-        {label && (
-          <Text style={styles.label}>
+        {label && !floatingLabel && (
+          <Text style={labelStyle}>
             {label}
             {required && <Text style={styles.required}> *</Text>}
           </Text>
@@ -70,21 +143,32 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(
         <View style={inputContainerStyle}>
           {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
 
-          <RNTextInput
-            ref={ref}
-            style={[styles.input, inputStyle]}
-            placeholderTextColor={theme.colors.neutral[500]}
-            editable={editable}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            {...props}
-          />
+          <View style={styles.inputWrapper}>
+            {floatingLabel && label && (
+              <Animated.Text style={labelStyle}>
+                {label}
+                {required && <Text style={styles.required}> *</Text>}
+              </Animated.Text>
+            )}
+
+            <RNTextInput
+              ref={ref}
+              style={[styles.input, styles[`${size}Input`], inputStyle]}
+              placeholderTextColor={theme.colors.text.disabled}
+              value={value}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onChangeText={handleChangeText}
+              editable={!isDisabled}
+              {...props}
+            />
+          </View>
 
           {rightIcon && (
             <TouchableOpacity
               style={styles.rightIcon}
               onPress={onRightIconPress}
-              disabled={!onRightIconPress}
+              disabled={!onRightIconPress || isDisabled}
             >
               {rightIcon}
             </TouchableOpacity>
@@ -103,65 +187,132 @@ TextInput.displayName = 'TextInput';
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
-      marginBottom: theme.spacing.m,
+      marginBottom: spacing['4'], // 16px
     },
+    
+    // Labels
     label: {
-      fontSize: theme.typography.fontSize.xs,
+      ...textPresets.label,
       color: theme.colors.text.primary,
-      marginBottom: theme.spacing.xs,
-      fontWeight: '500',
+      marginBottom: spacing['2'], // 8px
+    },
+    floatingLabel: {
+      ...textPresets.label,
+      color: theme.colors.text.secondary,
+      position: 'absolute',
+      left: spacing['3'], // 12px
+      top: spacing['3'], // 12px
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: spacing['1'], // 4px
+      zIndex: 1,
     },
     required: {
       color: theme.colors.error[500],
     },
+
+    // Input container
     inputContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      borderRadius: theme.borderRadius.md,
-      minHeight: 48,
+      borderRadius: layout.inputBorderRadius,
+      backgroundColor: theme.colors.surface,
+      overflow: 'hidden',
     },
+    inputWrapper: {
+      flex: 1,
+      position: 'relative',
+    },
+
+    // Variants
     outlined: {
-      borderWidth: 1,
-      borderColor: theme.colors.neutral[300],
-      backgroundColor: 'transparent',
+      borderWidth: layout.borderWidth.thin,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
     },
     filled: {
-      backgroundColor: theme.colors.neutral[100],
-      borderWidth: 1,
-      borderColor: 'transparent',
+      backgroundColor: theme.colors.neutral[50],
+      borderWidth: 0,
     },
+    underlined: {
+      borderBottomWidth: layout.borderWidth.medium,
+      borderBottomColor: theme.colors.border,
+      borderRadius: 0,
+      backgroundColor: 'transparent',
+    },
+    floating: {
+      borderWidth: layout.borderWidth.thin,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+      ...getModernShadow('input'),
+    },
+
+    // Sizes
+    smallSize: {
+      minHeight: spacing['8'], // 32px
+    },
+    mediumSize: {
+      minHeight: layout.minTouchTarget, // 44px
+    },
+    largeSize: {
+      minHeight: spacing['14'], // 56px
+    },
+
+    // States
     focused: {
       borderColor: theme.colors.primary[500],
+      ...getModernShadow('inputFocused'),
     },
     error: {
       borderColor: theme.colors.error[500],
     },
+    success: {
+      borderColor: theme.colors.success[500],
+    },
     disabled: {
-      opacity: 0.5,
+      opacity: 0.6,
       backgroundColor: theme.colors.neutral[100],
     },
+
+    // Input field
     input: {
-      flex: 1,
-      fontSize: theme.typography.fontSize.base,
+      ...textPresets.body,
       color: theme.colors.text.primary,
-      paddingHorizontal: theme.spacing.s,
-      paddingVertical: theme.spacing.s,
+      paddingHorizontal: layout.inputPadding.horizontal,
+      paddingVertical: layout.inputPadding.vertical,
+      textAlignVertical: 'center',
     },
+    smallInput: {
+      paddingVertical: spacing['2'], // 8px
+    },
+    mediumInput: {
+      paddingVertical: layout.inputPadding.vertical, // 10px
+    },
+    largeInput: {
+      paddingVertical: spacing['4'], // 16px
+    },
+
+    // Icons
     leftIcon: {
-      paddingLeft: theme.spacing.s,
+      paddingLeft: spacing['3'], // 12px
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     rightIcon: {
-      paddingRight: theme.spacing.s,
+      paddingRight: spacing['3'], // 12px
+      justifyContent: 'center',
+      alignItems: 'center',
     },
+
+    // Helper text
     errorText: {
-      fontSize: theme.typography.fontSize.xs,
+      ...textPresets.caption,
       color: theme.colors.error[500],
-      marginTop: theme.spacing.xs,
+      marginTop: spacing['1'], // 4px
     },
     hintText: {
-      fontSize: theme.typography.fontSize.xs,
+      ...textPresets.caption,
       color: theme.colors.text.secondary,
-      marginTop: theme.spacing.xs,
+      marginTop: spacing['1'], // 4px
     },
   });
 

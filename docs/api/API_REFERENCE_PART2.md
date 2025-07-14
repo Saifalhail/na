@@ -1,14 +1,17 @@
 # API Reference - Part 2
-*Continuation of API_REFERENCE.md*
+
+_Continuation of API_REFERENCE.md_
 
 ## Payments & Subscriptions
 
 ### List Subscription Plans
+
 **GET** `/payments/plans/`
 
 Get available subscription plans.
 
 **Response (200):**
+
 ```json
 {
   "plans": [
@@ -16,7 +19,7 @@ Get available subscription plans.
       "id": 1,
       "name": "Basic",
       "description": "Essential nutrition tracking",
-      "price": 0.00,
+      "price": 0.0,
       "currency": "USD",
       "interval": "month",
       "features": [
@@ -49,6 +52,7 @@ Get available subscription plans.
 ```
 
 ### Get Current Subscription
+
 **GET** `/payments/subscription/`
 
 Get user's current subscription details.
@@ -56,6 +60,7 @@ Get user's current subscription details.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "id": 123,
@@ -75,6 +80,7 @@ Get user's current subscription details.
 ```
 
 ### Create Subscription
+
 **POST** `/payments/subscription/`
 
 Create a new subscription.
@@ -82,6 +88,7 @@ Create a new subscription.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "plan_id": 2,
@@ -90,6 +97,7 @@ Create a new subscription.
 ```
 
 **Response (201):**
+
 ```json
 {
   "subscription": {
@@ -106,6 +114,7 @@ Create a new subscription.
 ```
 
 ### Cancel Subscription
+
 **DELETE** `/payments/subscription/`
 
 Cancel user's subscription.
@@ -113,6 +122,7 @@ Cancel user's subscription.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "cancel_at_period_end": true,
@@ -121,6 +131,7 @@ Cancel user's subscription.
 ```
 
 **Response (200):**
+
 ```json
 {
   "message": "Subscription will be cancelled at the end of the current period",
@@ -130,6 +141,7 @@ Cancel user's subscription.
 ```
 
 ### List Payment Methods
+
 **GET** `/payments/methods/`
 
 Get user's saved payment methods.
@@ -137,6 +149,7 @@ Get user's saved payment methods.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "payment_methods": [
@@ -157,6 +170,7 @@ Get user's saved payment methods.
 ```
 
 ### Add Payment Method
+
 **POST** `/payments/methods/`
 
 Add a new payment method.
@@ -164,6 +178,7 @@ Add a new payment method.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "payment_method_id": "pm_1234567890",
@@ -172,6 +187,7 @@ Add a new payment method.
 ```
 
 **Response (201):**
+
 ```json
 {
   "id": "pm_1234567890",
@@ -187,6 +203,7 @@ Add a new payment method.
 ```
 
 ### Delete Payment Method
+
 **DELETE** `/payments/methods/{id}/`
 
 Remove a payment method.
@@ -196,6 +213,7 @@ Remove a payment method.
 **Response (204):** No content.
 
 ### Payment History
+
 **GET** `/payments/history/`
 
 Get user's payment history.
@@ -203,10 +221,12 @@ Get user's payment history.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Query Parameters:**
+
 - `page` (integer): Page number
 - `page_size` (integer): Items per page
 
 **Response (200):**
+
 ```json
 {
   "count": 12,
@@ -232,6 +252,7 @@ Get user's payment history.
 ## Mobile Optimized
 
 ### Sync Data
+
 **POST** `/mobile/sync/`
 
 Sync mobile app data with server.
@@ -239,6 +260,7 @@ Sync mobile app data with server.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "device_info": {
@@ -263,6 +285,7 @@ Sync mobile app data with server.
 ```
 
 **Response (200):**
+
 ```json
 {
   "sync_id": "sync_550e8400",
@@ -292,6 +315,7 @@ Sync mobile app data with server.
 ```
 
 ### Batch Operations
+
 **POST** `/mobile/batch/`
 
 Perform multiple operations in a single request.
@@ -299,6 +323,7 @@ Perform multiple operations in a single request.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "operations": [
@@ -327,6 +352,7 @@ Perform multiple operations in a single request.
 ```
 
 **Response (200):**
+
 ```json
 {
   "results": [
@@ -360,6 +386,7 @@ Perform multiple operations in a single request.
 ```
 
 ### Quick Stats
+
 **GET** `/mobile/stats/`
 
 Get quick statistics for mobile dashboard.
@@ -367,6 +394,7 @@ Get quick statistics for mobile dashboard.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "today": {
@@ -397,6 +425,7 @@ Get quick statistics for mobile dashboard.
 ```
 
 ### Offline Queue
+
 **GET** `/mobile/queue/`
 
 Get pending operations from offline queue.
@@ -404,6 +433,7 @@ Get pending operations from offline queue.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Response (200):**
+
 ```json
 {
   "pending_operations": [
@@ -426,6 +456,7 @@ Process offline queue operations.
 **Headers:** `Authorization: Bearer <access_token>`
 
 **Request:**
+
 ```json
 {
   "operations": [
@@ -442,6 +473,7 @@ Process offline queue operations.
 ```
 
 **Response (200):**
+
 ```json
 {
   "processed": [
@@ -463,6 +495,7 @@ Process offline queue operations.
 ## Admin & Analytics
 
 ### API Usage Statistics (Admin Only)
+
 **GET** `/admin/stats/api-usage/`
 
 Get API usage statistics.
@@ -470,10 +503,12 @@ Get API usage statistics.
 **Headers:** `Authorization: Bearer <admin_token>`
 
 **Query Parameters:**
+
 - `period` (string): `day`, `week`, `month` (default: `day`)
 - `endpoint` (string): Filter by specific endpoint
 
 **Response (200):**
+
 ```json
 {
   "period": "day",
@@ -501,13 +536,14 @@ Get API usage statistics.
     "500": 30
   },
   "peak_hours": [
-    {"hour": 12, "requests": 1850},
-    {"hour": 19, "requests": 2100}
+    { "hour": 12, "requests": 1850 },
+    { "hour": 19, "requests": 2100 }
   ]
 }
 ```
 
 ### User Analytics (Admin Only)
+
 **GET** `/admin/stats/users/`
 
 Get user analytics and insights.
@@ -515,6 +551,7 @@ Get user analytics and insights.
 **Headers:** `Authorization: Bearer <admin_token>`
 
 **Response (200):**
+
 ```json
 {
   "total_users": 12500,
@@ -548,6 +585,7 @@ Get user analytics and insights.
 ```
 
 ### System Health (Admin Only)
+
 **GET** `/admin/health/`
 
 Get system health metrics.
@@ -555,6 +593,7 @@ Get system health metrics.
 **Headers:** `Authorization: Bearer <admin_token>`
 
 **Response (200):**
+
 ```json
 {
   "status": "healthy",
@@ -600,21 +639,24 @@ Get system health metrics.
 ## WebSocket Endpoints
 
 ### Progressive Analysis Updates
+
 **WebSocket** `ws://your-domain.com/ws/analysis/`
 
 Real-time updates for progressive food analysis.
 
 **Connection:**
+
 ```javascript
-const ws = new WebSocket('ws://localhost:8000/ws/analysis/');
-ws.onopen = function() {
-    console.log('Connected to analysis updates');
+const ws = new WebSocket("ws://localhost:8000/ws/analysis/");
+ws.onopen = function () {
+  console.log("Connected to analysis updates");
 };
 ```
 
 **Message Types:**
 
 1. **Connection Established:**
+
 ```json
 {
   "type": "connection_established",
@@ -625,6 +667,7 @@ ws.onopen = function() {
 ```
 
 2. **Analysis Progress:**
+
 ```json
 {
   "type": "analysis_progress",
@@ -633,16 +676,17 @@ ws.onopen = function() {
   "current_stage": "nutritional_analysis",
   "status": "processing",
   "stages": {
-    "image_preprocessing": {"status": "completed", "progress": 100},
-    "food_detection": {"status": "completed", "progress": 100},
-    "portion_estimation": {"status": "completed", "progress": 100},
-    "nutritional_analysis": {"status": "processing", "progress": 75}
+    "image_preprocessing": { "status": "completed", "progress": 100 },
+    "food_detection": { "status": "completed", "progress": 100 },
+    "portion_estimation": { "status": "completed", "progress": 100 },
+    "nutritional_analysis": { "status": "processing", "progress": 75 }
   },
   "timestamp": "2024-01-20T15:30:00Z"
 }
 ```
 
 3. **Analysis Complete:**
+
 ```json
 {
   "type": "analysis_progress",
@@ -657,18 +701,21 @@ ws.onopen = function() {
 ```
 
 ### Notifications WebSocket
+
 **WebSocket** `ws://your-domain.com/ws/notifications/`
 
 Real-time notifications for users.
 
 **Connection:**
+
 ```javascript
-const ws = new WebSocket('ws://localhost:8000/ws/notifications/');
+const ws = new WebSocket("ws://localhost:8000/ws/notifications/");
 ```
 
 **Message Types:**
 
 1. **New Notification:**
+
 ```json
 {
   "type": "new_notification",
@@ -683,6 +730,7 @@ const ws = new WebSocket('ws://localhost:8000/ws/notifications/');
 ```
 
 2. **Mark Notification Read (Send):**
+
 ```json
 {
   "type": "mark_read",
@@ -691,6 +739,7 @@ const ws = new WebSocket('ws://localhost:8000/ws/notifications/');
 ```
 
 3. **Notification Marked Read (Receive):**
+
 ```json
 {
   "type": "notification_marked_read",
@@ -700,6 +749,7 @@ const ws = new WebSocket('ws://localhost:8000/ws/notifications/');
 ```
 
 4. **Mark All Read (Send):**
+
 ```json
 {
   "type": "mark_all_read"
@@ -707,6 +757,7 @@ const ws = new WebSocket('ws://localhost:8000/ws/notifications/');
 ```
 
 5. **Ping/Pong:**
+
 ```json
 // Send
 {"type": "ping", "timestamp": "2024-01-20T15:30:00Z"}
@@ -720,11 +771,13 @@ const ws = new WebSocket('ws://localhost:8000/ws/notifications/');
 ## Webhook Endpoints
 
 ### Twilio SMS Status
+
 **POST** `/webhooks/twilio/status/`
 
 Webhook for Twilio SMS delivery status updates.
 
 **Request (from Twilio):**
+
 ```
 MessageSid=SM1234567890
 MessageStatus=delivered
@@ -735,6 +788,7 @@ ErrorMessage=
 **Response (200):** Empty response.
 
 ### Stripe Webhook
+
 **POST** `/webhooks/stripe/`
 
 Webhook for Stripe payment events.
@@ -742,6 +796,7 @@ Webhook for Stripe payment events.
 **Headers:** `Stripe-Signature: <signature>`
 
 **Request (from Stripe):**
+
 ```json
 {
   "id": "evt_1234567890",
@@ -759,6 +814,7 @@ Webhook for Stripe payment events.
 ```
 
 **Response (200):**
+
 ```json
 {
   "status": "received"
@@ -772,6 +828,7 @@ Webhook for Stripe payment events.
 All endpoints may return these common error responses:
 
 ### 400 Bad Request
+
 ```json
 {
   "error": "validation_error",
@@ -784,6 +841,7 @@ All endpoints may return these common error responses:
 ```
 
 ### 401 Unauthorized
+
 ```json
 {
   "error": "authentication_failed",
@@ -792,6 +850,7 @@ All endpoints may return these common error responses:
 ```
 
 ### 403 Forbidden
+
 ```json
 {
   "error": "permission_denied",
@@ -800,6 +859,7 @@ All endpoints may return these common error responses:
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "error": "not_found",
@@ -808,6 +868,7 @@ All endpoints may return these common error responses:
 ```
 
 ### 429 Too Many Requests
+
 ```json
 {
   "error": "rate_limit_exceeded",
@@ -817,6 +878,7 @@ All endpoints may return these common error responses:
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
   "error": "internal_server_error",
@@ -835,6 +897,7 @@ All endpoints may return these common error responses:
 - **AI Analysis:** 50 requests per hour (free), 500 requests per hour (premium)
 
 Rate limit headers are included in all responses:
+
 ```
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 999

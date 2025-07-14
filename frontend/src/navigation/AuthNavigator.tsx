@@ -17,7 +17,7 @@ const Stack = createStackNavigator<AuthStackParamList>();
 export const AuthNavigator: React.FC = () => {
   return (
     <Stack.Navigator
-      initialRouteName="Welcome"
+      initialRouteName="Login"
       screenOptions={{
         headerShown: false,
         cardStyle: { backgroundColor: 'transparent' },

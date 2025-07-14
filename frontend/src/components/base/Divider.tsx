@@ -46,7 +46,7 @@ export const Divider: React.FC<DividerProps> = ({
     lineStyle.borderStyle = 'dashed';
     lineStyle[isHorizontal ? 'borderBottomWidth' : 'borderRightWidth'] = thickness;
     lineStyle.borderColor = dividerColor;
-    
+
     // React Native doesn't support dotted style well, so we simulate it
     if (variant === 'dotted') {
       lineStyle.borderStyle = 'dotted';
@@ -70,12 +70,7 @@ export const Divider: React.FC<DividerProps> = ({
     );
   }
 
-  return (
-    <View
-      style={[containerStyle, lineStyle]}
-      testID={testID}
-    />
-  );
+  return <View style={[containerStyle, lineStyle]} testID={testID} />;
 };
 
 const createStyles = (theme: Theme) =>

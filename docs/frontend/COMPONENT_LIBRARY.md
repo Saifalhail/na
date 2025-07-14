@@ -13,22 +13,24 @@ This document serves as a comprehensive reference for all reusable components in
 **Purpose**: Primary interactive element for user actions
 
 **Props**:
+
 ```typescript
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'text';
-  size?: 'small' | 'medium' | 'large';
+  variant?: "primary" | "secondary" | "outline" | "text";
+  size?: "small" | "medium" | "large";
   disabled?: boolean;
   loading?: boolean;
   icon?: string;
-  iconPosition?: 'left' | 'right';
+  iconPosition?: "left" | "right";
   fullWidth?: boolean;
   testID?: string;
 }
 ```
 
 **Usage**:
+
 ```tsx
 <Button
   title="Analyze Photo"
@@ -45,6 +47,7 @@ interface ButtonProps {
 **Purpose**: Text input field with validation support
 
 **Props**:
+
 ```typescript
 interface InputProps {
   value: string;
@@ -54,7 +57,7 @@ interface InputProps {
   error?: string;
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
   editable?: boolean;
   multiline?: boolean;
   numberOfLines?: number;
@@ -67,6 +70,7 @@ interface InputProps {
 ```
 
 **Usage**:
+
 ```tsx
 <Input
   label="Email"
@@ -85,13 +89,22 @@ interface InputProps {
 **Purpose**: Consistent text styling across the app
 
 **Props**:
+
 ```typescript
 interface TypographyProps {
-  variant: 'h1' | 'h2' | 'h3' | 'h4' | 'body1' | 'body2' | 'caption' | 'overline';
+  variant:
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4"
+    | "body1"
+    | "body2"
+    | "caption"
+    | "overline";
   children: React.ReactNode;
-  color?: 'primary' | 'secondary' | 'text' | 'textSecondary' | 'error';
-  align?: 'left' | 'center' | 'right' | 'justify';
-  weight?: 'regular' | 'medium' | 'semibold' | 'bold';
+  color?: "primary" | "secondary" | "text" | "textSecondary" | "error";
+  align?: "left" | "center" | "right" | "justify";
+  weight?: "regular" | "medium" | "semibold" | "bold";
   numberOfLines?: number;
   selectable?: boolean;
   testID?: string;
@@ -99,6 +112,7 @@ interface TypographyProps {
 ```
 
 **Usage**:
+
 ```tsx
 <Typography variant="h2" color="primary" align="center">
   Welcome Back!
@@ -112,6 +126,7 @@ interface TypographyProps {
 **Purpose**: Main screen wrapper with safe area support
 
 **Props**:
+
 ```typescript
 interface ContainerProps {
   children: React.ReactNode;
@@ -126,8 +141,9 @@ interface ContainerProps {
 ```
 
 **Usage**:
+
 ```tsx
-<Container edges={['top', 'bottom']} scroll keyboardAware>
+<Container edges={["top", "bottom"]} scroll keyboardAware>
   {/* Screen content */}
 </Container>
 ```
@@ -137,11 +153,18 @@ interface ContainerProps {
 **Purpose**: Horizontal flexbox container
 
 **Props**:
+
 ```typescript
 interface RowProps {
   children: React.ReactNode;
-  justify?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
-  align?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
+  justify?:
+    | "flex-start"
+    | "center"
+    | "flex-end"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
+  align?: "flex-start" | "center" | "flex-end" | "stretch";
   wrap?: boolean;
   gap?: number;
   padding?: number;
@@ -150,6 +173,7 @@ interface RowProps {
 ```
 
 **Usage**:
+
 ```tsx
 <Row justify="space-between" align="center" gap={16}>
   <Text>Label</Text>
@@ -162,11 +186,18 @@ interface RowProps {
 **Purpose**: Vertical flexbox container
 
 **Props**:
+
 ```typescript
 interface ColumnProps {
   children: React.ReactNode;
-  justify?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
-  align?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
+  justify?:
+    | "flex-start"
+    | "center"
+    | "flex-end"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
+  align?: "flex-start" | "center" | "flex-end" | "stretch";
   gap?: number;
   padding?: number;
   flex?: number;
@@ -175,6 +206,7 @@ interface ColumnProps {
 ```
 
 **Usage**:
+
 ```tsx
 <Column gap={24} padding={16}>
   <Card>...</Card>
@@ -187,14 +219,16 @@ interface ColumnProps {
 **Purpose**: Consistent spacing between elements
 
 **Props**:
+
 ```typescript
 interface SpacerProps {
-  size?: 'xs' | 's' | 'm' | 'l' | 'xl' | number;
+  size?: "xs" | "s" | "m" | "l" | "xl" | number;
   horizontal?: boolean;
 }
 ```
 
 **Usage**:
+
 ```tsx
 <View>
   <Text>First Item</Text>
@@ -210,11 +244,12 @@ interface SpacerProps {
 **Purpose**: Container with elevation and padding
 
 **Props**:
+
 ```typescript
 interface CardProps {
   children: React.ReactNode;
-  variant?: 'elevated' | 'outlined' | 'filled';
-  padding?: 'none' | 'small' | 'medium' | 'large';
+  variant?: "elevated" | "outlined" | "filled";
+  padding?: "none" | "small" | "medium" | "large";
   onPress?: () => void;
   disabled?: boolean;
   testID?: string;
@@ -222,6 +257,7 @@ interface CardProps {
 ```
 
 **Usage**:
+
 ```tsx
 <Card variant="elevated" padding="medium" onPress={handlePress}>
   <Typography variant="h4">Meal Summary</Typography>
@@ -234,23 +270,21 @@ interface CardProps {
 **Purpose**: Small status indicator
 
 **Props**:
+
 ```typescript
 interface BadgeProps {
   label: string;
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-  size?: 'small' | 'medium';
+  variant?: "primary" | "secondary" | "success" | "warning" | "error" | "info";
+  size?: "small" | "medium";
   icon?: string;
   onPress?: () => void;
 }
 ```
 
 **Usage**:
+
 ```tsx
-<Badge 
-  label="Verified" 
-  variant="success" 
-  icon="check-circle"
-/>
+<Badge label="Verified" variant="success" icon="check-circle" />
 ```
 
 #### Avatar
@@ -258,11 +292,12 @@ interface BadgeProps {
 **Purpose**: User profile image display
 
 **Props**:
+
 ```typescript
 interface AvatarProps {
   source?: ImageSourcePropType;
   name?: string;
-  size?: 'small' | 'medium' | 'large' | number;
+  size?: "small" | "medium" | "large" | number;
   onPress?: () => void;
   showBadge?: boolean;
   badgeColor?: string;
@@ -270,6 +305,7 @@ interface AvatarProps {
 ```
 
 **Usage**:
+
 ```tsx
 <Avatar
   source={{ uri: user.profileImage }}
@@ -286,21 +322,20 @@ interface AvatarProps {
 **Purpose**: Loading state indicators
 
 **Props**:
+
 ```typescript
 interface LoadingProps {
-  variant?: 'spinner' | 'skeleton' | 'overlay';
-  size?: 'small' | 'medium' | 'large';
+  variant?: "spinner" | "skeleton" | "overlay";
+  size?: "small" | "medium" | "large";
   color?: string;
   text?: string;
 }
 ```
 
 **Usage**:
+
 ```tsx
-<Loading 
-  variant="overlay" 
-  text="Analyzing your meal..." 
-/>
+<Loading variant="overlay" text="Analyzing your meal..." />
 ```
 
 #### Toast
@@ -308,24 +343,26 @@ interface LoadingProps {
 **Purpose**: Temporary notification messages
 
 **Props**:
+
 ```typescript
 interface ToastProps {
   message: string;
-  type?: 'success' | 'error' | 'warning' | 'info';
+  type?: "success" | "error" | "warning" | "info";
   duration?: number;
   action?: {
     label: string;
     onPress: () => void;
   };
-  position?: 'top' | 'bottom';
+  position?: "top" | "bottom";
 }
 ```
 
 **Usage**:
+
 ```tsx
 Toast.show({
-  message: 'Meal saved successfully!',
-  type: 'success',
+  message: "Meal saved successfully!",
+  type: "success",
   duration: 3000,
 });
 ```
@@ -335,19 +372,21 @@ Toast.show({
 **Purpose**: Overlay dialog for focused content
 
 **Props**:
+
 ```typescript
 interface ModalProps {
   visible: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'small' | 'medium' | 'large' | 'fullscreen';
+  size?: "small" | "medium" | "large" | "fullscreen";
   closeButton?: boolean;
   backdropPress?: boolean;
 }
 ```
 
 **Usage**:
+
 ```tsx
 <Modal
   visible={showDetails}
@@ -366,13 +405,14 @@ interface ModalProps {
 **Purpose**: Display nutritional information
 
 **Props**:
+
 ```typescript
 interface NutritionCardProps {
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  variant?: 'compact' | 'detailed';
+  variant?: "compact" | "detailed";
   showPercentages?: boolean;
   dailyGoals?: {
     calories: number;
@@ -385,6 +425,7 @@ interface NutritionCardProps {
 ```
 
 **Usage**:
+
 ```tsx
 <NutritionCard
   calories={450}
@@ -402,10 +443,11 @@ interface NutritionCardProps {
 **Purpose**: Display meal summary
 
 **Props**:
+
 ```typescript
 interface MealCardProps {
   meal: Meal;
-  variant?: 'list' | 'grid' | 'detailed';
+  variant?: "list" | "grid" | "detailed";
   showImage?: boolean;
   showActions?: boolean;
   onPress?: () => void;
@@ -415,6 +457,7 @@ interface MealCardProps {
 ```
 
 **Usage**:
+
 ```tsx
 <MealCard
   meal={meal}
@@ -431,10 +474,11 @@ interface MealCardProps {
 **Purpose**: Interactive food item display
 
 **Props**:
+
 ```typescript
 interface FoodItemBubbleProps {
   item: FoodItem;
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
   editable?: boolean;
   onPress?: () => void;
   onEdit?: (item: FoodItem) => void;
@@ -444,6 +488,7 @@ interface FoodItemBubbleProps {
 ```
 
 **Usage**:
+
 ```tsx
 <FoodItemBubble
   item={foodItem}
@@ -460,6 +505,7 @@ interface FoodItemBubbleProps {
 **Purpose**: Circular progress display for calories
 
 **Props**:
+
 ```typescript
 interface CalorieRingProps {
   current: number;
@@ -473,6 +519,7 @@ interface CalorieRingProps {
 ```
 
 **Usage**:
+
 ```tsx
 <CalorieRing
   current={1850}
@@ -487,30 +534,35 @@ interface CalorieRingProps {
 ## Component Development Guidelines
 
 ### 1. TypeScript Requirements
+
 - All props must be fully typed
 - Use interfaces over types for props
 - Export prop interfaces for reuse
 - No implicit any types
 
 ### 2. Accessibility
+
 - All interactive components must have accessible labels
 - Support screen readers
 - Keyboard navigation where applicable
 - Proper contrast ratios
 
 ### 3. Testing
+
 - Unit tests for all components
 - Snapshot tests for UI consistency
 - Interaction tests for user actions
 - Accessibility tests
 
 ### 4. Documentation
+
 - JSDoc comments for complex props
 - Usage examples in Storybook
 - Visual states documented
 - Performance considerations noted
 
 ### 5. Performance
+
 - Use React.memo for expensive renders
 - Implement shouldComponentUpdate logic
 - Lazy load heavy components

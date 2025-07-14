@@ -1,12 +1,17 @@
 /**
  * Image Preprocessing Service for Enhanced AI Analysis
- * 
+ *
  * This service provides image analysis capabilities to extract visual features
  * that enhance nutritional AI accuracy.
  */
 
 import { manipulateAsync, ImageResult, FlipType, RotateType } from 'expo-image-manipulator';
-import { Canvas, CanvasRenderingContext2D, Image as CanvasImage, createImageData } from '@react-native-community/art';
+import {
+  Canvas,
+  CanvasRenderingContext2D,
+  Image as CanvasImage,
+  createImageData,
+} from '@react-native-community/art';
 import { rs } from '@/utils/responsive';
 
 export interface ImageAnalysisResult {
@@ -46,36 +51,44 @@ export class ImagePreprocessingService {
     try {
       // First, optimize the image for analysis
       const optimizedImage = await this.optimizeImageForAnalysis(imageUri);
-      
+
       // Perform various analyses in parallel
       const [
         colorAnalysis,
         brightnessContrast,
         sharpnessScore,
         objectDetection,
-        foodAreaEstimation
+        foodAreaEstimation,
       ] = await Promise.allSettled([
         this.analyzeColors(optimizedImage.uri),
         this.analyzeBrightnessContrast(optimizedImage.uri),
         this.analyzeSharpness(optimizedImage.uri),
         this.detectObjects(optimizedImage.uri),
-        this.estimateFoodArea(optimizedImage.uri)
+        this.estimateFoodArea(optimizedImage.uri),
       ]);
 
       // Combine results
       const result: ImageAnalysisResult = {
-        brightness: brightnessContrast.status === 'fulfilled' ? brightnessContrast.value.brightness : 0.5,
-        contrast: brightnessContrast.status === 'fulfilled' ? brightnessContrast.value.contrast : 1.0,
-        dominantColors: colorAnalysis.status === 'fulfilled' ? colorAnalysis.value.dominantColors : [],
-        colorTemperature: colorAnalysis.status === 'fulfilled' ? colorAnalysis.value.colorTemperature : 'neutral',
+        brightness:
+          brightnessContrast.status === 'fulfilled' ? brightnessContrast.value.brightness : 0.5,
+        contrast:
+          brightnessContrast.status === 'fulfilled' ? brightnessContrast.value.contrast : 1.0,
+        dominantColors:
+          colorAnalysis.status === 'fulfilled' ? colorAnalysis.value.dominantColors : [],
+        colorTemperature:
+          colorAnalysis.status === 'fulfilled' ? colorAnalysis.value.colorTemperature : 'neutral',
         sharpness: sharpnessScore.status === 'fulfilled' ? sharpnessScore.value : 0.5,
-        hasReferenceObjects: objectDetection.status === 'fulfilled' ? objectDetection.value.hasReferenceObjects : false,
+        hasReferenceObjects:
+          objectDetection.status === 'fulfilled'
+            ? objectDetection.value.hasReferenceObjects
+            : false,
         detectedShapes: objectDetection.status === 'fulfilled' ? objectDetection.value.shapes : [],
-        estimatedFoodArea: foodAreaEstimation.status === 'fulfilled' ? foodAreaEstimation.value : 0.8,
+        estimatedFoodArea:
+          foodAreaEstimation.status === 'fulfilled' ? foodAreaEstimation.value : 0.8,
         lightingQuality: this.assessLightingQuality(
           brightnessContrast.status === 'fulfilled' ? brightnessContrast.value.brightness : 0.5,
           brightnessContrast.status === 'fulfilled' ? brightnessContrast.value.contrast : 1.0
-        )
+        ),
       };
 
       return result;
@@ -91,7 +104,7 @@ export class ImagePreprocessingService {
         hasReferenceObjects: false,
         detectedShapes: [],
         estimatedFoodArea: 0.8,
-        lightingQuality: 'fair'
+        lightingQuality: 'fair',
       };
     }
   }
@@ -104,11 +117,11 @@ export class ImagePreprocessingService {
       imageUri,
       [
         // Resize to optimal size for analysis (balance between quality and performance)
-        { resize: { width: 1024 } }
+        { resize: { width: 1024 } },
       ],
       {
         compress: 0.8,
-        format: 'jpeg'
+        format: 'jpeg',
       }
     );
   }
@@ -127,7 +140,6 @@ export class ImagePreprocessingService {
       // Placeholder implementation with mock data
       const mockColors = this.generateMockColorAnalysis();
       return mockColors;
-      
     } catch (error) {
       console.error('Color analysis failed:', error);
       return {
@@ -135,7 +147,7 @@ export class ImagePreprocessingService {
         colorDistribution: { '#8B4513': 0.3, '#F4A460': 0.4, '#FFFFE0': 0.3 },
         averageColor: '#C19A6B',
         colorTemperature: 'warm',
-        saturation: 0.6
+        saturation: 0.6,
       };
     }
   }
@@ -143,15 +155,17 @@ export class ImagePreprocessingService {
   /**
    * Analyze brightness and contrast
    */
-  private async analyzeBrightnessContrast(imageUri: string): Promise<{ brightness: number; contrast: number }> {
+  private async analyzeBrightnessContrast(
+    imageUri: string
+  ): Promise<{ brightness: number; contrast: number }> {
     try {
       // Simplified brightness/contrast calculation
       // In production, this would analyze actual pixel data
-      
+
       // Mock implementation - would analyze image histogram
       const brightness = Math.random() * 0.6 + 0.2; // 0.2 to 0.8
       const contrast = Math.random() * 1.5 + 0.5; // 0.5 to 2.0
-      
+
       return { brightness, contrast };
     } catch (error) {
       console.error('Brightness/contrast analysis failed:', error);
@@ -176,26 +190,28 @@ export class ImagePreprocessingService {
   /**
    * Detect objects and reference items in the image
    */
-  private async detectObjects(imageUri: string): Promise<{ hasReferenceObjects: boolean; shapes: string[] }> {
+  private async detectObjects(
+    imageUri: string
+  ): Promise<{ hasReferenceObjects: boolean; shapes: string[] }> {
     try {
       // Object detection would typically use:
       // - TensorFlow.js with a pre-trained model
       // - Custom ML models
       // - Cloud-based vision APIs
-      
+
       // Mock implementation
       const hasUtensils = Math.random() > 0.7;
       const hasPlate = Math.random() > 0.3;
       const hasCup = Math.random() > 0.6;
-      
+
       const shapes: string[] = [];
       if (hasPlate) shapes.push('plate');
       if (hasUtensils) shapes.push('utensils');
       if (hasCup) shapes.push('cup');
-      
+
       return {
         hasReferenceObjects: hasUtensils,
-        shapes
+        shapes,
       };
     } catch (error) {
       console.error('Object detection failed:', error);
@@ -220,11 +236,14 @@ export class ImagePreprocessingService {
   /**
    * Assess overall lighting quality
    */
-  private assessLightingQuality(brightness: number, contrast: number): 'poor' | 'fair' | 'good' | 'excellent' {
+  private assessLightingQuality(
+    brightness: number,
+    contrast: number
+  ): 'poor' | 'fair' | 'good' | 'excellent' {
     // Define optimal ranges
     const optimalBrightness = brightness >= 0.3 && brightness <= 0.7;
     const optimalContrast = contrast >= 0.8 && contrast <= 1.5;
-    
+
     if (optimalBrightness && optimalContrast) {
       return 'excellent';
     } else if (optimalBrightness || optimalContrast) {
@@ -251,15 +270,15 @@ export class ImagePreprocessingService {
       // Sauce/condiment colors
       ['#DC143C', '#FF6347', '#FF4500'], // Reds
       // Mixed meal colors
-      ['#8B4513', '#228B22', '#F5DEB3', '#FF6347'] // Mixed
+      ['#8B4513', '#228B22', '#F5DEB3', '#FF6347'], // Mixed
     ];
-    
+
     const randomPalette = foodColorPalettes[Math.floor(Math.random() * foodColorPalettes.length)];
-    
+
     // Generate color distribution
     const distribution: { [color: string]: number } = {};
     let remaining = 1.0;
-    
+
     randomPalette.forEach((color, index) => {
       if (index === randomPalette.length - 1) {
         distribution[color] = remaining;
@@ -269,19 +288,19 @@ export class ImagePreprocessingService {
         remaining -= portion;
       }
     });
-    
+
     // Calculate average color (simplified)
     const averageColor = randomPalette[0]; // Simplified - would calculate actual average
-    
+
     // Determine color temperature
     const colorTemperature = this.determineColorTemperature(randomPalette);
-    
+
     return {
       dominantColors: randomPalette,
       colorDistribution: distribution,
       averageColor,
       colorTemperature,
-      saturation: Math.random() * 0.5 + 0.5 // 0.5 to 1.0
+      saturation: Math.random() * 0.5 + 0.5, // 0.5 to 1.0
     };
   }
 
@@ -292,16 +311,16 @@ export class ImagePreprocessingService {
     // Simplified color temperature analysis
     const warmColors = ['#FF', '#FE', '#FD', '#FC', '#FB', '#FA', '#F9', '#F8', '#F7', '#F6'];
     const coolColors = ['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9'];
-    
+
     let warmCount = 0;
     let coolCount = 0;
-    
-    colors.forEach(color => {
+
+    colors.forEach((color) => {
       const hex = color.substring(1, 3);
-      if (warmColors.some(w => hex.startsWith(w))) warmCount++;
-      if (coolColors.some(c => hex.startsWith(c))) coolCount++;
+      if (warmColors.some((w) => hex.startsWith(w))) warmCount++;
+      if (coolColors.some((c) => hex.startsWith(c))) coolCount++;
     });
-    
+
     if (warmCount > coolCount) return 'warm';
     if (coolCount > warmCount) return 'cool';
     return 'neutral';
@@ -320,12 +339,14 @@ export class ImagePreprocessingService {
       // - Gabor filters
       // - Local Binary Patterns (LBP)
       // - Gray-Level Co-occurrence Matrix (GLCM)
-      
+
       // Mock implementation
       return {
         roughness: Math.random(),
         smoothness: Math.random(),
-        patterns: ['granular', 'smooth', 'textured'][Math.floor(Math.random() * 3)] ? ['granular'] : []
+        patterns: ['granular', 'smooth', 'textured'][Math.floor(Math.random() * 3)]
+          ? ['granular']
+          : [],
       };
     } catch (error) {
       console.error('Texture analysis failed:', error);
@@ -344,15 +365,15 @@ export class ImagePreprocessingService {
       // - Oil/grease appearance
       // - Steam/moisture indicators
       // - Char marks
-      
+
       const indicators: string[] = [];
-      
+
       // Mock detection
       if (Math.random() > 0.7) indicators.push('grilled');
       if (Math.random() > 0.8) indicators.push('fried');
       if (Math.random() > 0.6) indicators.push('baked');
       if (Math.random() > 0.9) indicators.push('steamed');
-      
+
       return indicators;
     } catch (error) {
       console.error('Cooking method detection failed:', error);
@@ -363,7 +384,10 @@ export class ImagePreprocessingService {
   /**
    * Estimate portion size using visual cues
    */
-  async estimatePortionSize(imageUri: string, referenceObjects?: string[]): Promise<{
+  async estimatePortionSize(
+    imageUri: string,
+    referenceObjects?: string[]
+  ): Promise<{
     estimatedWeight: number; // in grams
     confidence: number;
     referenceUsed?: string;
@@ -374,29 +398,29 @@ export class ImagePreprocessingService {
       // - Plate/bowl size estimation
       // - Food volume calculation
       // - Machine learning models trained on portion data
-      
+
       let confidence = 0.5;
       let referenceUsed: string | undefined;
-      
+
       // Increase confidence if reference objects are detected
       if (referenceObjects && referenceObjects.length > 0) {
         confidence = 0.8;
         referenceUsed = referenceObjects[0];
       }
-      
+
       // Mock estimation (in grams)
       const estimatedWeight = Math.random() * 400 + 100; // 100-500g
-      
+
       return {
         estimatedWeight,
         confidence,
-        referenceUsed
+        referenceUsed,
       };
     } catch (error) {
       console.error('Portion estimation failed:', error);
       return {
         estimatedWeight: 200,
-        confidence: 0.3
+        confidence: 0.3,
       };
     }
   }

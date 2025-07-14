@@ -10,7 +10,7 @@ try {
 } catch (error) {
   console.warn('Warning: Unable to load default Expo Metro config, falling back to basic config');
   console.warn('Error:', error.message);
-  
+
   // Fallback config for WSL/OneDrive environments
   config = {
     resolver: {
@@ -33,13 +33,13 @@ const isOneDrive = projectRoot.includes('OneDrive');
 
 if (isWSL || isOneDrive) {
   console.log('Detected WSL/OneDrive environment, applying optimizations...');
-  
+
   // Enhanced resolver configuration for WSL
   config.resolver = {
     ...config.resolver,
     // Ensure source maps work properly in WSL
     sourceExts: [...(config.resolver?.sourceExts || []), 'cjs', 'mjs'],
-    
+
     // More comprehensive blocklist for WSL/OneDrive
     blockList: [
       // Block hidden files and directories
@@ -57,7 +57,7 @@ if (isWSL || isOneDrive) {
       /\.tmp$/,
       /~\$.*\.tmp$/,
     ],
-    
+
     // Enhanced node modules resolution for WSL
     nodeModulesPaths: [
       path.resolve(projectRoot, 'node_modules'),
@@ -66,9 +66,10 @@ if (isWSL || isOneDrive) {
   };
 
   // Optimize file watching for WSL/OneDrive
+  // Only watch source files, not node_modules for better performance
   config.watchFolders = [
-    path.resolve(projectRoot, 'node_modules'),
     path.resolve(projectRoot, 'src'),
+    path.resolve(projectRoot, 'assets'),
   ];
 }
 
@@ -79,6 +80,9 @@ config.cacheStores = [
     root: path.join(projectRoot, '.metro-cache'),
   }),
 ];
+
+// Set cache version to invalidate when needed
+config.cacheVersion = '1.0';
 
 // Improved transformer configuration
 config.transformer = {
@@ -91,8 +95,10 @@ config.transformer = {
     },
   },
   // Enable Hermes bytecode for better performance
-  hermesCommand: process.env.NODE_ENV === 'production' ? 
-    './node_modules/react-native/sdks/hermesc/linux64-bin/hermesc' : undefined,
+  hermesCommand:
+    process.env.NODE_ENV === 'production'
+      ? './node_modules/react-native/sdks/hermesc/linux64-bin/hermesc'
+      : undefined,
 };
 
 // Enhanced server configuration
@@ -104,20 +110,20 @@ config.server = {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      
+
       // Handle OPTIONS requests
       if (req.method === 'OPTIONS') {
         res.status(200).end();
         return;
       }
-      
+
       return middleware(req, res, next);
     };
   },
 };
 
 // Additional optimizations for Metro
-config.resetCache = true;
+config.resetCache = false; // Keep cache for faster rebuilds
 
 // Performance optimizations for faster loading
 config.transformer = {
@@ -125,6 +131,13 @@ config.transformer = {
   // Enable experimental features for faster builds
   experimentalImportSupport: false,
   inlineRequires: true, // Defer module loading for faster startup
+  assetPlugins: [],
+  getTransformOptions: async () => ({
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: true,
+    },
+  })
 };
 
 // Optimize bundling for production-like performance in dev

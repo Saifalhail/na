@@ -96,7 +96,12 @@ export const Modal: React.FC<ModalProps> = ({
   const content = (
     <View
       ref={modalRef}
-      style={[styles.modalContent, sizeStyles, { backgroundColor: theme.colors.surface }, getModernShadow('modal')]}
+      style={[
+        styles.modalContent,
+        sizeStyles,
+        { backgroundColor: theme.colors.surface },
+        getModernShadow('modal'),
+      ]}
       accessible={true}
       accessibilityRole="none"
       accessibilityLabel={accessibilityLabel || title || 'Modal dialog'}

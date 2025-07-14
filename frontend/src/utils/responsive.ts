@@ -63,7 +63,12 @@ export const rTouchTarget = {
 } as const;
 
 // Safe area padding helpers
-export const getSafeAreaPadding = (insets: { top: number; bottom: number; left: number; right: number }) => {
+export const getSafeAreaPadding = (insets: {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}) => {
   return {
     paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 20 : 0),
     paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 0 : 20),
@@ -95,15 +100,15 @@ export const borderRadius = {
 export const layout = {
   // Container padding that scales with screen size
   containerPadding: dimensions.isSmallDevice ? rs.medium : rs.large,
-  
+
   // Card padding
   cardPadding: rs.medium,
-  
+
   // Section spacing
   sectionSpacing: rs.xlarge,
-  
+
   // Maximum content width for tablets
-  maxContentWidth: dimensions.isTablet ? 600 : '100%' as const,
+  maxContentWidth: dimensions.isTablet ? 600 : ('100%' as const),
 } as const;
 
 // Animation durations

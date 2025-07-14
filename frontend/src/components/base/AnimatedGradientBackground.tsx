@@ -1,12 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { rs } from '@/utils/responsive';
-import { 
-  StyleSheet, 
-  Animated, 
-  ViewStyle,
-  Dimensions,
-  View
-} from 'react-native';
+import { StyleSheet, Animated, ViewStyle, Dimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -16,7 +10,7 @@ export type GradientType = 'mesh' | 'radial' | 'diagonal' | 'wave' | 'aurora' | 
 
 interface AnimatedGradientBackgroundProps {
   type?: GradientType;
-  colors?: string[];
+  colors?: readonly [string, string, ...string[]];
   animated?: boolean;
   speed?: 'slow' | 'medium' | 'fast';
   style?: ViewStyle;
@@ -35,7 +29,7 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
   const animValue1 = useRef(new Animated.Value(0)).current;
   const animValue2 = useRef(new Animated.Value(0)).current;
   const animValue3 = useRef(new Animated.Value(0)).current;
-  
+
   const getSpeedDuration = () => {
     switch (speed) {
       case 'slow':
@@ -46,10 +40,10 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
         return 10000;
     }
   };
-  
-  const getDefaultColors = (): string[] => {
+
+  const getDefaultColors = (): readonly [string, string, ...string[]] => {
     const hour = new Date().getHours();
-    
+
     // Time-based color schemes
     if (hour >= 5 && hour < 12) {
       // Morning - warm sunrise colors
@@ -58,7 +52,7 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
         theme.colors.primary[300] + '30',
         theme.colors.secondary[200] + '20',
         theme.colors.background,
-      ];
+      ] as const;
     } else if (hour >= 12 && hour < 17) {
       // Afternoon - bright energetic colors
       return [
@@ -66,7 +60,7 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
         theme.colors.info[200] + '25',
         theme.colors.success[200] + '20',
         theme.colors.background,
-      ];
+      ] as const;
     } else if (hour >= 17 && hour < 20) {
       // Evening - sunset colors
       return [
@@ -74,7 +68,7 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
         theme.colors.error[200] + '25',
         theme.colors.warning[200] + '20',
         theme.colors.background,
-      ];
+      ] as const;
     } else {
       // Night - calm cool colors
       return [
@@ -82,283 +76,36 @@ export const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProp
         theme.colors.secondary[400] + '20',
         theme.colors.info[400] + '15',
         theme.colors.background,
-      ];
+      ] as const;
     }
   };
-  
+
   useEffect(() => {
-    if (!animated) return;
-    
-    const duration = getSpeedDuration();
-    
-    const animation1 = Animated.loop(
-      Animated.sequence([
-        Animated.timing(animValue1, {
-          toValue: 1,
-          duration: duration,
-          useNativeDriver: false,
-        }),
-        Animated.timing(animValue1, {
-          toValue: 0,
-          duration: duration,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    
-    const animation2 = Animated.loop(
-      Animated.sequence([
-        Animated.timing(animValue2, {
-          toValue: 1,
-          duration: duration * 1.5,
-          useNativeDriver: false,
-        }),
-        Animated.timing(animValue2, {
-          toValue: 0,
-          duration: duration * 1.5,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    
-    const animation3 = Animated.loop(
-      Animated.sequence([
-        Animated.timing(animValue3, {
-          toValue: 1,
-          duration: duration * 2,
-          useNativeDriver: false,
-        }),
-        Animated.timing(animValue3, {
-          toValue: 0,
-          duration: duration * 2,
-          useNativeDriver: false,
-        }),
-      ])
-    );
-    
-    animation1.start();
-    animation2.start();
-    animation3.start();
-    
-    return () => {
-      animation1.stop();
-      animation2.stop();
-      animation3.stop();
-    };
+    // DISABLED ANIMATIONS FOR PERFORMANCE
+    // These animations were causing severe performance issues (40+ second renders)
+    // If animations are needed in the future, they should:
+    // 1. Use useNativeDriver: true
+    // 2. Be limited to opacity/transform only
+    // 3. Run on demand, not continuously
+    console.log('[Performance] AnimatedGradientBackground animations disabled for performance');
+    return;
   }, [animated, animValue1, animValue2, animValue3]);
-  
+
   const gradientColors = colors || getDefaultColors();
-  
+
   const renderGradient = () => {
-    switch (type) {
-      case 'wave':
-        return (
-          <>
-            <Animated.View
-              style={[
-                styles.waveGradient,
-                {
-                  transform: [
-                    {
-                      translateY: animValue1.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, -screenHeight * 0.3],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={gradientColors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-            </Animated.View>
-            
-            <Animated.View
-              style={[
-                styles.waveGradient2,
-                {
-                  transform: [
-                    {
-                      translateY: animValue2.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, -screenHeight * 0.4],
-                      }),
-                    },
-                  ],
-                  opacity: 0.6,
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={[...gradientColors].reverse()}
-                start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-            </Animated.View>
-          </>
-        );
-        
-      case 'aurora':
-        return (
-          <>
-            <Animated.View
-              style={[
-                styles.auroraGradient,
-                {
-                  transform: [
-                    {
-                      rotate: animValue1.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['0deg', '360deg'],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={gradientColors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-            </Animated.View>
-            
-            <Animated.View
-              style={[
-                styles.auroraGradient2,
-                {
-                  transform: [
-                    {
-                      rotate: animValue2.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['0deg', '-360deg'],
-                      }),
-                    },
-                  ],
-                  opacity: 0.5,
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={[...gradientColors].reverse()}
-                start={{ x: 0.5, y: 0.5 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-            </Animated.View>
-          </>
-        );
-        
-      case 'mesh':
-        return (
-          <>
-            <Animated.View
-              style={[
-                styles.meshBlob1,
-                {
-                  transform: [
-                    {
-                      translateX: animValue1.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, screenWidth * 0.3],
-                      }),
-                    },
-                    {
-                      translateY: animValue2.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, screenHeight * 0.2],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={[gradientColors[0], gradientColors[1]]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.meshGradient}
-              />
-            </Animated.View>
-            
-            <Animated.View
-              style={[
-                styles.meshBlob2,
-                {
-                  transform: [
-                    {
-                      translateX: animValue2.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, -screenWidth * 0.3],
-                      }),
-                    },
-                    {
-                      translateY: animValue3.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, -screenHeight * 0.2],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={[gradientColors[1], gradientColors[2]]}
-                start={{ x: 0.5, y: 0.5 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.meshGradient}
-              />
-            </Animated.View>
-            
-            <Animated.View
-              style={[
-                styles.meshBlob3,
-                {
-                  transform: [
-                    {
-                      translateX: animValue3.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, screenWidth * 0.2],
-                      }),
-                    },
-                    {
-                      translateY: animValue1.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, screenHeight * 0.15],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={[gradientColors[2], gradientColors[0]]}
-                start={{ x: 1, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={styles.meshGradient}
-              />
-            </Animated.View>
-          </>
-        );
-        
-      default:
-        return (
-          <LinearGradient
-            colors={gradientColors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
-          />
-        );
-    }
+    // SIMPLIFIED FOR PERFORMANCE - Just render a static gradient
+    // All animated gradients have been disabled due to severe performance issues
+    return (
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+    );
   };
-  
+
   return (
     <View style={[styles.container, style]}>
       {renderGradient()}

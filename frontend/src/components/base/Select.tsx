@@ -155,7 +155,11 @@ export const Select: React.FC<SelectProps> = ({
       {label && <Text style={styles.label}>{label}</Text>}
 
       <TouchableOpacity
-        style={[styles.selectButton, disabled && styles.disabled, error ? styles.errorBorder : undefined]}
+        style={[
+          styles.selectButton,
+          disabled && styles.disabled,
+          error ? styles.errorBorder : undefined,
+        ]}
         onPress={() => setModalVisible(true)}
         disabled={disabled}
       >

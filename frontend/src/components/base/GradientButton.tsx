@@ -111,11 +111,7 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
 
   return (
     <Animated.View
-      style={[
-        { transform: [{ scale: scaleAnimation }] },
-        fullWidth && styles.fullWidth,
-        style,
-      ]}
+      style={[{ transform: [{ scale: scaleAnimation }] }, fullWidth && styles.fullWidth, style]}
     >
       <TouchableOpacity
         activeOpacity={0.8}
@@ -126,7 +122,11 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
         {...touchableProps}
       >
         <LinearGradient
-          colors={disabled ? [theme.colors.neutral[300], theme.colors.neutral[400]] : gradientColors as [string, string, ...string[]]}
+          colors={
+            disabled
+              ? [theme.colors.neutral[300], theme.colors.neutral[400]]
+              : (gradientColors as [string, string, ...string[]])
+          }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[buttonStyle, disabled && styles.disabled]}
@@ -154,15 +154,11 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
-                {icon && iconPosition === 'left' && (
-                  <View style={styles.iconLeft}>{icon}</View>
-                )}
+                {icon && iconPosition === 'left' && <View style={styles.iconLeft}>{icon}</View>}
                 <Text style={[textStyles, textStyle, disabled && styles.disabledText]}>
                   {children}
                 </Text>
-                {icon && iconPosition === 'right' && (
-                  <View style={styles.iconRight}>{icon}</View>
-                )}
+                {icon && iconPosition === 'right' && <View style={styles.iconRight}>{icon}</View>}
               </>
             )}
           </View>
@@ -174,21 +170,15 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
 
 const getGradientColors = (variant: GradientButtonVariant, theme: any, isPressed: boolean) => {
   const colors = {
-    primary: isPressed 
+    primary: isPressed
       ? [theme.colors.primary[700], theme.colors.primary[900]]
       : [theme.colors.primary[500], theme.colors.primary[700]],
     secondary: isPressed
       ? [theme.colors.secondary[700], theme.colors.secondary[900]]
       : [theme.colors.secondary[500], theme.colors.secondary[700]],
-    success: isPressed
-      ? ['#22c55e', '#16a34a']
-      : ['#34d399', '#22c55e'],
-    danger: isPressed
-      ? ['#dc2626', '#b91c1c']
-      : ['#ef4444', '#dc2626'],
-    premium: isPressed
-      ? ['#9333ea', '#7c3aed']
-      : ['#a855f7', '#9333ea'],
+    success: isPressed ? ['#22c55e', '#16a34a'] : ['#34d399', '#22c55e'],
+    danger: isPressed ? ['#dc2626', '#b91c1c'] : ['#ef4444', '#dc2626'],
+    premium: isPressed ? ['#9333ea', '#7c3aed'] : ['#a855f7', '#9333ea'],
   };
 
   return colors[variant] || colors.primary;

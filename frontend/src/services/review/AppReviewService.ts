@@ -153,7 +153,7 @@ class AppReviewService {
   // Update review stats
   incrementMealsLogged(): void {
     this.stats.mealsLogged++;
-    this.saveStats().catch(error => {
+    this.saveStats().catch((error) => {
       console.error('Failed to save review stats:', error);
     });
 
@@ -165,14 +165,14 @@ class AppReviewService {
 
   incrementAppOpens(): void {
     this.stats.appOpens++;
-    this.saveStats().catch(error => {
+    this.saveStats().catch((error) => {
       console.error('Failed to save review stats:', error);
     });
   }
 
   markAsRated(): void {
     this.stats.hasRated = true;
-    this.saveStats().catch(error => {
+    this.saveStats().catch((error) => {
       console.error('Failed to save review stats:', error);
     });
 
@@ -244,7 +244,7 @@ class AppReviewService {
       promptsThisYear: 0,
       hasRated: false,
     };
-    this.saveStats().catch(error => {
+    this.saveStats().catch((error) => {
       console.error('Failed to save review stats:', error);
     });
   }

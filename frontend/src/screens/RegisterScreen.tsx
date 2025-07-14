@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Image,
+} from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Container, Spacer } from '@/components/layout';
 import { Button } from '@/components/base/Button';
@@ -130,8 +138,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Image 
-              source={require('../../assets/logo_cropped.png')} 
+            <Image
+              source={require('../../assets/logo_cropped.png')}
               style={styles.headerLogo}
               resizeMode="contain"
             />
@@ -236,11 +244,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="lg" />
 
-            <Button
-              onPress={handleLogin}
-              variant="text"
-              style={styles.loginButton}
-            >
+            <Button onPress={handleLogin} variant="text" style={styles.loginButton}>
               Already have an account? Sign In
             </Button>
           </View>

@@ -58,7 +58,7 @@ export const CameraOptionsSheet: React.FC<CameraOptionsSheetProps> = ({
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(theme, insets);
-  
+
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
 
@@ -114,14 +114,14 @@ export const CameraOptionsSheet: React.FC<CameraOptionsSheetProps> = ({
 
   const handleConfirm = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     const options: CameraOptions = {
       mealType,
       cuisines,
       portionSize,
       diningContext,
     };
-    
+
     onConfirm(options);
   };
 
@@ -164,19 +164,13 @@ export const CameraOptionsSheet: React.FC<CameraOptionsSheetProps> = ({
           style={styles.keyboardAvoid}
         >
           <View style={styles.handle} />
-          
+
           <View style={styles.header}>
             <Text style={styles.title}>Meal Context</Text>
-            <Text style={styles.subtitle}>
-              Help us analyze your meal more accurately
-            </Text>
+            <Text style={styles.subtitle}>Help us analyze your meal more accurately</Text>
           </View>
 
-          <ScrollView
-            style={styles.content}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false} bounces={false}>
             {/* Meal Type Section */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>What type of meal is this?</Text>
@@ -239,18 +233,10 @@ export const CameraOptionsSheet: React.FC<CameraOptionsSheetProps> = ({
 
           {/* Action Buttons */}
           <View style={styles.actions}>
-            <Button
-              variant="outline"
-              onPress={handleClose}
-              style={styles.actionButton}
-            >
+            <Button variant="outline" onPress={handleClose} style={styles.actionButton}>
               Skip
             </Button>
-            <Button
-              variant="primary"
-              onPress={handleConfirm}
-              style={styles.actionButton}
-            >
+            <Button variant="primary" onPress={handleConfirm} style={styles.actionButton}>
               Apply Context
             </Button>
           </View>

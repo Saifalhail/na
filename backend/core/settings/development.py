@@ -23,6 +23,7 @@ ALLOWED_HOSTS = [
     "172.25.29.233",
     "172.25.*",
     "*.local",
+    "*",  # Allow all hosts in development
 ]
 
 # Database
@@ -40,10 +41,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:19006",  # Expo development server
     "http://127.0.0.1:19006",
+    "http://172.25.29.233:19006",  # Current IP for development
 ]
 
-# CORS restricted to specific development origins for security
-CORS_ALLOW_ALL_ORIGINS = False
+# Allow all origins in development for mobile testing
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Logging configuration for development
 LOGGING = {

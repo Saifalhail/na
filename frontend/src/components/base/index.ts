@@ -62,7 +62,11 @@ export { InfoTooltip } from './InfoTooltip';
 export type { TooltipTrigger, TooltipPosition } from './InfoTooltip';
 
 export { SegmentedControl } from './SegmentedControl';
-export type { SegmentedControlSize, SegmentedControlVariant, SegmentOption } from './SegmentedControl';
+export type {
+  SegmentedControlSize,
+  SegmentedControlVariant,
+  SegmentOption,
+} from './SegmentedControl';
 
 export { NutritionGauge } from './NutritionGauge';
 export type { NutritionGaugeSize } from './NutritionGauge';
@@ -84,3 +88,5 @@ export { AnimatedGradientBackground } from './AnimatedGradientBackground';
 export type { GradientType } from './AnimatedGradientBackground';
 
 export { NutritionBubble } from './NutritionBubble';
+
+export { EmptyState } from './EmptyState';

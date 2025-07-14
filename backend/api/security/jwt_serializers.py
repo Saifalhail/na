@@ -3,6 +3,7 @@ Custom JWT serializers with enhanced security features.
 """
 
 import hashlib
+import logging
 
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import update_last_login
@@ -18,6 +19,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from api.models import APIUsageLog
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -90,24 +92,25 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         refresh["account_type"] = self.user.account_type
         refresh["is_verified"] = self.user.is_verified
 
+        # Batch user updates to reduce database operations and cache invalidations
+        fields_to_update = []
+        
         # Update last login
-        update_last_login(None, self.user)
-
-        # Update last login IP
-        if hasattr(self.user, "last_login_ip"):
+        if not self.user.last_login or (timezone.now() - self.user.last_login).total_seconds() > 300:
+            # Only update if last login was more than 5 minutes ago to reduce frequent updates
+            self.user.last_login = timezone.now()
+            fields_to_update.append("last_login")
+        
+        # Update last login IP efficiently (avoid extra save if unchanged)
+        if hasattr(self.user, "last_login_ip") and self.user.last_login_ip != ip_address:
             self.user.last_login_ip = ip_address
-            self.user.save(update_fields=["last_login_ip"])
+            fields_to_update.append("last_login_ip")
+        
+        # Save all updates in one operation to reduce cache invalidations
+        if fields_to_update:
+            self.user.save(update_fields=fields_to_update)
 
-        # Log successful login
-        APIUsageLog.objects.create(
-            user=self.user,
-            endpoint="/api/v1/auth/login/",
-            method="POST",
-            ip_address=ip_address,
-            user_agent=request.META.get("HTTP_USER_AGENT", ""),
-            response_status_code=200,
-            response_time_ms=0,  # Will be updated by middleware
-        )
+        # Skip APIUsageLog creation here as it's handled by middleware to avoid duplicate logging
 
         data = {}
         data["refresh"] = str(refresh)
@@ -141,17 +144,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         attempts = cache.get(cache_key, 0)
         cache.set(cache_key, attempts + 1, 900)  # 15 minutes
 
-        # Log to database
-        APIUsageLog.objects.create(
-            user=None,
-            endpoint="/api/v1/auth/login/",
-            method="POST",
-            ip_address=ip_address,
-            user_agent=self.context.get("request").META.get("HTTP_USER_AGENT", ""),
-            response_status_code=401,
-            response_time_ms=0,
-            error_message=f"Failed login attempt for username: {username}",
-        )
+        # Skip database logging here as it's handled by middleware to avoid duplicate logging
+        # Just log to application logs for debugging
+        logger.warning(f"Failed login attempt for username: {username} from IP: {ip_address}")
 
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):
@@ -189,18 +184,7 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         # Blacklist old refresh token
         self.blacklist_token(refresh)
 
-        # Log token refresh
-        request = self.context.get("request")
-        if request:
-            APIUsageLog.objects.create(
-                user=user,
-                endpoint="/api/v1/auth/refresh/",
-                method="POST",
-                ip_address=self.get_client_ip(request),
-                user_agent=request.META.get("HTTP_USER_AGENT", ""),
-                response_status_code=200,
-                response_time_ms=0,
-            )
+        # Skip database logging here as it's handled by middleware to avoid duplicate logging
 
         data = {}
         data["refresh"] = str(new_refresh)

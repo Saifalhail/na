@@ -5,6 +5,7 @@ Complete guide for integrating with the Nutrition AI mobile-optimized API endpoi
 ## Overview
 
 The mobile API endpoints are specifically designed for mobile applications with features like:
+
 - Offline support and data synchronization
 - Batch operations for efficiency
 - Reduced payload sizes
@@ -16,6 +17,7 @@ The mobile API endpoints are specifically designed for mobile applications with 
 ## Authentication
 
 All mobile endpoints require JWT authentication:
+
 ```http
 Authorization: Bearer <access_token>
 ```
@@ -25,6 +27,7 @@ Authorization: Bearer <access_token>
 ### 1. Data Synchronization
 
 #### Full Sync
+
 **POST** `/mobile/sync/`
 
 Synchronize all user data between mobile app and server.
@@ -32,6 +35,7 @@ Synchronize all user data between mobile app and server.
 **Use Case:** App startup, major version updates, or after extended offline usage.
 
 **Request Schema:**
+
 ```json
 {
   "device_info": {
@@ -85,6 +89,7 @@ Synchronize all user data between mobile app and server.
 ```
 
 **Response (200):**
+
 ```json
 {
   "sync_id": "string (UUID)",
@@ -146,9 +151,11 @@ Synchronize all user data between mobile app and server.
 ```
 
 #### Incremental Sync
+
 For regular background synchronization:
 
 **Request:**
+
 ```json
 {
   "device_info": {
@@ -158,8 +165,8 @@ For regular background synchronization:
   "last_sync": "2024-01-20T10:00:00Z",
   "sync_type": "incremental",
   "data": {
-    "meals": [],  // Only new/modified meals since last_sync
-    "favorites": []  // Only changes since last_sync
+    "meals": [], // Only new/modified meals since last_sync
+    "favorites": [] // Only changes since last_sync
   }
 }
 ```
@@ -167,16 +174,18 @@ For regular background synchronization:
 ### 2. Batch Operations
 
 #### Batch Request
+
 **POST** `/mobile/batch/`
 
 Execute multiple API operations in a single request to reduce network overhead.
 
 **Request Schema:**
+
 ```json
 {
   "operations": [
     {
-      "id": "op_1",  // Client-generated operation ID
+      "id": "op_1", // Client-generated operation ID
       "type": "create_meal",
       "data": {
         "name": "Breakfast Bowl",
@@ -214,12 +223,13 @@ Execute multiple API operations in a single request to reduce network overhead.
       }
     }
   ],
-  "transaction": true,  // If true, all operations succeed or all fail
-  "timeout": 30  // Timeout in seconds (max 60)
+  "transaction": true, // If true, all operations succeed or all fail
+  "timeout": 30 // Timeout in seconds (max 60)
 }
 ```
 
 **Supported Operation Types:**
+
 - `create_meal`
 - `update_meal`
 - `delete_meal`
@@ -233,13 +243,14 @@ Execute multiple API operations in a single request to reduce network overhead.
 - `update_device_token`
 
 **Response (200):**
+
 ```json
 {
   "batch_id": "batch_550e8400",
   "total_operations": 5,
   "successful_operations": 4,
   "failed_operations": 1,
-  "execution_time": 1.25,  // seconds
+  "execution_time": 1.25, // seconds
   "results": [
     {
       "operation_id": "op_1",
@@ -298,11 +309,13 @@ Execute multiple API operations in a single request to reduce network overhead.
 ### 3. Quick Dashboard Stats
 
 #### Get Dashboard Data
+
 **GET** `/mobile/stats/`
 
 Get optimized dashboard data for mobile apps.
 
 **Query Parameters:**
+
 - `include` (string): Comma-separated list of data to include
   - `today` (default)
   - `week`
@@ -311,6 +324,7 @@ Get optimized dashboard data for mobile apps.
   - `quick_actions`
 
 **Response (200):**
+
 ```json
 {
   "today": {
@@ -322,9 +336,9 @@ Get optimized dashboard data for mobile apps.
       "remaining": 350
     },
     "macros": {
-      "protein": {"consumed": 125, "goal": 150, "percentage": 83.3},
-      "carbs": {"consumed": 180, "goal": 275, "percentage": 65.5},
-      "fat": {"consumed": 65, "goal": 73, "percentage": 89.0}
+      "protein": { "consumed": 125, "goal": 150, "percentage": 83.3 },
+      "carbs": { "consumed": 180, "goal": 275, "percentage": 65.5 },
+      "fat": { "consumed": 65, "goal": 73, "percentage": 89.0 }
     },
     "meals_logged": 3,
     "meals_planned": 4,
@@ -345,7 +359,7 @@ Get optimized dashboard data for mobile apps.
       "date": "2024-01-18",
       "calories_percentage": 98.5
     },
-    "trend": "improving"  // improving|declining|stable
+    "trend": "improving" // improving|declining|stable
   },
   "achievements": [
     {
@@ -384,7 +398,7 @@ Get optimized dashboard data for mobile apps.
       "type": "log_water",
       "title": "Log Water",
       "icon": "water",
-      "quick_amounts": [250, 500, 750]  // ml
+      "quick_amounts": [250, 500, 750] // ml
     },
     {
       "type": "view_progress",
@@ -398,11 +412,13 @@ Get optimized dashboard data for mobile apps.
 ### 4. Offline Queue Management
 
 #### Get Offline Queue Status
+
 **GET** `/mobile/queue/`
 
 Get status of pending offline operations.
 
 **Response (200):**
+
 ```json
 {
   "queue_status": "syncing|idle|error",
@@ -420,17 +436,19 @@ Get status of pending offline operations.
     }
   ],
   "total_pending": 1,
-  "estimated_sync_time": 15,  // seconds
+  "estimated_sync_time": 15, // seconds
   "last_successful_sync": "2024-01-20T09:45:00Z"
 }
 ```
 
 #### Process Offline Queue
+
 **POST** `/mobile/queue/`
 
 Process pending offline operations.
 
 **Request:**
+
 ```json
 {
   "operations": [
@@ -450,6 +468,7 @@ Process pending offline operations.
 ```
 
 **Response (200):**
+
 ```json
 {
   "processed": [
@@ -471,22 +490,26 @@ Process pending offline operations.
 ### 5. Image Upload & Analysis
 
 #### Upload Image for Analysis
+
 **POST** `/mobile/analyze/`
 
 Upload and analyze food images with mobile optimizations.
 
 **Headers:**
+
 - `Content-Type: multipart/form-data`
 - `X-Device-Resolution: 1920x1080` (optional)
 - `X-Network-Type: wifi|cellular` (optional)
 
 **Request (Form Data):**
+
 - `image` (file): Image file (JPEG, PNG, WebP, HEIF)
 - `compression_quality` (string): `low|medium|high` (default: medium)
 - `priority` (string): `normal|high` (default: normal)
 - `context` (JSON string): Analysis context
 
 **Context Schema:**
+
 ```json
 {
   "meal_type": "breakfast|lunch|dinner|snack",
@@ -500,12 +523,13 @@ Upload and analyze food images with mobile optimizations.
   },
   "location": {
     "latitude": 40.7128,
-    "longitude": -74.0060
+    "longitude": -74.006
   }
 }
 ```
 
 **Response (202):**
+
 ```json
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -520,11 +544,13 @@ Upload and analyze food images with mobile optimizations.
 ### 6. Device & Push Notification Management
 
 #### Register Device Token
+
 **POST** `/mobile/device/register/`
 
 Register device for push notifications.
 
 **Request:**
+
 ```json
 {
   "device_id": "ABC123-DEF456",
@@ -538,6 +564,7 @@ Register device for push notifications.
 ```
 
 **Response (201):**
+
 ```json
 {
   "device_id": "ABC123-DEF456",
@@ -548,11 +575,13 @@ Register device for push notifications.
 ```
 
 #### Update Device Token
+
 **PUT** `/mobile/device/{device_id}/`
 
 Update device information or token.
 
 **Request:**
+
 ```json
 {
   "token": "new_push_notification_token",
@@ -562,6 +591,7 @@ Update device information or token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "device_id": "ABC123-DEF456",
@@ -645,15 +675,15 @@ class OfflineManager {
 
   async syncQueue() {
     if (!this.isOnline || this.queue.length === 0) return;
-    
+
     const operations = this.queue.splice(0);
     try {
-      const response = await fetch('/api/v1/mobile/queue/', {
-        method: 'POST',
+      const response = await fetch("/api/v1/mobile/queue/", {
+        method: "POST",
         body: JSON.stringify({ operations }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { "Content-Type": "application/json" },
       });
-      
+
       const result = await response.json();
       this.handleSyncResult(result);
     } catch (error) {
@@ -670,34 +700,34 @@ class OfflineManager {
 // Example: Incremental sync implementation
 class SyncManager {
   async performSync() {
-    const lastSync = localStorage.getItem('lastSyncTime');
+    const lastSync = localStorage.getItem("lastSyncTime");
     const localChanges = this.getLocalChanges(lastSync);
-    
+
     const syncRequest = {
       device_info: this.getDeviceInfo(),
       last_sync: lastSync,
-      sync_type: lastSync ? 'incremental' : 'full',
-      data: localChanges
+      sync_type: lastSync ? "incremental" : "full",
+      data: localChanges,
     };
-    
-    const response = await fetch('/api/v1/mobile/sync/', {
-      method: 'POST',
+
+    const response = await fetch("/api/v1/mobile/sync/", {
+      method: "POST",
       body: JSON.stringify(syncRequest),
-      headers: this.getAuthHeaders()
+      headers: this.getAuthHeaders(),
     });
-    
+
     const result = await response.json();
-    
+
     // Handle conflicts
     if (result.conflicts.length > 0) {
       await this.resolveConflicts(result.conflicts);
     }
-    
+
     // Update local data
     await this.updateLocalData(result.server_data);
-    
+
     // Store sync timestamp
-    localStorage.setItem('lastSyncTime', result.sync_timestamp);
+    localStorage.setItem("lastSyncTime", result.sync_timestamp);
   }
 }
 ```
@@ -711,30 +741,34 @@ class ImageUploader {
     // Compress image based on network conditions
     const networkType = this.getNetworkType();
     const quality = this.getCompressionQuality(networkType);
-    
+
     const compressedFile = await this.compressImage(file, quality);
-    
+
     const formData = new FormData();
-    formData.append('image', compressedFile);
-    formData.append('compression_quality', quality);
-    formData.append('context', JSON.stringify(options.context));
-    
-    return fetch('/api/v1/mobile/analyze/', {
-      method: 'POST',
+    formData.append("image", compressedFile);
+    formData.append("compression_quality", quality);
+    formData.append("context", JSON.stringify(options.context));
+
+    return fetch("/api/v1/mobile/analyze/", {
+      method: "POST",
       body: formData,
       headers: {
-        'Authorization': `Bearer ${this.accessToken}`,
-        'X-Network-Type': networkType
-      }
+        Authorization: `Bearer ${this.accessToken}`,
+        "X-Network-Type": networkType,
+      },
     });
   }
-  
+
   getCompressionQuality(networkType) {
     switch (networkType) {
-      case 'wifi': return 'high';
-      case 'cellular-4g': return 'medium';
-      case 'cellular-3g': return 'low';
-      default: return 'medium';
+      case "wifi":
+        return "high";
+      case "cellular-4g":
+        return "medium";
+      case "cellular-3g":
+        return "low";
+      default:
+        return "medium";
     }
   }
 }
@@ -750,7 +784,7 @@ class BackgroundSyncManager {
     this.maxInterval = 300000; // 5 minutes
     this.retryCount = 0;
   }
-  
+
   async startBackgroundSync() {
     const performSync = async () => {
       try {
@@ -759,28 +793,28 @@ class BackgroundSyncManager {
       } catch (error) {
         this.increaseSyncInterval();
       }
-      
+
       setTimeout(performSync, this.syncInterval);
     };
-    
+
     // Start background sync when app comes to foreground
-    document.addEventListener('visibilitychange', () => {
+    document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
         performSync();
       }
     });
   }
-  
+
   resetSyncInterval() {
     this.syncInterval = 30000;
     this.retryCount = 0;
   }
-  
+
   increaseSyncInterval() {
     this.retryCount++;
     this.syncInterval = Math.min(
       this.syncInterval * Math.pow(2, this.retryCount),
-      this.maxInterval
+      this.maxInterval,
     );
   }
 }
@@ -791,14 +825,14 @@ class BackgroundSyncManager {
 ### React Native Integration
 
 ```javascript
-import { NutritionAI } from '@nutrition-ai/react-native-sdk';
+import { NutritionAI } from "@nutrition-ai/react-native-sdk";
 
 // Initialize SDK
 const nutritionAI = new NutritionAI({
-  apiKey: 'your-api-key',
-  baseUrl: 'https://your-domain.com/api/v1/',
+  apiKey: "your-api-key",
+  baseUrl: "https://your-domain.com/api/v1/",
   enableOfflineSupport: true,
-  enableBackgroundSync: true
+  enableBackgroundSync: true,
 });
 
 // Analyze food image
@@ -806,14 +840,14 @@ const analyzeFood = async (imageUri) => {
   try {
     const result = await nutritionAI.analyzeImage(imageUri, {
       context: {
-        meal_type: 'lunch',
-        cuisine_type: 'italian'
-      }
+        meal_type: "lunch",
+        cuisine_type: "italian",
+      },
     });
-    
+
     return result;
   } catch (error) {
-    console.error('Analysis failed:', error);
+    console.error("Analysis failed:", error);
   }
 };
 
@@ -821,9 +855,9 @@ const analyzeFood = async (imageUri) => {
 const syncData = async () => {
   try {
     const result = await nutritionAI.sync();
-    console.log('Sync completed:', result);
+    console.log("Sync completed:", result);
   } catch (error) {
-    console.error('Sync failed:', error);
+    console.error("Sync failed:", error);
   }
 };
 ```

@@ -133,7 +133,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const [dietaryRestrictions, setDietaryRestrictions] = useState<DietaryRestriction[]>(
     DIETARY_RESTRICTIONS.map((restriction) => ({
       ...restriction,
-      selected: profile?.dietaryRestrictions?.some(dr => dr.id === restriction.id) || false,
+      selected: profile?.dietaryRestrictions?.some((dr) => dr.id === restriction.id) || false,
     }))
   );
 
@@ -245,7 +245,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           id: r.id,
           name: r.name,
           restrictionType: 'preference' as const,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
         }));
 
       await updateProfile({
@@ -266,7 +266,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.5,
@@ -316,311 +316,316 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   const accountType = getAccountTypeInfo();
 
   return (
-    <SafeAreaContainer style={styles.container} scrollable scrollViewProps={{ showsVerticalScrollIndicator: false }}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.backButtonTouch}>
-            <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Back</Text>
-          </TouchableOpacity>
+    <SafeAreaContainer
+      style={styles.container}
+      scrollable
+      scrollViewProps={{ showsVerticalScrollIndicator: false }}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButtonTouch}>
+          <Text style={[styles.backButton, { color: theme.colors.primary[500] }]}>← Back</Text>
+        </TouchableOpacity>
 
-          <Image 
-            source={require('../../assets/logo_cropped.png')} 
-            style={styles.headerLogo}
-            resizeMode="contain"
-          />
+        <Image
+          source={require('../../assets/logo_cropped.png')}
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
 
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.notificationTouch}>
-            <Text style={styles.notificationIcon}>🔔</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Notifications')}
+          style={styles.notificationTouch}
+        >
+          <Text style={styles.notificationIcon}>🔔</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Spacer size="xl" />
+
+      {/* Profile Info */}
+      <Card style={styles.profileCard}>
+        <View style={styles.avatarContainer}>
+          <TouchableOpacity onPress={handleAvatarChange} style={styles.avatar}>
+            {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+            ) : (
+              <Text style={[styles.avatarText, { color: theme.colors.background }]}>
+                {(user?.first_name?.[0] || 'U').toUpperCase()}
+              </Text>
+            )}
+            <View style={styles.avatarEdit}>
+              <Text style={styles.avatarEditIcon}>📷</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
-        <Spacer size="xl" />
+        <Spacer size="lg" />
 
-        {/* Profile Info */}
-        <Card style={styles.profileCard}>
-          <View style={styles.avatarContainer}>
-            <TouchableOpacity onPress={handleAvatarChange} style={styles.avatar}>
-              {user?.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
-              ) : (
-                <Text style={[styles.avatarText, { color: theme.colors.background }]}>
-                  {(user?.first_name?.[0] || 'U').toUpperCase()}
-                </Text>
-              )}
-              <View style={styles.avatarEdit}>
-                <Text style={styles.avatarEditIcon}>📷</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <Spacer size="lg" />
-
-          <View style={styles.nameContainer}>
-            <Text style={[styles.name, { color: theme.colors.text.primary }]}>
-              {user?.first_name} {user?.last_name}
-            </Text>
-            <Badge
-              variant="primary"
-              style={styles.accountBadge}
-            >
-              {accountType.icon} {accountType.label}
-            </Badge>
-          </View>
-
-          <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{user?.email}</Text>
-
-          <Text style={[styles.joinDate, { color: theme.colors.textSecondary }]}>
-            Member since {formatDate(new Date(user?.date_joined || new Date().toISOString()))}
+        <View style={styles.nameContainer}>
+          <Text style={[styles.name, { color: theme.colors.text.primary }]}>
+            {user?.first_name} {user?.last_name}
           </Text>
+          <Badge variant="primary" style={styles.accountBadge}>
+            {accountType.icon} {accountType.label}
+          </Badge>
+        </View>
 
-          <Spacer size="lg" />
+        <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{user?.email}</Text>
 
-          <Button
-            onPress={() => setShowEditModal(true)}
-            variant="outline"
-            style={styles.editButton}
-          >
-            Edit Profile
-          </Button>
-        </Card>
+        <Text style={[styles.joinDate, { color: theme.colors.textSecondary }]}>
+          Member since {formatDate(new Date(user?.date_joined || new Date().toISOString()))}
+        </Text>
 
-        <Spacer size="xl" />
+        <Spacer size="lg" />
 
-        {/* Today's Progress */}
-        <Card style={styles.progressCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Today's Progress</Text>
-
-          <Spacer size="lg" />
-
-          <View style={styles.progressItem}>
-            <View style={styles.progressHeader}>
-              <Text style={[styles.progressLabel, { color: theme.colors.text.primary }]}>Calories</Text>
-              <Text style={[styles.progressValue, { color: theme.colors.primary[500] }]}>
-                {todayStats.calories} / {nutritionGoals.calories}
-              </Text>
-            </View>
-            <ProgressBar
-              progress={(todayStats.calories / nutritionGoals.calories) * 100}
-              variant="default"
-              style={styles.progressBar}
-            />
-          </View>
-
-          <View style={styles.macrosRow}>
-            <View style={styles.macroItem}>
-              <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>
-                Protein
-              </Text>
-              <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
-                {todayStats.protein}g
-              </Text>
-            </View>
-            <View style={styles.macroItem}>
-              <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Carbs</Text>
-              <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
-                {todayStats.carbs}g
-              </Text>
-            </View>
-            <View style={styles.macroItem}>
-              <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Fat</Text>
-              <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
-                {todayStats.fat}g
-              </Text>
-            </View>
-          </View>
-        </Card>
-
-        <Spacer size="xl" />
-
-        {/* Health Metrics */}
-        <Card style={styles.healthCard}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Health Metrics</Text>
-            <TouchableOpacity onPress={() => setShowHealthModal(true)}>
-              <Text style={[styles.editLink, { color: theme.colors.primary[500] }]}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Spacer size="lg" />
-
-          <View style={styles.metricsGrid}>
-            {healthMetrics.bmi && (
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
-                  {healthMetrics.bmi}
-                </Text>
-                <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMI</Text>
-                <Text
-                  style={[
-                    styles.metricCategory,
-                    { color: getBMICategory(healthMetrics.bmi).color },
-                  ]}
-                >
-                  {getBMICategory(healthMetrics.bmi).label}
-                </Text>
-              </View>
-            )}
-
-            {healthMetrics.bmr && (
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
-                  {healthMetrics.bmr}
-                </Text>
-                <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMR</Text>
-                <Text style={[styles.metricCategory, { color: theme.colors.textSecondary }]}>
-                  kcal/day
-                </Text>
-              </View>
-            )}
-
-            {healthMetrics.tdee && (
-              <View style={styles.metricItem}>
-                <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
-                  {healthMetrics.tdee}
-                </Text>
-                <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>
-                  TDEE
-                </Text>
-                <Text style={[styles.metricCategory, { color: theme.colors.textSecondary }]}>
-                  kcal/day
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <Spacer size="md" />
-
-          <View style={[styles.metricDetails, { backgroundColor: theme.colors.surface }]}>
-            <MetricRow label="Height" value={`${healthMetrics.height} cm`} theme={theme} />
-            <MetricRow label="Weight" value={`${healthMetrics.weight} kg`} theme={theme} />
-            <MetricRow
-              label="Activity"
-              value={
-                ACTIVITY_LEVELS.find((a) => a.value === healthMetrics.activityLevel)?.label || ''
-              }
-              theme={theme}
-            />
-          </View>
-        </Card>
-
-        <Spacer size="xl" />
-
-        {/* Settings */}
-        <Card style={styles.settingsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Settings</Text>
-
-          <Spacer size="lg" />
-
-          <SettingItem
-            title="Nutrition Goals"
-            subtitle="Set your daily targets"
-            icon="🎯"
-            onPress={() => setShowGoalsModal(true)}
-            theme={theme}
-            showBadge={false}
-          />
-
-          <SettingItem
-            title="Dietary Preferences"
-            subtitle={`${dietaryRestrictions.filter((r) => r.selected).length} restrictions set`}
-            icon="🥗"
-            onPress={() => setShowDietaryModal(true)}
-            theme={theme}
-            showBadge={dietaryRestrictions.filter((r) => r.selected).length > 0}
-          />
-
-          <SettingItem
-            title="Two-Factor Authentication"
-            subtitle={user?.is_verified ? 'Enabled' : 'Secure your account'}
-            icon="🔐"
-            onPress={() => navigation.navigate('TwoFactorSetup')}
-            theme={theme}
-            showBadge={user?.is_verified || false}
-          />
-
-          <SettingItem
-            title="Notifications"
-            subtitle="Manage your alerts"
-            icon="🔔"
-            onPress={() => navigation.navigate('Notifications')}
-            theme={theme}
-            showBadge={false}
-          />
-
-          <View style={styles.settingItem}>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingIcon}>🌙</Text>
-              <View style={styles.settingText}>
-                <Text style={[styles.settingTitle, { color: theme.colors.text.primary }]}>Dark Mode</Text>
-                <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
-                  {themeMode === 'dark' ? 'Enabled' : 'Disabled'}
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={themeMode === 'dark'}
-              onValueChange={toggleTheme}
-              trackColor={{ false: theme.colors.neutral[300], true: theme.colors.primary[500] }}
-              thumbColor={theme.colors.background}
-            />
-          </View>
-
-          <SettingItem
-            title="Privacy & Security"
-            subtitle="Manage your data"
-            icon="🔒"
-            onPress={() => Alert.alert('Coming Soon', 'Privacy settings will be available soon!')}
-            theme={theme}
-            showBadge={false}
-          />
-
-          <SettingItem
-            title="Help & Support"
-            subtitle="Get help or contact us"
-            icon="❓"
-            onPress={() => Alert.alert('Help & Support', 'Contact us at support@bitesight.app')}
-            theme={theme}
-            showBadge={false}
-          />
-        </Card>
-
-        <Spacer size="xl" />
-
-        {/* Account Actions */}
-        <Card style={styles.accountCard}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Account</Text>
-
-          <Spacer size="lg" />
-
-          <TouchableOpacity onPress={handleExportData} style={styles.accountAction}>
-            <Text style={[styles.accountActionText, { color: theme.colors.primary[500] }]}>
-              Export My Data
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setShowDeleteModal(true)} style={styles.accountAction}>
-            <Text style={[styles.accountActionText, { color: theme.colors.error[500] }]}>
-              Delete Account
-            </Text>
-          </TouchableOpacity>
-        </Card>
-
-        <Spacer size="xl" />
-
-        {/* Logout */}
-        <Button
-          onPress={handleLogout}
-          variant="danger"
-          style={styles.logoutButton}
-        >
-          Sign Out
+        <Button onPress={() => setShowEditModal(true)} variant="outline" style={styles.editButton}>
+          Edit Profile
         </Button>
+      </Card>
 
-        <Spacer size="xxl" />
+      <Spacer size="xl" />
+
+      {/* Today's Progress */}
+      <Card style={styles.progressCard}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+          Today's Progress
+        </Text>
+
+        <Spacer size="lg" />
+
+        <View style={styles.progressItem}>
+          <View style={styles.progressHeader}>
+            <Text style={[styles.progressLabel, { color: theme.colors.text.primary }]}>
+              Calories
+            </Text>
+            <Text style={[styles.progressValue, { color: theme.colors.primary[500] }]}>
+              {todayStats.calories} / {nutritionGoals.calories}
+            </Text>
+          </View>
+          <ProgressBar
+            progress={(todayStats.calories / nutritionGoals.calories) * 100}
+            variant="default"
+            style={styles.progressBar}
+          />
+        </View>
+
+        <View style={styles.macrosRow}>
+          <View style={styles.macroItem}>
+            <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Protein</Text>
+            <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
+              {todayStats.protein}g
+            </Text>
+          </View>
+          <View style={styles.macroItem}>
+            <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Carbs</Text>
+            <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
+              {todayStats.carbs}g
+            </Text>
+          </View>
+          <View style={styles.macroItem}>
+            <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Fat</Text>
+            <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
+              {todayStats.fat}g
+            </Text>
+          </View>
+        </View>
+      </Card>
+
+      <Spacer size="xl" />
+
+      {/* Health Metrics */}
+      <Card style={styles.healthCard}>
+        <View style={styles.cardHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+            Health Metrics
+          </Text>
+          <TouchableOpacity onPress={() => setShowHealthModal(true)}>
+            <Text style={[styles.editLink, { color: theme.colors.primary[500] }]}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Spacer size="lg" />
+
+        <View style={styles.metricsGrid}>
+          {healthMetrics.bmi && (
+            <View style={styles.metricItem}>
+              <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
+                {healthMetrics.bmi}
+              </Text>
+              <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMI</Text>
+              <Text
+                style={[styles.metricCategory, { color: getBMICategory(healthMetrics.bmi).color }]}
+              >
+                {getBMICategory(healthMetrics.bmi).label}
+              </Text>
+            </View>
+          )}
+
+          {healthMetrics.bmr && (
+            <View style={styles.metricItem}>
+              <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
+                {healthMetrics.bmr}
+              </Text>
+              <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMR</Text>
+              <Text style={[styles.metricCategory, { color: theme.colors.textSecondary }]}>
+                kcal/day
+              </Text>
+            </View>
+          )}
+
+          {healthMetrics.tdee && (
+            <View style={styles.metricItem}>
+              <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
+                {healthMetrics.tdee}
+              </Text>
+              <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>TDEE</Text>
+              <Text style={[styles.metricCategory, { color: theme.colors.textSecondary }]}>
+                kcal/day
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <Spacer size="md" />
+
+        <View style={[styles.metricDetails, { backgroundColor: theme.colors.surface }]}>
+          <MetricRow label="Height" value={`${healthMetrics.height} cm`} theme={theme} />
+          <MetricRow label="Weight" value={`${healthMetrics.weight} kg`} theme={theme} />
+          <MetricRow
+            label="Activity"
+            value={
+              ACTIVITY_LEVELS.find((a) => a.value === healthMetrics.activityLevel)?.label || ''
+            }
+            theme={theme}
+          />
+        </View>
+      </Card>
+
+      <Spacer size="xl" />
+
+      {/* Settings */}
+      <Card style={styles.settingsCard}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Settings</Text>
+
+        <Spacer size="lg" />
+
+        <SettingItem
+          title="Nutrition Goals"
+          subtitle="Set your daily targets"
+          icon="🎯"
+          onPress={() => setShowGoalsModal(true)}
+          theme={theme}
+          showBadge={false}
+        />
+
+        <SettingItem
+          title="Dietary Preferences"
+          subtitle={`${dietaryRestrictions.filter((r) => r.selected).length} restrictions set`}
+          icon="🥗"
+          onPress={() => setShowDietaryModal(true)}
+          theme={theme}
+          showBadge={dietaryRestrictions.filter((r) => r.selected).length > 0}
+        />
+
+        <SettingItem
+          title="Two-Factor Authentication"
+          subtitle={user?.is_verified ? 'Enabled' : 'Secure your account'}
+          icon="🔐"
+          onPress={() => navigation.navigate('TwoFactorSetup')}
+          theme={theme}
+          showBadge={user?.is_verified || false}
+        />
+
+        <SettingItem
+          title="Notifications"
+          subtitle="Manage your alerts"
+          icon="🔔"
+          onPress={() => navigation.navigate('Notifications')}
+          theme={theme}
+          showBadge={false}
+        />
+
+        <View style={styles.settingItem}>
+          <View style={styles.settingContent}>
+            <Text style={styles.settingIcon}>🌙</Text>
+            <View style={styles.settingText}>
+              <Text style={[styles.settingTitle, { color: theme.colors.text.primary }]}>
+                Dark Mode
+              </Text>
+              <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
+                {themeMode === 'dark' ? 'Enabled' : 'Disabled'}
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={themeMode === 'dark'}
+            onValueChange={toggleTheme}
+            trackColor={{ false: theme.colors.neutral[300], true: theme.colors.primary[500] }}
+            thumbColor={theme.colors.background}
+          />
+        </View>
+
+        <SettingItem
+          title="Privacy & Security"
+          subtitle="Manage your data"
+          icon="🔒"
+          onPress={() => Alert.alert('Coming Soon', 'Privacy settings will be available soon!')}
+          theme={theme}
+          showBadge={false}
+        />
+
+        <SettingItem
+          title="Help & Support"
+          subtitle="Get help or contact us"
+          icon="❓"
+          onPress={() => Alert.alert('Help & Support', 'Contact us at support@bitesight.app')}
+          theme={theme}
+          showBadge={false}
+        />
+      </Card>
+
+      <Spacer size="xl" />
+
+      {/* Account Actions */}
+      <Card style={styles.accountCard}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Account</Text>
+
+        <Spacer size="lg" />
+
+        <TouchableOpacity onPress={handleExportData} style={styles.accountAction}>
+          <Text style={[styles.accountActionText, { color: theme.colors.primary[500] }]}>
+            Export My Data
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setShowDeleteModal(true)} style={styles.accountAction}>
+          <Text style={[styles.accountActionText, { color: theme.colors.error[500] }]}>
+            Delete Account
+          </Text>
+        </TouchableOpacity>
+      </Card>
+
+      <Spacer size="xl" />
+
+      {/* Logout */}
+      <Button onPress={handleLogout} variant="danger" style={styles.logoutButton}>
+        Sign Out
+      </Button>
+
+      <Spacer size="xxl" />
 
       {/* Edit Profile Modal */}
-      <Modal visible={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Profile" scrollable>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContent}>
+      <Modal
+        visible={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Profile"
+        scrollable
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContent}
+        >
           <TextInput
             style={[styles.input, { color: theme.colors.text.primary }]}
             value={profileData.firstName}
@@ -652,12 +657,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
           <Spacer size="lg" />
 
-          <Button
-            onPress={handleSaveProfile}
-            variant="primary"
-            fullWidth
-            loading={isLoading}
-          >
+          <Button onPress={handleSaveProfile} variant="primary" fullWidth loading={isLoading}>
             Save Changes
           </Button>
         </KeyboardAvoidingView>
@@ -672,7 +672,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <ScrollView style={styles.modalScrollContent}>
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Height (cm)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>
+                Height (cm)
+              </Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text.primary }]}
                 value={healthMetrics.height.toString()}
@@ -686,7 +688,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Weight (kg)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>
+                Weight (kg)
+              </Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text.primary }]}
                 value={healthMetrics.weight.toString()}
@@ -714,7 +718,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Activity Level</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>
+                Activity Level
+              </Text>
               {ACTIVITY_LEVELS.map((level) => (
                 <TouchableOpacity
                   key={level.value}
@@ -774,7 +780,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         <ScrollView style={styles.modalScrollContent}>
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Daily Calories</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>
+                Daily Calories
+              </Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.calories.toString()}
@@ -788,7 +796,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Protein (g)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>
+                Protein (g)
+              </Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.protein.toString()}
@@ -832,7 +842,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Fiber (g)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>
+                Fiber (g)
+              </Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.fiber.toString()}
@@ -846,7 +858,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             <Spacer size="md" />
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>Water (ml)</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.text.primary }]}>
+                Water (ml)
+              </Text>
               <TextInput
                 style={[styles.input, { color: theme.colors.text.primary }]}
                 value={nutritionGoals.water.toString()}
@@ -859,12 +873,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="lg" />
 
-            <Button
-              onPress={handleSaveGoals}
-              variant="primary"
-              fullWidth
-              loading={isLoading}
-            >
+            <Button onPress={handleSaveGoals} variant="primary" fullWidth loading={isLoading}>
               Save Goals
             </Button>
           </View>
@@ -939,21 +948,13 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
           <Spacer size="lg" />
 
-          <Button
-            onPress={() => setShowDeleteModal(false)}
-            variant="outline"
-            fullWidth
-          >
+          <Button onPress={() => setShowDeleteModal(false)} variant="outline" fullWidth>
             Cancel
           </Button>
 
           <Spacer size="md" />
 
-          <Button
-            onPress={handleDeleteAccount}
-            variant="danger"
-            fullWidth
-          >
+          <Button onPress={handleDeleteAccount} variant="danger" fullWidth>
             Delete My Account
           </Button>
         </View>

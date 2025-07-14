@@ -59,7 +59,7 @@ class ABTestingService {
 
   initialize(userId: string): void {
     this.userId = userId;
-    this.loadUserAssignments().catch(error => {
+    this.loadUserAssignments().catch((error) => {
       console.error('[ABTesting] Failed to load user assignments:', error);
     });
   }
@@ -157,7 +157,7 @@ class ABTestingService {
     experiments.forEach((exp) => {
       this.experiments.set(exp.id, exp);
     });
-    this.persistExperiments().catch(error => {
+    this.persistExperiments().catch((error) => {
       console.error('[ABTesting] Failed to persist experiments:', error);
     });
   }
@@ -165,7 +165,7 @@ class ABTestingService {
   // Add a single experiment
   addExperiment(experiment: Experiment): void {
     this.experiments.set(experiment.id, experiment);
-    this.persistExperiments().catch(error => {
+    this.persistExperiments().catch((error) => {
       console.error('[ABTesting] Failed to persist experiments:', error);
     });
   }
@@ -175,7 +175,7 @@ class ABTestingService {
     const experiment = this.experiments.get(experimentId);
     if (experiment) {
       experiment.status = status;
-      this.persistExperiments().catch(error => {
+      this.persistExperiments().catch((error) => {
         console.error('[ABTesting] Failed to persist experiments:', error);
       });
     }
@@ -237,7 +237,7 @@ class ABTestingService {
           assignedAt: Date.now(),
         };
         this.userAssignments.set(experiment.id, assignment);
-        this.persistUserAssignments().catch(error => {
+        this.persistUserAssignments().catch((error) => {
           console.error('[ABTesting] Failed to persist user assignments:', error);
         });
         return variant;

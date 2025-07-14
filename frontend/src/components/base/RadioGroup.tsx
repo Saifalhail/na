@@ -1,14 +1,7 @@
 import React from 'react';
 import { rs } from '@/utils/responsive';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Ionicons } from '@/components/IconFallback';
 import { useTheme } from '@/hooks/useTheme';
 import { Theme } from '@/theme';
 
@@ -111,11 +104,7 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
         </View>
         <View style={styles.labelContainer}>
           <Text
-            style={[
-              styles.optionLabel,
-              styles[`${size}Label`],
-              isDisabled && styles.disabledLabel,
-            ]}
+            style={[styles.optionLabel, styles[`${size}Label`], isDisabled && styles.disabledLabel]}
           >
             {option.label}
           </Text>
@@ -138,19 +127,13 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
   return (
     <View style={style} testID={testID}>
       {label && (
-        <Text
-          style={[styles.groupLabel, labelStyle]}
-          accessibilityRole="text"
-        >
+        <Text style={[styles.groupLabel, labelStyle]} accessibilityRole="text">
           {label}
           {required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
       <View
-        style={[
-          styles.container,
-          orientation === 'horizontal' && styles.horizontalContainer,
-        ]}
+        style={[styles.container, orientation === 'horizontal' && styles.horizontalContainer]}
         accessibilityRole="radiogroup"
         accessibilityLabel={accessibilityLabel || label}
       >

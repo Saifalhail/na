@@ -158,11 +158,11 @@ class UserModelTest(TestCase):
             'first_name': 'Test',
             'last_name': 'User',
         }
-    
+
     def test_create_user_with_email(self):
         """Test creating a user with email as primary field."""
         user = User.objects.create_user(**self.valid_user_data)
-        
+
         self.assertEqual(user.email, 'test@example.com')
         self.assertTrue(user.check_password('testpass123'))
         self.assertFalse(user.is_verified)  # Check defaults
@@ -185,7 +185,7 @@ class UserModelTest(TestCase):
 def test_field_validation(self):
     """Test field validation."""
     model = MyModel(invalid_field='invalid_value')
-    
+
     with self.assertRaises(ValidationError):
         model.full_clean()
 ```
@@ -196,7 +196,7 @@ def test_field_validation(self):
 def test_unique_constraint(self):
     """Test unique constraint."""
     MyModel.objects.create(unique_field='value')
-    
+
     with self.assertRaises(IntegrityError):
         MyModel.objects.create(unique_field='value')
 ```
@@ -208,7 +208,7 @@ def test_foreign_key_relationship(self):
     """Test foreign key relationship."""
     parent = ParentModel.objects.create()
     child = ChildModel.objects.create(parent=parent)
-    
+
     self.assertEqual(child.parent, parent)
     self.assertEqual(parent.children.count(), 1)
 ```
@@ -229,6 +229,7 @@ python manage.py test --debug-sql
 ## Continuous Integration
 
 Tests are automatically run on:
+
 - Pull requests
 - Commits to main branch
 - Before deployment
