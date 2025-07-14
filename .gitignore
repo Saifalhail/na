@@ -6,6 +6,8 @@ __pycache__/
 .Python
 *.so
 .env
+
+# Virtual environments only
 venv/
 venv_linux/
 venv_*/
@@ -13,6 +15,7 @@ env/
 ENV/
 env.bak/
 venv.bak/
+backend/venv*/
 
 # Problematic shell scripts
 start_temp.sh
