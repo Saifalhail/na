@@ -7,7 +7,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import FavoriteMeal, Meal, UserProfile
+from api.models import Meal, UserProfile
 from api.serializers.meal_serializers import MealListSerializer
 from api.serializers.user_serializers import (UserBasicSerializer,
                                               UserDetailSerializer,
@@ -143,7 +143,8 @@ class UserStatisticsView(APIView):
             )
 
             # Count favorite meals
-            favorite_count = FavoriteMeal.objects.filter(user=user).count()
+            # FavoriteMeal model has been removed in backend simplification
+            favorite_count = 0
 
             # Meals by time period
             meals_this_week = meals.filter(consumed_at__gte=week_ago).count()

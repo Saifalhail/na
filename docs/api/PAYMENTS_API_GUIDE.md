@@ -2,17 +2,24 @@
 
 Complete guide for integrating with the Nutrition AI payments and subscription system powered by Stripe.
 
+## ⚠️ Backend Simplification Update
+
+**Note**: This document describes the original complex payment system. The backend has been simplified to use basic models: `SubscriptionPlan`, `Subscription`, and `Payment`. For updated integration examples, see:
+
+- [SIMPLIFIED_API_GUIDE.md](./SIMPLIFIED_API_GUIDE.md) - Core endpoints guide
+- [API_REFERENCE.md](./API_REFERENCE.md) - Complete updated API reference
+
+**Removed Features**: Complex payment method management, invoice generation, extensive billing analytics, and webhook handling have been simplified.
+
 ## Overview
 
-The payments API provides:
+The simplified payments API provides:
 
-- Subscription management for premium features
-- Payment method storage and management
-- Invoice generation and history
-- Webhook handling for real-time updates
-- Comprehensive billing analytics
+- Basic subscription management for premium features
+- Simple payment tracking
+- Essential subscription plan management
 
-**Base URL:** `https://your-domain.com/api/v1/payments/`
+**Base URL:** `http://127.0.0.1:8000/api/v1/` (dev) | `https://api.nutritionai.com/api/v1/` (prod)
 
 ## Authentication
 

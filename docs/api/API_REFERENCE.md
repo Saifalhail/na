@@ -1,22 +1,81 @@
-# API Reference - Nutrition AI Backend
+# API Reference - Nutrition AI Backend (Simplified)
 
-Complete reference for all API endpoints with request/response schemas.
+Complete reference for all API endpoints with request/response schemas for the simplified backend architecture.
 
 **Base URL:** `https://your-domain.com/api/v1/` (production) or `http://127.0.0.1:8000/api/v1/` (development)
 
 **Authentication:** JWT Bearer tokens required for most endpoints.
 
+## Backend Simplification Note
+
+This API reference reflects the simplified backend structure with 10 core models:
+- User, UserProfile, FoodItem, Meal, MealItem, MealAnalysis
+- Notification, DeviceToken, SubscriptionPlan, Subscription, Payment
+
+**Removed Features**: FavoriteMeal, PaymentMethod, Invoice, SyncLog, PushNotification, DietaryRestriction, 2FA, SMS, Firebase, and malware scanning have been removed for simplicity.
+
 ## Table of Contents
 
-1. [Authentication](#authentication)
-2. [User Management](#user-management)
-3. [Meals & Analysis](#meals--analysis)
-4. [Notifications](#notifications)
-5. [Payments & Subscriptions](#payments--subscriptions)
-6. [Mobile Optimized](#mobile-optimized)
-7. [Admin & Analytics](#admin--analytics)
-8. [WebSocket Endpoints](#websocket-endpoints)
+1. [Health Checks](#health-checks)
+2. [Authentication](#authentication)
+3. [User Management](#user-management)
+4. [AI Analysis](#ai-analysis)
+5. [Meals Management](#meals-management)
+6. [Notifications](#notifications)
+7. [Mobile Optimized](#mobile-optimized)
+8. [Subscriptions](#subscriptions)
 9. [Webhook Endpoints](#webhook-endpoints)
+
+---
+
+## Health Checks
+
+### API Health Check
+
+**GET** `/api/health/`
+
+Check the overall health of the API.
+
+**Response:**
+```json
+{
+    "status": "healthy",
+    "timestamp": "2025-07-15T10:30:00.000Z",
+    "version": "1.0.0",
+    "environment": "development"
+}
+```
+
+### Service Health Check
+
+**GET** `/api/health/services/`
+
+Check the health of individual services.
+
+**Response:**
+```json
+{
+    "status": "healthy",
+    "services": {
+        "database": "healthy",
+        "cache": "healthy",
+        "gemini_ai": "healthy"
+    },
+    "timestamp": "2025-07-15T10:30:00.000Z"
+}
+```
+
+### Readiness Check
+
+**GET** `/api/ready/`
+
+Check if the API is ready to serve requests.
+
+### Liveness Check
+
+**GET** `/api/live/`
+
+Check if the API is running.
 
 ---
 
@@ -420,294 +479,471 @@ Get user's nutrition and activity statistics.
 
 ---
 
-## Meals & Analysis
+## AI Analysis
 
-### Analyze Food Image
+### Basic Food Image Analysis
 
 **POST** `/ai/analyze/`
 
-Analyze a food image and get nutritional information.
+Analyze a food image using Google Gemini Vision API and create a meal with nutritional information.
 
-**Headers:**
-
-- `Authorization: Bearer <access_token>`
-- `Content-Type: multipart/form-data`
-
-**Request (Form Data):**
-
-- `image` (file): Food image (JPEG, PNG, WebP, HEIF)
-- `meal_type` (string, optional): `breakfast`, `lunch`, `dinner`, `snack`
-- `cuisine_type` (string, optional): e.g., `italian`, `chinese`, `mexican`
-- `context` (JSON string, optional): Additional context data
+**Request (multipart/form-data):**
+- `image` (file, required): Food image (JPG, PNG, WebP, max 10MB)
+- `meal_type` (string, optional): "breakfast", "lunch", "dinner", "snack", "other"
+- `location_name` (string, optional): Location name for context
+- `latitude` (float, optional): Latitude for location context
+- `longitude` (float, optional): Longitude for location context
 
 **Response (200):**
-
 ```json
 {
-  "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "analysis_complete": true,
-  "overall_progress": 100,
-  "final_result": {
-    "items": [
-      {
-        "name": "Grilled Chicken Breast",
-        "quantity": 150,
-        "unit": "g",
-        "confidence": 92.5,
-        "calories": 231,
-        "protein": 43.5,
-        "carbohydrates": 0,
-        "fat": 5.0,
-        "fiber": 0,
-        "sugar": 0,
-        "sodium": 74
-      },
-      {
-        "name": "Brown Rice",
-        "quantity": 100,
-        "unit": "g",
-        "confidence": 88.2,
-        "calories": 111,
-        "protein": 2.6,
-        "carbohydrates": 23,
-        "fat": 0.9,
-        "fiber": 1.8,
-        "sugar": 0.4,
-        "sodium": 5
-      }
-    ],
-    "total_nutrition": {
-      "calories": 342,
-      "protein": 46.1,
-      "carbohydrates": 23,
-      "fat": 5.9,
-      "fiber": 1.8,
-      "sugar": 0.4,
-      "sodium": 79
+    "meal": {
+        "id": "uuid",
+        "name": "Grilled Chicken Salad",
+        "meal_type": "lunch",
+        "consumed_at": "2025-07-15T12:00:00Z",
+        "total_calories": 350,
+        "location_name": "Home Kitchen",
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "meal_items": [
+            {
+                "id": "uuid",
+                "food_item_name": "Grilled Chicken Breast",
+                "quantity": 150,
+                "unit": "g",
+                "calories": 231,
+                "protein": 43.5,
+                "carbohydrates": 0,
+                "fat": 5.0
+            },
+            {
+                "id": "uuid",
+                "food_item_name": "Mixed Greens",
+                "quantity": 100,
+                "unit": "g",
+                "calories": 20,
+                "protein": 2.0,
+                "carbohydrates": 4.0,
+                "fat": 0.3
+            }
+        ]
     },
-    "dietary_flags": ["high_protein", "low_carb"],
-    "allergens": [],
-    "cuisine_detected": "american",
-    "meal_type_detected": "lunch"
-  }
+    "analysis": {
+        "confidence_overall": 85,
+        "confidence_ingredients": 90,
+        "confidence_portions": 80,
+        "analysis_context": {
+            "location": "Home Kitchen",
+            "time": "2025-07-15T12:00:00Z",
+            "lighting": "good",
+            "image_quality": "high"
+        }
+    }
 }
 ```
 
-### Get Analysis Progress
+### Progressive Food Analysis
 
-**GET** `/ai/analyze/{session_id}/`
+**POST** `/ai/progressive-analyze/`
 
-Get progress of an ongoing analysis.
+Start a progressive analysis that continues until target confidence is reached.
 
-**Headers:** `Authorization: Bearer <access_token>`
+**Request (multipart/form-data):**
+- `image` (file, required): Food image
+- `meal_type` (string, optional): Meal type
+- `target_confidence` (int, optional): Target confidence level (default: 80)
 
-**Response (200):**
-
+**Response (202):**
 ```json
 {
-  "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "overall_progress": 75,
-  "current_stage": "nutritional_analysis",
-  "status": "processing",
-  "stages": {
-    "image_preprocessing": { "status": "completed", "progress": 100 },
-    "food_detection": { "status": "completed", "progress": 100 },
-    "portion_estimation": { "status": "completed", "progress": 100 },
-    "nutritional_analysis": { "status": "processing", "progress": 75 },
-    "result_compilation": { "status": "pending", "progress": 0 }
-  }
+    "session_id": "progressive_session_uuid",
+    "status": "processing",
+    "progress": {
+        "current_step": 1,
+        "total_steps": 3,
+        "current_confidence": 65,
+        "target_confidence": 80
+    }
 }
 ```
 
-### Create Meal from Analysis
+### Get Progressive Analysis Status
+
+**GET** `/ai/progressive-status/{session_id}/`
+
+Check the status of a progressive analysis session.
+
+**Response (200):**
+```json
+{
+    "session_id": "progressive_session_uuid",
+    "status": "completed",
+    "progress": {
+        "current_step": 3,
+        "total_steps": 3,
+        "current_confidence": 87,
+        "target_confidence": 80
+    },
+    "meal": {
+        "id": "uuid",
+        "name": "Analyzed Meal",
+        "meal_items": [...]
+    },
+    "analysis": {
+        "confidence_overall": 87,
+        "confidence_ingredients": 90,
+        "confidence_portions": 85
+    }
+}
+```
+
+### Confidence Routing Analysis
+
+**POST** `/ai/confidence-analyze/`
+
+Analyze food image with confidence-based routing to different AI models.
+
+**Request (multipart/form-data):**
+- `image` (file, required): Food image
+- `meal_type` (string, optional): Meal type
+- `confidence_threshold` (int, optional): Minimum confidence threshold
+
+**Response (200):**
+```json
+{
+    "meal": {...},
+    "analysis": {
+        "confidence_overall": 92,
+        "routing_decision": "high_confidence_model",
+        "model_used": "gemini-pro-vision",
+        "fallback_used": false
+    }
+}
+```
+
+### Recalculate Nutrition
+
+**POST** `/ai/recalculate/`
+
+Recalculate nutritional information for a meal with updated ingredients.
+
+**Request:**
+```json
+{
+    "meal_id": "uuid",
+    "meal_items": [
+        {
+            "food_item_name": "Chicken Breast",
+            "quantity": 200,
+            "unit": "g"
+        }
+    ]
+}
+```
+
+**Response (200):**
+```json
+{
+    "meal": {
+        "id": "uuid",
+        "total_calories": 462,
+        "total_macros": {
+            "protein": 87.0,
+            "carbohydrates": 0,
+            "fat": 10.0
+        },
+        "meal_items": [...]
+    }
+}
+```
+
+### Get Progressive Analysis Statistics
+
+**GET** `/ai/progressive-stats/`
+
+Get statistics about progressive analysis performance.
+
+**Response (200):**
+```json
+{
+    "total_sessions": 156,
+    "average_confidence_improvement": 23.5,
+    "average_steps_to_target": 2.3,
+    "success_rate": 94.2
+}
+```
+
+### Get Confidence Routing Statistics
+
+**GET** `/ai/confidence-stats/`
+
+Get statistics about confidence routing performance.
+
+**Response (200):**
+```json
+{
+    "total_analyses": 1250,
+    "routing_distribution": {
+        "high_confidence": 68.2,
+        "medium_confidence": 25.8,
+        "low_confidence": 6.0
+    },
+    "average_confidence": 82.3
+}
+```
+
+### Get Cache Statistics (Admin Only)
+
+**GET** `/ai/cache-stats/`
+
+Get AI analysis cache statistics.
+
+**Response (200):**
+```json
+{
+    "cache_hit_rate": 34.2,
+    "total_cached_analyses": 428,
+    "cache_size_mb": 156.7,
+    "average_response_time_ms": 1250
+}
+```
+
+### Clear AI Cache (Admin Only)
+
+**POST** `/ai/clear-cache/`
+
+Clear the AI analysis cache.
+
+**Response (200):**
+```json
+{
+    "message": "Cache cleared successfully",
+    "items_cleared": 428
+}
+```
+
+---
+
+## Meals Management
+
+### Create Meal
 
 **POST** `/meals/`
 
-Create a new meal from analysis results.
-
-**Headers:** `Authorization: Bearer <access_token>`
+Create a new meal manually or from analysis results.
 
 **Request:**
-
 ```json
 {
-  "name": "Lunch - Chicken & Rice",
-  "image": "path/to/uploaded/image.jpg",
-  "meal_type": "lunch",
-  "consumed_at": "2024-01-20T12:30:00Z",
-  "analysis_session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "meal_items": [
-    {
-      "food_item_name": "Grilled Chicken Breast",
-      "quantity": 150,
-      "unit": "g",
-      "calories": 231,
-      "protein": 43.5,
-      "carbohydrates": 0,
-      "fat": 5.0
-    }
-  ]
+    "name": "Breakfast Bowl",
+    "meal_type": "breakfast",
+    "consumed_at": "2025-07-15T08:00:00Z",
+    "notes": "Healthy breakfast",
+    "meal_items": [
+        {
+            "food_item_name": "Oatmeal",
+            "quantity": 100,
+            "unit": "g"
+        },
+        {
+            "food_item_name": "Banana",
+            "quantity": 1,
+            "unit": "medium"
+        }
+    ]
 }
 ```
 
 **Response (201):**
-
 ```json
 {
-  "id": 123,
-  "name": "Lunch - Chicken & Rice",
-  "image": "https://example.com/meals/123.jpg",
-  "meal_type": "lunch",
-  "consumed_at": "2024-01-20T12:30:00Z",
-  "total_calories": 342,
-  "total_protein": 46.1,
-  "total_carbs": 23,
-  "total_fat": 5.9,
-  "created_at": "2024-01-20T12:35:00Z",
-  "meal_items": [
-    {
-      "id": 456,
-      "food_item": "Grilled Chicken Breast",
-      "quantity": 150,
-      "unit": "g",
-      "calories": 231,
-      "protein": 43.5,
-      "carbohydrates": 0,
-      "fat": 5.0
-    }
-  ]
+    "id": "uuid",
+    "name": "Breakfast Bowl",
+    "meal_type": "breakfast",
+    "consumed_at": "2025-07-15T08:00:00Z",
+    "total_calories": 285,
+    "total_macros": {
+        "protein": 6.5,
+        "carbohydrates": 58.2,
+        "fat": 3.1
+    },
+    "meal_items": [...]
 }
 ```
 
-### List Meals
+### Get All Meals
 
 **GET** `/meals/`
 
-Get user's meals with filtering and pagination.
-
-**Headers:** `Authorization: Bearer <access_token>`
+Get all meals for the authenticated user.
 
 **Query Parameters:**
-
-- `page` (integer): Page number
-- `page_size` (integer): Items per page
+- `page` (int): Page number
+- `limit` (int): Items per page (max 100)
 - `meal_type` (string): Filter by meal type
-- `date` (date): Filter by specific date
-- `date_from` (date): Filter from date
-- `date_to` (date): Filter to date
-- `search` (string): Search in meal names
+- `start_date` (date): Filter meals after this date
+- `end_date` (date): Filter meals before this date
 
 **Response (200):**
-
 ```json
 {
-  "count": 45,
-  "next": "http://api.example.com/meals/?page=2",
-  "previous": null,
-  "results": [
-    {
-      "id": 123,
-      "name": "Breakfast Bowl",
-      "image": "https://example.com/meals/123.jpg",
-      "meal_type": "breakfast",
-      "consumed_at": "2024-01-20T08:30:00Z",
-      "total_calories": 450,
-      "is_favorite": false
-    }
-  ]
+    "count": 150,
+    "next": "http://api.example.com/meals/?page=2",
+    "previous": null,
+    "results": [
+        {
+            "id": "uuid",
+            "name": "Lunch Salad",
+            "meal_type": "lunch",
+            "consumed_at": "2025-07-15T12:00:00Z",
+            "total_calories": 350,
+            "items_count": 3,
+            "is_favorite": false,
+            "image": "http://example.com/media/meals/image.jpg"
+        }
+    ]
 }
 ```
 
 ### Get Meal Details
 
-**GET** `/meals/{id}/`
+**GET** `/meals/{meal_id}/`
 
 Get detailed information about a specific meal.
 
-**Headers:** `Authorization: Bearer <access_token>`
-
 **Response (200):**
-
 ```json
 {
-  "id": 123,
-  "name": "Breakfast Bowl",
-  "image": "https://example.com/meals/123.jpg",
-  "meal_type": "breakfast",
-  "consumed_at": "2024-01-20T08:30:00Z",
-  "total_calories": 450,
-  "total_protein": 25.5,
-  "total_carbs": 35.2,
-  "total_fat": 18.3,
-  "total_fiber": 8.2,
-  "total_sugar": 12.1,
-  "total_sodium": 245,
-  "is_favorite": true,
-  "created_at": "2024-01-20T08:35:00Z",
-  "updated_at": "2024-01-20T08:35:00Z",
-  "meal_items": [
-    {
-      "id": 456,
-      "food_item": "Oatmeal",
-      "quantity": 100,
-      "unit": "g",
-      "calories": 350,
-      "protein": 10.5,
-      "carbohydrates": 58.2,
-      "fat": 6.3,
-      "fiber": 8.2,
-      "sugar": 1.1,
-      "sodium": 245
-    }
-  ]
+    "id": "uuid",
+    "name": "Dinner Plate",
+    "meal_type": "dinner",
+    "consumed_at": "2025-07-15T19:00:00Z",
+    "image": "http://example.com/media/meals/image.jpg",
+    "notes": "Delicious dinner",
+    "location_name": "Restaurant",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "total_calories": 650,
+    "total_macros": {
+        "protein": 45.2,
+        "carbohydrates": 52.8,
+        "fat": 28.3,
+        "fiber": 8.5,
+        "sugar": 12.1,
+        "sodium": 890.5
+    },
+    "meal_items": [
+        {
+            "id": "uuid",
+            "food_item_name": "Grilled Salmon",
+            "quantity": 200,
+            "unit": "g",
+            "calories": 412,
+            "protein": 38.4,
+            "carbohydrates": 0,
+            "fat": 27.8,
+            "custom_name": "Atlantic Salmon",
+            "notes": "Well cooked"
+        }
+    ],
+    "is_favorite": false,
+    "favorite_id": null,
+    "created_at": "2025-07-15T19:00:00Z",
+    "updated_at": "2025-07-15T19:00:00Z"
 }
 ```
 
 ### Update Meal
 
-**PUT/PATCH** `/meals/{id}/`
+**PUT** `/meals/{meal_id}/`
 
-Update meal information.
-
-**Headers:** `Authorization: Bearer <access_token>`
+Update an existing meal.
 
 **Request:**
-
 ```json
 {
-  "name": "Updated Breakfast Bowl",
-  "meal_type": "breakfast",
-  "consumed_at": "2024-01-20T09:00:00Z"
+    "name": "Updated Meal Name",
+    "meal_type": "lunch",
+    "consumed_at": "2025-07-15T13:00:00Z",
+    "notes": "Updated notes"
 }
 ```
 
-**Response (200):** Returns updated meal object.
+**Response (200):**
+```json
+{
+    "id": "uuid",
+    "name": "Updated Meal Name",
+    "meal_type": "lunch",
+    "consumed_at": "2025-07-15T13:00:00Z",
+    "notes": "Updated notes",
+    "total_calories": 350,
+    "updated_at": "2025-07-15T13:15:00Z"
+}
+```
 
 ### Delete Meal
 
-**DELETE** `/meals/{id}/`
+**DELETE** `/meals/{meal_id}/`
 
 Delete a meal.
 
-**Headers:** `Authorization: Bearer <access_token>`
+**Response (204):** No content
 
-**Response (204):** No content.
+### Duplicate Meal
 
-### Add/Remove Favorite
+**POST** `/meals/{meal_id}/duplicate/`
 
-**POST** `/meals/{id}/favorite/`
-**DELETE** `/meals/{id}/favorite/`
+Create a copy of an existing meal.
 
-Add or remove meal from favorites.
-
-**Headers:** `Authorization: Bearer <access_token>`
-
-**Response (200):**
-
+**Request:**
 ```json
 {
-  "is_favorite": true,
-  "message": "Meal added to favorites"
+    "name": "Duplicated Meal",
+    "consumed_at": "2025-07-15T14:00:00Z"
+}
+```
+
+**Response (201):**
+```json
+{
+    "id": "new_uuid",
+    "name": "Duplicated Meal",
+    "meal_type": "lunch",
+    "consumed_at": "2025-07-15T14:00:00Z",
+    "meal_items": [...],
+    "total_calories": 350
+}
+```
+
+### Get Meal Statistics
+
+**GET** `/meals/statistics/`
+
+Get meal statistics for the authenticated user.
+
+**Response (200):**
+```json
+{
+    "total_meals": 145,
+    "total_calories": 185250,
+    "average_calories_per_meal": 1278.6,
+    "favorite_meal_type": "lunch",
+    "meals_by_type": {
+        "breakfast": 48,
+        "lunch": 52,
+        "dinner": 38,
+        "snack": 7
+    },
+    "average_macros": {
+        "protein": 45.2,
+        "carbohydrates": 156.8,
+        "fat": 52.3
+    },
+    "meals_this_week": 12,
+    "meals_this_month": 48,
+    "most_active_meal_time": "12:30"
 }
 ```
 

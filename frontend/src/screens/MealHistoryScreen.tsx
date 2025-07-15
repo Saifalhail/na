@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { SafeAreaContainer, Container, Spacer } from '@/components/layout';
+import { SafeAreaContainer } from '@/components/layout';
 import { TextInput } from '@/components/base/TextInput';
-import { Button } from '@/components/base/Button';
-import { Card } from '@/components/base/Card';
+import { UnifiedButton } from '@/components/base/UnifiedButton';
+import { UnifiedCard } from '@/components/base/UnifiedCard';
+import { UnifiedIcon, UNIFIED_ICONS } from '@/components/base/UnifiedIcon';
+import { UI } from '@/constants/uiConstants';
 import { LoadingOverlay, ListSkeleton } from '@/components/base/Loading';
 import { ErrorDisplay } from '@/components/base/ErrorDisplay';
 import { EmptyState } from '@/components/base/EmptyState';
@@ -15,7 +17,8 @@ import { useTheme } from '@/hooks/useTheme';
 import { useMealStore } from '@/store/mealStore';
 import { useDebounce, usePerformanceMonitor } from '@/utils/performance';
 import type { Meal } from '@/types/models';
-import { rTouchTarget, scale, moderateScale, layout, spacing } from '@/utils/responsive';
+import { spacing, layout } from '@/theme/spacing';
+import { textPresets } from '@/theme/typography';
 
 interface MealCardProps {
   meal: Meal;
@@ -44,16 +47,24 @@ const MealCard: React.FC<MealCardProps> = React.memo(
     }, []);
 
     return (
-      <Card style={styles.mealCard} onPress={() => onPress(meal)}>
+      <UnifiedCard
+        gradient={true}
+        padding="medium"
+        borderRadius={spacing['4']}
+        onPress={() => onPress(meal)}
+        style={styles.mealCard}
+        elevated={true}
+        animationType="fadeUp"
+      >
         <View style={styles.mealHeader}>
-          <Text style={[styles.mealName, { color: theme.colors.text.primary }]} numberOfLines={1}>
+          <Text style={[styles.mealName, { color: theme.isDark ? theme.colors.text.primary : '#000000' }]} numberOfLines={1}>
             {meal.name}
           </Text>
           <TouchableOpacity onPress={() => onToggleFavorite(meal)} style={styles.favoriteButton}>
             <Text
               style={[
                 styles.favoriteIcon,
-                { color: meal.isFavorite ? theme.colors.error[500] : theme.colors.textSecondary },
+                { color: meal.isFavorite ? theme.colors.error[500] : theme.colors.text.secondary },
               ]}
             >
               {meal.isFavorite ? '♥' : '♡'}
@@ -65,16 +76,16 @@ const MealCard: React.FC<MealCardProps> = React.memo(
           <Text style={[styles.mealType, { color: theme.colors.primary[500] }]}>
             {meal.mealType?.charAt(0).toUpperCase() + meal.mealType?.slice(1)}
           </Text>
-          <Text style={[styles.mealDate, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.mealDate, { color: theme.colors.text.secondary }]}>
             {formatDate(meal.consumedAt)}
           </Text>
         </View>
 
         <View style={styles.mealNutrition}>
-          <Text style={[styles.calories, { color: theme.colors.text.primary }]}>
+          <Text style={[styles.calories, { color: theme.isDark ? theme.colors.text.primary : '#000000' }]}>
             {formatCalories(meal.totalCalories)}
           </Text>
-          <Text style={[styles.macros, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.macros, { color: theme.isDark ? theme.colors.text.secondary : '#666666' }]}>
             P: {Math.round(meal.totalProtein)}g • C: {Math.round(meal.totalCarbs)}g • F:{' '}
             {Math.round(meal.totalFat)}g
           </Text>
@@ -94,7 +105,7 @@ const MealCard: React.FC<MealCardProps> = React.memo(
             <Text style={[styles.actionText, { color: theme.colors.error[500] }]}>Delete</Text>
           </TouchableOpacity>
         </View>
-      </Card>
+      </UnifiedCard>
     );
   },
   (prevProps, nextProps) => {
@@ -256,7 +267,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.isDark ? theme.colors.background : '#FFFFFF' }]}>
       <AppHeader 
         title="Meal History"
         subtitle="Track your nutrition journey"
@@ -266,8 +277,6 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
       
       <SafeAreaContainer style={styles.contentContainer} edges={['bottom']}>
         <View style={styles.header}>
-
-        <Spacer size="md" />
 
         <View style={styles.searchContainer}>
           <View style={styles.searchInputWrapper}>
@@ -287,7 +296,7 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
 
         {(filters.search || filters.mealType) && (
           <View style={styles.activeFilters}>
-            <Text style={[styles.activeFiltersText, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.activeFiltersText, { color: theme.colors.text.secondary }]}>
               Active filters
             </Text>
             <Button onPress={handleClearSearch} variant="text" style={styles.clearFiltersButton}>
@@ -295,9 +304,9 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
             </Button>
           </View>
         )}
-      </View>
+        </View>
 
-      <OptimizedList
+        <OptimizedList
         data={meals}
         renderItem={renderMealCard}
         keyExtractor={(item) => item.id}
@@ -335,8 +344,8 @@ export const MealHistoryScreen: React.FC = React.memo(() => {
 
 const styles = StyleSheet.create({
   skeletonContainer: {
-    paddingHorizontal: layout.containerPadding,
-    paddingTop: spacing.medium,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing['4'],
   },
   container: {
     flex: 1,
@@ -345,44 +354,61 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: layout.containerPadding,
-    paddingTop: spacing.medium,
-    paddingBottom: spacing.medium,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing['4'],
+    paddingBottom: spacing['4'],
   },
   title: {
-    fontSize: moderateScale(28),
+    ...textPresets.h1,
     fontWeight: 'bold',
     textAlign: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: spacing['4'],
+    paddingVertical: spacing['3'],
+    borderRadius: 12,
+    marginBottom: spacing['2'],
+  },
+  searchIcon: {
+    fontSize: 20,
+    marginRight: spacing['2'],
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0,
+  },
+  clearSearchButton: {
+    padding: spacing['2'],
+    marginLeft: spacing['2'],
+  },
+  clearSearchIcon: {
+    fontSize: 16,
   },
   searchInputWrapper: {
     flex: 1,
-    marginRight: spacing.small,
-  },
-  searchInput: {
-    width: '100%',
+    marginRight: spacing['2'],
   },
   searchButton: {
-    paddingHorizontal: spacing.large,
+    paddingHorizontal: spacing['4'],
   },
   activeFilters: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.medium,
+    marginTop: spacing['3'],
   },
   activeFiltersText: {
-    fontSize: moderateScale(14),
+    ...textPresets.body,
   },
   clearFiltersButton: {
     paddingHorizontal: 0,
   },
   listContent: {
-    paddingHorizontal: layout.containerPadding,
-    paddingBottom: spacing.xlarge,
+    paddingHorizontal: layout.screenPadding,
+    paddingBottom: spacing['8'],
   },
   emptyListContent: {
     flexGrow: 1,
@@ -408,8 +434,16 @@ const styles = StyleSheet.create({
   },
   // Meal Card Styles
   mealCard: {
-    marginVertical: spacing.small,
-    padding: spacing.medium,
+    marginHorizontal: layout.screenPadding,
+    marginVertical: spacing['2'],
+    padding: spacing['4'],
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
   },
   mealHeader: {
     flexDirection: 'row',
@@ -423,15 +457,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   favoriteButton: {
-    padding: spacing.small,
-    minWidth: rTouchTarget.minimum,
-    minHeight: rTouchTarget.minimum,
+    padding: spacing['2'],
+    minWidth: 44,
+    minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: spacing.small,
+    marginLeft: spacing['2'],
   },
   favoriteIcon: {
-    fontSize: moderateScale(24),
+    fontSize: 24,
   },
   mealInfo: {
     flexDirection: 'row',
@@ -439,9 +473,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  mealTypeBadge: {
+    paddingHorizontal: spacing['2'],
+    paddingVertical: spacing['1'],
+    borderRadius: 8,
+  },
   mealType: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
     textTransform: 'capitalize',
   },
   mealDate: {
@@ -451,25 +490,47 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   calories: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 8,
   },
   macros: {
     fontSize: 14,
+  },
+  macrosContainer: {
+    flexDirection: 'row',
+    gap: spacing['2'],
+  },
+  macroItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing['2'],
+    paddingVertical: spacing['1'],
+    borderRadius: 8,
+    gap: spacing['1'],
+  },
+  macroLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  macroValue: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   mealActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   actionButton: {
-    paddingHorizontal: spacing.medium,
-    paddingVertical: spacing.small,
-    borderRadius: spacing.small,
+    paddingHorizontal: spacing['3'],
+    paddingVertical: spacing['2'],
+    borderRadius: 10,
     flex: 1,
-    marginHorizontal: spacing.tiny,
-    minHeight: rTouchTarget.minimum,
+    marginHorizontal: spacing['1'],
+    minHeight: 40,
     justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
   },
   actionText: {
     fontSize: 14,

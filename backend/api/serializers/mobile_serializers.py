@@ -4,7 +4,7 @@ Serializers for mobile and push notification models.
 
 from rest_framework import serializers
 
-from api.models import DeviceToken, PushNotification, SyncLog
+from api.models import DeviceToken, Notification
 
 
 class DeviceTokenSerializer(serializers.ModelSerializer):
@@ -70,39 +70,26 @@ class RegisterDeviceSerializer(serializers.Serializer):
 class PushNotificationSerializer(serializers.ModelSerializer):
     """Serializer for push notifications."""
 
-    device_platform = serializers.CharField(
-        source="device_token.platform", read_only=True
-    )
-    device_name = serializers.CharField(
-        source="device_token.device_name", read_only=True
-    )
-
     class Meta:
-        model = PushNotification
+        model = Notification
         fields = [
             "id",
             "title",
-            "body",
+            "message",
             "data",
             "status",
             "sent_at",
-            "delivered_at",
             "failed_at",
             "error_message",
             "created_at",
-            "device_platform",
-            "device_name",
         ]
         read_only_fields = [
             "id",
             "status",
             "sent_at",
-            "delivered_at",
             "failed_at",
             "error_message",
             "created_at",
-            "device_platform",
-            "device_name",
         ]
 
 
@@ -140,81 +127,84 @@ class SendPushNotificationSerializer(serializers.Serializer):
         return value
 
 
-class SyncLogSerializer(serializers.ModelSerializer):
-    """Serializer for sync logs."""
-
-    device_platform = serializers.CharField(
-        source="device_token.platform", read_only=True
-    )
-    device_name = serializers.CharField(
-        source="device_token.device_name", read_only=True
-    )
-
-    class Meta:
-        model = SyncLog
-        fields = [
-            "id",
-            "sync_type",
-            "status",
-            "meals_uploaded",
-            "meals_downloaded",
-            "notifications_downloaded",
-            "started_at",
-            "completed_at",
-            "duration_seconds",
-            "data_size_bytes",
-            "error_message",
-            "app_version",
-            "os_version",
-            "device_platform",
-            "device_name",
-        ]
-        read_only_fields = ["id", "started_at", "device_platform", "device_name"]
-
-
-class CreateSyncLogSerializer(serializers.Serializer):
-    """Serializer for creating sync logs."""
-
-    sync_type = serializers.ChoiceField(
-        choices=SyncLog.SYNC_TYPE_CHOICES, default="incremental"
-    )
-    device_id = serializers.CharField(max_length=255, required=False)
-    app_version = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    os_version = serializers.CharField(max_length=50, required=False, allow_blank=True)
-
-    def validate_device_id(self, value):
-        """Validate device ID exists for the user."""
-        if value:
-            request = self.context.get("request")
-            if request and request.user:
-                if not request.user.device_tokens.filter(
-                    device_id=value, is_active=True
-                ).exists():
-                    raise serializers.ValidationError(
-                        "Invalid device ID for this user."
-                    )
-        return value
+# SyncLog model has been removed in backend simplification
+# class SyncLogSerializer(serializers.ModelSerializer):
+#     """Serializer for sync logs."""
+#
+#     device_platform = serializers.CharField(
+#         source="device_token.platform", read_only=True
+#     )
+#     device_name = serializers.CharField(
+#         source="device_token.device_name", read_only=True
+#     )
+#
+#     class Meta:
+#         model = SyncLog
+#         fields = [
+#             "id",
+#             "sync_type",
+#             "status",
+#             "meals_uploaded",
+#             "meals_downloaded",
+#             "notifications_downloaded",
+#             "started_at",
+#             "completed_at",
+#             "duration_seconds",
+#             "data_size_bytes",
+#             "error_message",
+#             "app_version",
+#             "os_version",
+#             "device_platform",
+#             "device_name",
+#         ]
+#         read_only_fields = ["id", "started_at", "device_platform", "device_name"]
 
 
-class CompleteSyncLogSerializer(serializers.Serializer):
-    """Serializer for completing sync logs."""
+# SyncLog model has been removed in backend simplification
+# class CreateSyncLogSerializer(serializers.Serializer):
+#     """Serializer for creating sync logs."""
+#
+#     sync_type = serializers.ChoiceField(
+#         choices=SyncLog.SYNC_TYPE_CHOICES, default="incremental"
+#     )
+#     device_id = serializers.CharField(max_length=255, required=False)
+#     app_version = serializers.CharField(max_length=50, required=False, allow_blank=True)
+#     os_version = serializers.CharField(max_length=50, required=False, allow_blank=True)
+#
+#     def validate_device_id(self, value):
+#         """Validate device ID exists for the user."""
+#         if value:
+#             request = self.context.get("request")
+#             if request and request.user:
+#                 if not request.user.device_tokens.filter(
+#                     device_id=value, is_active=True
+#                 ).exists():
+#                     raise serializers.ValidationError(
+#                         "Invalid device ID for this user."
+#                     )
+#         return value
 
-    status = serializers.ChoiceField(choices=["completed", "failed"])
-    meals_uploaded = serializers.IntegerField(min_value=0, default=0)
-    meals_downloaded = serializers.IntegerField(min_value=0, default=0)
-    notifications_downloaded = serializers.IntegerField(min_value=0, default=0)
-    data_size_bytes = serializers.IntegerField(min_value=0, default=0)
-    error_message = serializers.CharField(
-        max_length=1000, required=False, allow_blank=True
-    )
 
-    def validate(self, attrs):
-        """Validate completion data."""
-        if attrs["status"] == "failed" and not attrs.get("error_message"):
-            raise serializers.ValidationError(
-                "Error message is required when status is 'failed'."
-            )
-        return attrs
+# SyncLog model has been removed in backend simplification
+# class CompleteSyncLogSerializer(serializers.Serializer):
+#     """Serializer for completing sync logs."""
+#
+#     status = serializers.ChoiceField(choices=["completed", "failed"])
+#     meals_uploaded = serializers.IntegerField(min_value=0, default=0)
+#     meals_downloaded = serializers.IntegerField(min_value=0, default=0)
+#     notifications_downloaded = serializers.IntegerField(min_value=0, default=0)
+#     data_size_bytes = serializers.IntegerField(min_value=0, default=0)
+#     error_message = serializers.CharField(
+#         max_length=1000, required=False, allow_blank=True
+#     )
+#
+#     def validate(self, attrs):
+#         """Validate completion data."""
+#         if attrs["status"] == "failed" and not attrs.get("error_message"):
+#             raise serializers.ValidationError(
+#                 "Error message is required when status is 'failed'."
+#             )
+#         return attrs
 
 
 class MobileDashboardSerializer(serializers.Serializer):

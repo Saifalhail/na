@@ -12,8 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from api.exceptions.custom_exceptions import PaymentError
-from api.models import (Invoice, Payment, PaymentMethod, Subscription,
-                        SubscriptionPlan, User)
+from api.models import (Payment, Subscription, SubscriptionPlan, User)
 
 logger = logging.getLogger(__name__)
 
@@ -211,67 +210,69 @@ class StripeService:
             logger.error(f"Failed to cancel subscription {subscription.id}: {e}")
             raise PaymentError(f"Failed to cancel subscription: {e}")
 
-    def add_payment_method(self, user: User, payment_method_id: str) -> PaymentMethod:
-        """
-        Add a payment method for the user.
+    # PaymentMethod model has been removed in backend simplification
+    # def add_payment_method(self, user: User, payment_method_id: str) -> PaymentMethod:
+    #     """
+    #     Add a payment method for the user.
+    #
+    #     Args:
+    #         user: The user to add payment method for
+    #         payment_method_id: Stripe payment method ID
+    #
+    #     Returns:
+    #         PaymentMethod: The created payment method
+    #     """
+    #     try:
+    #         # Get or create customer
+    #         customer_id = self.get_or_create_customer(user)
+    #
+    #         # Attach payment method to customer
+    #         stripe.PaymentMethod.attach(payment_method_id, customer=customer_id)
+    #
+    #         # Get payment method details
+    #         stripe_pm = stripe.PaymentMethod.retrieve(payment_method_id)
+    #
+    #         # Create local payment method record
+    #         payment_method = PaymentMethod.objects.create(
+    #             user=user,
+    #             stripe_payment_method_id=payment_method_id,
+    #             payment_type=stripe_pm.type,
+    #             card_brand=stripe_pm.card.brand if stripe_pm.card else "",
+    #             card_last4=stripe_pm.card.last4 if stripe_pm.card else "",
+    #             card_exp_month=stripe_pm.card.exp_month if stripe_pm.card else None,
+    #             card_exp_year=stripe_pm.card.exp_year if stripe_pm.card else None,
+    #             is_default=not user.payment_methods.exists(),  # First payment method is default
+    #         )
+    #
+    #         logger.info(
+    #             f"Added payment method {payment_method.id} for user {user.email}"
+    #         )
+    #         return payment_method
+    #
+    #     except stripe.error.StripeError as e:
+    #         logger.error(f"Failed to add payment method for user {user.email}: {e}")
+    #         raise PaymentError(f"Failed to add payment method: {e}")
 
-        Args:
-            user: The user to add payment method for
-            payment_method_id: Stripe payment method ID
-
-        Returns:
-            PaymentMethod: The created payment method
-        """
-        try:
-            # Get or create customer
-            customer_id = self.get_or_create_customer(user)
-
-            # Attach payment method to customer
-            stripe.PaymentMethod.attach(payment_method_id, customer=customer_id)
-
-            # Get payment method details
-            stripe_pm = stripe.PaymentMethod.retrieve(payment_method_id)
-
-            # Create local payment method record
-            payment_method = PaymentMethod.objects.create(
-                user=user,
-                stripe_payment_method_id=payment_method_id,
-                payment_type=stripe_pm.type,
-                card_brand=stripe_pm.card.brand if stripe_pm.card else "",
-                card_last4=stripe_pm.card.last4 if stripe_pm.card else "",
-                card_exp_month=stripe_pm.card.exp_month if stripe_pm.card else None,
-                card_exp_year=stripe_pm.card.exp_year if stripe_pm.card else None,
-                is_default=not user.payment_methods.exists(),  # First payment method is default
-            )
-
-            logger.info(
-                f"Added payment method {payment_method.id} for user {user.email}"
-            )
-            return payment_method
-
-        except stripe.error.StripeError as e:
-            logger.error(f"Failed to add payment method for user {user.email}: {e}")
-            raise PaymentError(f"Failed to add payment method: {e}")
-
-    def remove_payment_method(self, payment_method: PaymentMethod) -> None:
-        """
-        Remove a payment method.
-
-        Args:
-            payment_method: The payment method to remove
-        """
-        try:
-            # Detach from Stripe
-            stripe.PaymentMethod.detach(payment_method.stripe_payment_method_id)
-
-            # Delete local record
-            payment_method.delete()
-
-            logger.info(f"Removed payment method {payment_method.id}")
-
-        except stripe.error.StripeError as e:
-            logger.error(f"Failed to remove payment method {payment_method.id}: {e}")
-            raise PaymentError(f"Failed to remove payment method: {e}")
+    # PaymentMethod model has been removed in backend simplification
+    # def remove_payment_method(self, payment_method: PaymentMethod) -> None:
+    #     """
+    #     Remove a payment method.
+    #
+    #     Args:
+    #         payment_method: The payment method to remove
+    #     """
+    #     try:
+    #         # Detach from Stripe
+    #         stripe.PaymentMethod.detach(payment_method.stripe_payment_method_id)
+    #
+    #         # Delete local record
+    #         payment_method.delete()
+    #
+    #         logger.info(f"Removed payment method {payment_method.id}")
+    #
+    #     except stripe.error.StripeError as e:
+    #         logger.error(f"Failed to remove payment method {payment_method.id}: {e}")
+    #         raise PaymentError(f"Failed to remove payment method: {e}")
 
     def process_webhook(self, event_data: Dict[str, Any]) -> None:
         """

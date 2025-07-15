@@ -3,6 +3,23 @@
 ## Overview
 This guide explains how to configure Google OAuth for the Nutrition AI app authentication system.
 
+## Quick Fix for "Error 400: invalid_request"
+
+If you're seeing this error with a redirect_uri like `exp://192.168.250.63:8081`, follow these steps:
+
+1. **Copy the exact redirect URI from the error message** (e.g., `exp://192.168.250.63:8081`)
+2. **Add it to Google Cloud Console:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com)
+   - Navigate to **APIs & Services > Credentials**
+   - Click on your OAuth 2.0 Client ID
+   - Add the exact redirect URI from the error to **Authorized redirect URIs**
+   - Save the changes
+
+3. **Wait 5 minutes** for Google to propagate the changes
+4. **Try signing in again**
+
+**Note:** The exp:// URLs change based on your network configuration. You may need to add multiple exp:// URLs for different development environments.
+
 ## Prerequisites
 - Google Cloud Platform account
 - Access to Google Cloud Console
@@ -30,21 +47,34 @@ https://yourdomain.com
 
 #### **Authorized Redirect URIs:**
 ```
+# Production URIs
 bitesight://
 bitesight://oauth
-https://auth.expo.io/@anonymous/bitesight
+https://auth.expo.io/@your-expo-username/bitesight
+https://yourdomain.com/auth/google/callback
+
+# Development URIs (add ALL that apply to your setup)
 exp://localhost:8081
 exp://127.0.0.1:8081
-exp://172.18.223.214:8081
-http://172.18.223.214:8000/auth/social/google/
-http://localhost:8081/auth/google/callback
-https://yourdomain.com/auth/google/callback
+exp://localhost:19000
+exp://127.0.0.1:19000
+
+# Add your specific development IPs (check error messages)
+exp://192.168.1.100:8081  # Replace with your actual IP
+exp://192.168.250.63:8081  # Example from error
+exp://10.0.2.2:8081        # Android emulator
+exp://172.25.29.233:8081   # WSL network
+
+# Backend callback URLs
+http://localhost:8000/auth/social/google/
+http://127.0.0.1:8000/auth/social/google/
 ```
 
 **Important Notes:**
-- Use your actual project ID instead of `nutritionalapp-2136b` if different
-- The `exp://` URLs are for Expo development
-- Replace `172.18.223.214` with your actual development IP if different
+- The `exp://` URLs are for Expo development and change based on your network
+- To find your current redirect URI, check the console logs when attempting to sign in
+- You may need to add new exp:// URLs each time your IP changes
+- For a more stable development experience, consider using ngrok or a similar tunneling service
 
 ### 1.3 Get Client Credentials
 After creating the OAuth client, you'll get:
@@ -171,10 +201,13 @@ FIREBASE_PROJECT_ID=nutritionalapp-2136b
 
 ### Common Issues
 
-#### "redirect_uri_mismatch" Error
-- Ensure redirect URIs in Google Cloud Console match exactly
-- Check that `scheme` in `app.json` is correct
-- Verify frontend callback URL configuration
+#### "redirect_uri_mismatch" or "Error 400: invalid_request"
+- **Most common cause:** The exp:// redirect URI isn't added to Google Console
+- **Solution:** Copy the exact redirect URI from the error and add it to Google Console
+- Ensure redirect URIs in Google Cloud Console match exactly (including trailing slashes)
+- Check that `scheme` in `app.json` is correct (should be "bitesight")
+- In development, Expo generates dynamic redirect URIs based on your IP address
+- You may need to add multiple exp:// URIs for different networks (home, office, etc.)
 
 #### "invalid_client" Error
 - Check that Client ID is correct in both backend and frontend

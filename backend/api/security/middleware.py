@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 from rest_framework import status
 
-from api.models import APIUsageLog
+# from api.models import APIUsageLog  # Removed in backend simplification
 
 logger = logging.getLogger(__name__)
 
@@ -113,21 +113,22 @@ class RequestLoggingMiddleware(MiddlewareMixin):
         )
 
         # Save to database (async in production)
-        if request.path.startswith("/api/"):
-            try:
-                APIUsageLog.objects.create(
-                    user=request.user if request.user.is_authenticated else None,
-                    endpoint=request.path,
-                    method=request.method,
-                    ip_address=self.get_client_ip(request),
-                    user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
-                    request_body_size=getattr(request, "_cached_body_size", 0),
-                    response_status_code=response.status_code,
-                    response_time_ms=response_time_ms,
-                    ai_tokens_used=getattr(request, "ai_tokens_used", 0),
-                )
-            except Exception as e:
-                logger.error(f"Failed to log API usage: {str(e)}")
+        # Commented out in simplified backend - APIUsageLog model was removed
+        # if request.path.startswith("/api/"):
+        #     try:
+        #         APIUsageLog.objects.create(
+        #             user=request.user if request.user.is_authenticated else None,
+        #             endpoint=request.path,
+        #             method=request.method,
+        #             ip_address=self.get_client_ip(request),
+        #             user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+        #             request_body_size=getattr(request, "_cached_body_size", 0),
+        #             response_status_code=response.status_code,
+        #             response_time_ms=response_time_ms,
+        #             ai_tokens_used=getattr(request, "ai_tokens_used", 0),
+        #         )
+        #     except Exception as e:
+        #         logger.error(f"Failed to log API usage: {str(e)}")
 
         return response
 

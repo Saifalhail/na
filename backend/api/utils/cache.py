@@ -29,7 +29,7 @@ class CacheManager:
     PREFIX_MEAL_STATS = "meal_stats"
     PREFIX_NOTIFICATION_COUNT = "notification_count"
     PREFIX_AI_ANALYSIS = "ai_analysis"
-    PREFIX_FAVORITE_MEALS = "favorite_meals"
+    # PREFIX_FAVORITE_MEALS = "favorite_meals"  # Removed in backend simplification
 
     @classmethod
     def _generate_key(cls, prefix: str, *args, **kwargs) -> str:
@@ -131,7 +131,7 @@ def invalidate_user_cache(user_id: int):
         CacheManager.PREFIX_USER_PROFILE,
         CacheManager.PREFIX_MEAL_STATS,
         CacheManager.PREFIX_NOTIFICATION_COUNT,
-        CacheManager.PREFIX_FAVORITE_MEALS,
+        # CacheManager.PREFIX_FAVORITE_MEALS,  # Removed in backend simplification
     ]
 
     for prefix in prefixes:
@@ -144,7 +144,7 @@ def invalidate_meal_cache(user_id: int):
     """
     prefixes = [
         CacheManager.PREFIX_MEAL_STATS,
-        CacheManager.PREFIX_FAVORITE_MEALS,
+        # CacheManager.PREFIX_FAVORITE_MEALS,  # Removed in backend simplification
     ]
 
     for prefix in prefixes:

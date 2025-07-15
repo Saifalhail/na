@@ -176,7 +176,7 @@ export const staticStyles = StyleSheet.create({
 // Dynamic styles that depend on theme
 export const createDynamicStyles = (theme: Theme, insets: any) => ({
   container: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.isDark ? theme.colors.background : '#FFFFFF',
     paddingTop: insets.top,
   },
   // Text styles

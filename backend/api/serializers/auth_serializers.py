@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from api.models import DietaryRestriction, UserProfile
+from api.models import UserProfile
 
 User = get_user_model()
 
@@ -36,11 +36,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     )
     first_name = serializers.CharField(required=True, max_length=150)
     last_name = serializers.CharField(required=True, max_length=150)
-    account_type = serializers.ChoiceField(
-        choices=User.ACCOUNT_TYPE_CHOICES,
-        default="free",
-        help_text="Account type: free or premium",
-    )
     terms_accepted = serializers.BooleanField(
         required=True,
         error_messages={"required": "You must accept the terms and conditions"},
@@ -55,7 +50,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "password_confirm",
             "first_name",
             "last_name",
-            "account_type",
             "terms_accepted",
             "marketing_consent",
         )
@@ -141,7 +135,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data["password"],
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
-            account_type=validated_data.get("account_type", "free"),
             is_verified=False,  # Email verification required
         )
 
@@ -265,15 +258,7 @@ class EmailVerificationSerializer(serializers.Serializer):
     token = serializers.CharField(required=True)
 
 
-class DietaryRestrictionSerializer(serializers.ModelSerializer):
-    """
-    Serializer for dietary restrictions.
-    """
-
-    class Meta:
-        model = DietaryRestriction
-        fields = ("id", "name", "restriction_type", "description")
-        read_only_fields = ("id",)
+# DietaryRestriction model has been removed in backend simplification
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -285,10 +270,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="user.first_name", required=False)
     last_name = serializers.CharField(source="user.last_name", required=False)
     date_of_birth = serializers.DateField(source="user.date_of_birth", required=False)
-    account_type = serializers.CharField(source="user.account_type", read_only=True)
     is_verified = serializers.BooleanField(source="user.is_verified", read_only=True)
     date_joined = serializers.DateTimeField(source="user.date_joined", read_only=True)
-    dietary_restrictions = DietaryRestrictionSerializer(many=True, read_only=True)
 
     class Meta:
         model = UserProfile
@@ -297,20 +280,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "date_of_birth",
-            "account_type",
             "is_verified",
             "date_joined",
             "gender",
             "height",
             "weight",
             "activity_level",
-            "dietary_restrictions",
-            "daily_calorie_goal",
-            "daily_protein_goal",
-            "daily_carbs_goal",
-            "daily_fat_goal",
+            "goal",
             "timezone",
-            "measurement_system",
             "bmi",
             "bmr",
             "tdee",  # Computed properties
@@ -348,7 +325,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "email", "first_name", "last_name", "full_name", "account_type")
+        fields = ("id", "email", "first_name", "last_name", "full_name")
         read_only_fields = fields
 
     def get_full_name(self, obj: User) -> str:

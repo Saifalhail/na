@@ -12,7 +12,7 @@ from django.utils import timezone
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from api.models import DeviceToken, PushNotification, User
+from api.models import DeviceToken, Notification, User
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class ExpoNotificationService:
         ttl: int = 86400,  # 24 hours default
         priority: str = "normal",
         subtitle: Optional[str] = None,
-    ) -> Optional[PushNotification]:
+    ) -> Optional[Notification]:
         """
         Send a push notification to a specific device.
 
@@ -82,19 +82,20 @@ class ExpoNotificationService:
             subtitle: Subtitle for iOS notifications
 
         Returns:
-            PushNotification instance if created, None if failed
+            Notification instance if created, None if failed
         """
         if not self._is_valid_expo_token(device_token.token):
             logger.warning(f"Invalid Expo token format: {device_token.token[:20]}...")
             return None
 
         # Create notification record
-        push_notification = PushNotification.objects.create(
+        push_notification = Notification.objects.create(
             user=device_token.user,
-            device_token=device_token,
+            type="push_notification",
             title=title,
-            body=body,
+            message=body,
             data=data or {},
+            channel="push",
         )
 
         # Prepare message
@@ -137,7 +138,7 @@ class ExpoNotificationService:
 
                 if result.get("data") and result["data"].get("status") == "ok":
                     # Success
-                    push_notification.expo_ticket_id = result["data"].get("id")
+                    push_notification.data["expo_ticket_id"] = result["data"].get("id")
                     push_notification.status = "sent"
                     push_notification.sent_at = timezone.now()
                     push_notification.save()
@@ -189,7 +190,7 @@ class ExpoNotificationService:
         body: str,
         data: Optional[Dict] = None,
         **kwargs,
-    ) -> List[PushNotification]:
+    ) -> List[Notification]:
         """
         Send push notifications to multiple devices in bulk.
 
@@ -201,7 +202,7 @@ class ExpoNotificationService:
             **kwargs: Additional arguments for send_notification
 
         Returns:
-            List of PushNotification instances
+            List of Notification instances
         """
         notifications = []
 
@@ -214,12 +215,13 @@ class ExpoNotificationService:
                 continue
 
             # Create notification record
-            push_notification = PushNotification.objects.create(
+            push_notification = Notification.objects.create(
                 user=device_token.user,
-                device_token=device_token,
+                type="push_notification",
                 title=title,
-                body=body,
+                message=body,
                 data=data or {},
+                channel="push",
             )
             notifications.append(push_notification)
             token_to_notification[device_token.token] = push_notification
@@ -278,7 +280,7 @@ class ExpoNotificationService:
 
                         if notification:
                             if result.get("status") == "ok":
-                                notification.expo_ticket_id = result.get("id")
+                                notification.data["expo_ticket_id"] = result.get("id")
                                 notification.status = "sent"
                                 notification.sent_at = timezone.now()
                             else:
@@ -363,10 +365,9 @@ class ExpoNotificationService:
         Update delivery status for sent notifications by checking receipts.
         """
         # Get notifications that have been sent but not yet delivered/failed
-        pending_notifications = PushNotification.objects.filter(
+        pending_notifications = Notification.objects.filter(
             status="sent",
-            expo_ticket_id__isnull=False,
-            expo_ticket_id__ne="",
+            data__expo_ticket_id__isnull=False,
             sent_at__gte=timezone.now() - timedelta(days=7),  # Only check recent ones
         )
 
@@ -374,22 +375,24 @@ class ExpoNotificationService:
             return
 
         # Get ticket IDs
-        ticket_ids = list(
-            pending_notifications.values_list("expo_ticket_id", flat=True)
-        )
+        ticket_ids = []
+        for notification in pending_notifications:
+            ticket_id = notification.data.get("expo_ticket_id")
+            if ticket_id:
+                ticket_ids.append(ticket_id)
 
         # Check receipts
         receipts = self.check_receipts(ticket_ids)
 
         # Update notifications
         for notification in pending_notifications:
-            ticket_id = notification.expo_ticket_id
+            ticket_id = notification.data.get("expo_ticket_id")
             receipt = receipts.get(ticket_id)
 
             if receipt:
                 if receipt.get("status") == "ok":
-                    notification.status = "delivered"
-                    notification.delivered_at = timezone.now()
+                    notification.status = "sent"  # Keep as sent since Notification doesn't have delivered status
+                    notification.sent_at = timezone.now()
                 elif receipt.get("status") == "error":
                     notification.status = "failed"
                     notification.failed_at = timezone.now()
@@ -397,7 +400,7 @@ class ExpoNotificationService:
                         "message", "Delivery failed"
                     )
 
-                notification.expo_receipt_id = receipt.get("id", "")
+                notification.data["expo_receipt_id"] = receipt.get("id", "")
                 notification.save()
 
         logger.info(f"Updated receipts for {len(receipts)} notifications")
@@ -410,7 +413,7 @@ class ExpoNotificationService:
         data: Optional[Dict] = None,
         platform: Optional[str] = None,
         **kwargs,
-    ) -> List[PushNotification]:
+    ) -> List[Notification]:
         """
         Send notification to all active devices for a user.
 
@@ -423,7 +426,7 @@ class ExpoNotificationService:
             **kwargs: Additional arguments for send_notification
 
         Returns:
-            List of PushNotification instances
+            List of Notification instances
         """
         device_tokens = user.device_tokens.filter(is_active=True)
 

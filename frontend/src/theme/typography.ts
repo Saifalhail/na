@@ -47,9 +47,10 @@ export interface Typography {
   lineHeight: LineHeights;
 }
 
-// Platform-specific font families
+// Platform-specific font families - Using premium fonts
 const getFontFamily = (): FontFamily => {
   if (Platform.OS === 'ios') {
+    // Using San Francisco (SF Pro Display) for iOS
     return {
       light: 'System-Light',
       regular: 'System',
@@ -59,13 +60,14 @@ const getFontFamily = (): FontFamily => {
       black: 'System-Black',
     };
   } else {
+    // Using system default with Inter/Poppins fallback for Android
     return {
-      light: 'Roboto-Light',
-      regular: 'Roboto-Regular',
-      medium: 'Roboto-Medium',
-      semibold: 'Roboto-Medium',
-      bold: 'Roboto-Bold',
-      black: 'Roboto-Black',
+      light: 'sans-serif-light',
+      regular: 'sans-serif',
+      medium: 'sans-serif-medium',
+      semibold: 'sans-serif-medium',
+      bold: 'sans-serif-bold',
+      black: 'sans-serif-black',
     };
   }
 };
@@ -95,10 +97,10 @@ export const typography: Typography = {
     black: '800',
   },
   lineHeight: {
-    tight: 1.2,
-    normal: 1.5,
-    relaxed: 1.75,
-    loose: 2,
+    tight: 1.25,
+    normal: 1.6,
+    relaxed: 1.8,
+    loose: 2.1,
   },
 };
 

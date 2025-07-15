@@ -18,8 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.exceptions.custom_exceptions import PaymentError
-from api.models import (Invoice, Payment, PaymentMethod, Subscription,
-                        SubscriptionPlan)
+from api.models import (Payment, Subscription, SubscriptionPlan)
 from api.permissions import IsOwnerPermission
 from api.serializers.payment_serializers import (AddPaymentMethodSerializer,
                                                  BillingHistorySerializer,

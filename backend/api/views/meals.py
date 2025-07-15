@@ -11,12 +11,11 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from ..exceptions import (BusinessLogicException, DuplicateFavoriteException,
+from ..exceptions import (BusinessLogicException,
                           MealNotFoundException, ValidationError)
-from ..models import FavoriteMeal, FoodItem, Meal, MealItem
+from ..models import FoodItem, Meal, MealItem
 from ..permissions import IsOwnerPermission
-from ..serializers.meal_serializers import (FavoriteMealSerializer,
-                                            MealCreateUpdateSerializer,
+from ..serializers.meal_serializers import (MealCreateUpdateSerializer,
                                             MealDetailSerializer,
                                             MealDuplicateSerializer,
                                             MealListSerializer,
@@ -76,11 +75,12 @@ class MealFilterBackend(DjangoFilterBackend):
                 pass
 
         # Favorite filtering
-        favorites_only = (
-            request.query_params.get("favorites_only", "").lower() == "true"
-        )
-        if favorites_only:
-            queryset = queryset.filter(favorited_by__user=request.user)
+        # FavoriteMeal model has been removed in backend simplification
+        # favorites_only = (
+        #     request.query_params.get("favorites_only", "").lower() == "true"
+        # )
+        # if favorites_only:
+        #     queryset = queryset.filter(favorited_by__user=request.user)
 
         return queryset
 
@@ -95,9 +95,9 @@ class MealViewSet(viewsets.ModelViewSet):
     - Retrieve meal details
     - Update meals
     - Delete meals
-    - Favorite/unfavorite meals
     - Duplicate meals
     - Get meal statistics
+    - Find similar meals
     """
 
     permission_classes = [IsAuthenticated, IsOwnerPermission]
@@ -114,16 +114,13 @@ class MealViewSet(viewsets.ModelViewSet):
         # Optimize queries based on action
         if self.action == "list":
             # For list view, we need basic meal info and counts
-            queryset = queryset.prefetch_related("meal_items", "favorited_by").annotate(
+            queryset = queryset.prefetch_related("meal_items").annotate(
                 items_count=Count("meal_items", distinct=True),
-                is_favorited=Count(
-                    "favorited_by", filter=Q(favorited_by__user=self.request.user)
-                ),
             )
         elif self.action in ["retrieve", "update", "partial_update"]:
             # For detail views, we need full meal items and food items
             queryset = queryset.prefetch_related(
-                "meal_items__food_item", "favorited_by"
+                "meal_items__food_item"
             ).select_related("analysis")
         elif self.action == "statistics":
             # For statistics, optimize aggregation queries
@@ -157,40 +154,17 @@ class MealViewSet(viewsets.ModelViewSet):
         super().perform_destroy(instance)
         invalidate_meal_cache(self.request.user.id)
 
-    @action(detail=True, methods=["post"])
-    def favorite(self, request, pk=None):
-        """Add meal to favorites."""
-        meal = self.get_object()
+    # NOTE: favorite() method removed - FavoriteMeal model no longer exists
+    # @action(detail=True, methods=["post"])
+    # def favorite(self, request, pk=None):
+    #     """Add meal to favorites."""
+    #     # This functionality has been removed in backend simplification
 
-        # Check if already favorited
-        if FavoriteMeal.objects.filter(user=request.user, meal=meal).exists():
-            raise DuplicateFavoriteException()
-
-        # Create favorite
-        favorite_data = request.data.copy()
-        favorite_data["meal_id"] = meal.id
-
-        serializer = FavoriteMealSerializer(
-            data=favorite_data, context={"request": request}
-        )
-        serializer.is_valid(raise_exception=True)
-        favorite = serializer.save()
-
-        return Response(
-            FavoriteMealSerializer(favorite).data, status=status.HTTP_201_CREATED
-        )
-
-    @action(detail=True, methods=["delete"])
-    def unfavorite(self, request, pk=None):
-        """Remove meal from favorites."""
-        meal = self.get_object()
-
-        try:
-            favorite = FavoriteMeal.objects.get(user=request.user, meal=meal)
-            favorite.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except FavoriteMeal.DoesNotExist:
-            raise ValidationError("Meal is not in favorites")
+    # NOTE: unfavorite() method removed - FavoriteMeal model no longer exists
+    # @action(detail=True, methods=["delete"])
+    # def unfavorite(self, request, pk=None):
+    #     """Remove meal from favorites."""
+    #     # This functionality has been removed in backend simplification
 
     @action(detail=True, methods=["post"])
     def duplicate(self, request, pk=None):
@@ -238,32 +212,11 @@ class MealViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @action(detail=False, methods=["get"])
-    def favorites(self, request):
-        """Get user's favorite meals."""
-
-        def get_favorites():
-            favorites = (
-                FavoriteMeal.objects.filter(user=request.user)
-                .select_related("meal", "meal__user")
-                .prefetch_related("meal__meal_items__food_item")
-                .annotate(meal_items_count=Count("meal__meal_items", distinct=True))
-                .order_by("quick_add_order", "-created_at")
-            )
-
-            serializer = FavoriteMealSerializer(
-                favorites, many=True, context={"request": request}
-            )
-            return serializer.data
-
-        data = CacheManager.get_or_set(
-            CacheManager.PREFIX_FAVORITE_MEALS,
-            get_favorites,
-            CacheManager.TIMEOUT_MEDIUM,
-            user_id=request.user.id,
-        )
-
-        return Response(data)
+    # NOTE: favorites() method removed - FavoriteMeal model no longer exists
+    # @action(detail=False, methods=["get"])
+    # def favorites(self, request):
+    #     """Get user's favorite meals."""
+    #     # This functionality has been removed in backend simplification
 
     @action(detail=False, methods=["get"])
     def statistics(self, request):
@@ -380,12 +333,7 @@ class MealViewSet(viewsets.ModelViewSet):
         else:
             avg_macros = {"protein": 0, "carbohydrates": 0, "fat": 0, "fiber": 0}
 
-        # Recent favorites
-        recent_favorites = (
-            FavoriteMeal.objects.filter(user=self.request.user)
-            .select_related("meal")
-            .order_by("-last_used")[:5]
-        )
+        # NOTE: Recent favorites removed - FavoriteMeal model no longer exists
 
         # Time-based stats
         now = timezone.now()
@@ -422,87 +370,18 @@ class MealViewSet(viewsets.ModelViewSet):
             "average_calories_per_meal": float(stats["avg_calories"] or 0),
             "favorite_meal_type": favorite_meal_type,
             "meals_by_type": type_dict,
-            "recent_favorites": [
-                {
-                    "id": fav.id,
-                    "name": fav.name,
-                    "meal": {
-                        "id": str(fav.meal.id),
-                        "name": fav.meal.name,
-                        "meal_type": fav.meal.meal_type,
-                    },
-                    "times_used": fav.times_used,
-                    "last_used": fav.last_used,
-                }
-                for fav in recent_favorites
-            ],
+            # NOTE: recent_favorites removed - FavoriteMeal model no longer exists
             "average_macros": {k: float(v or 0) for k, v in avg_macros.items()},
             "meals_this_week": meals_this_week,
             "meals_this_month": meals_this_month,
             "most_active_meal_time": most_active_meal_time,
         }
 
-    @action(detail=False, methods=["post"])
-    def quick_log(self, request):
-        """
-        Quick log a favorite meal as a new meal entry.
-
-        Accepts favorite_meal_id and optionally consumed_at.
-        """
-        favorite_id = request.data.get("favorite_meal_id")
-        if not favorite_id:
-            raise ValidationError("favorite_meal_id is required")
-
-        try:
-            favorite = FavoriteMeal.objects.get(id=favorite_id, user=request.user)
-        except FavoriteMeal.DoesNotExist:
-            raise ValidationError("Favorite meal not found")
-
-        # Duplicate the favorite meal
-        consumed_at = request.data.get("consumed_at")
-        if consumed_at:
-            try:
-                consumed_at = datetime.fromisoformat(consumed_at)
-            except ValueError:
-                raise ValidationError("Invalid consumed_at format")
-        else:
-            consumed_at = timezone.now()
-
-        # Create new meal from favorite
-        new_meal = Meal.objects.create(
-            user=request.user,
-            name=favorite.name or favorite.meal.name,
-            meal_type=favorite.meal.meal_type,
-            consumed_at=consumed_at,
-            notes=f"Quick logged from favorite: {favorite.meal.name}",
-        )
-
-        # Copy meal items with prefetch to avoid N+1 queries
-        meal_items = favorite.meal.meal_items.select_related("food_item").all()
-        new_meal_items = []
-        for item in meal_items:
-            new_meal_items.append(
-                MealItem(
-                    meal=new_meal,
-                    food_item=item.food_item,
-                    quantity=item.quantity,
-                    unit=item.unit,
-                    custom_name=item.custom_name,
-                )
-            )
-
-        # Bulk create for better performance
-        MealItem.objects.bulk_create(new_meal_items)
-
-        # Update favorite usage stats
-        favorite.times_used = F("times_used") + 1
-        favorite.last_used = timezone.now()
-        favorite.save()
-
-        return Response(
-            MealDetailSerializer(new_meal, context={"request": request}).data,
-            status=status.HTTP_201_CREATED,
-        )
+    # NOTE: quick_log() method removed - FavoriteMeal model no longer exists
+    # @action(detail=False, methods=["post"])
+    # def quick_log(self, request):
+    #     """Quick log a favorite meal as a new meal entry."""
+    #     # This functionality has been removed in backend simplification
 
     @action(detail=True, methods=["get"])
     def similar(self, request, pk=None):

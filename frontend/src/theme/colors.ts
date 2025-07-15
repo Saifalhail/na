@@ -182,12 +182,12 @@ export const lightColors: Colors = {
       end: { x: 1, y: 1 },
     },
     success: {
-      colors: ['#4ADE80', '#22C55E', '#15803D'],
+      colors: ['#4ADE80', '#22C55E', '#16A34A'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
     warning: {
-      colors: ['#60A5FA', '#3B82F6', '#2563EB'], // Changed to blue theme
+      colors: ['#FBBF24', '#F59E0B', '#D97706'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
@@ -201,46 +201,45 @@ export const lightColors: Colors = {
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
-    // Unified blue-based gradients (removed purple/pink themes)
-    blueLight: {
-      colors: ['#F0F4FF', '#E6EDFF', '#DBEAFE'],
-      start: { x: 0, y: 0 },
-      end: { x: 1, y: 0.8 },
-    },
-    blueToWhite: {
-      colors: ['#3B82F6', '#60A5FA', '#FFFFFF'],
-      start: { x: 0, y: 0 },
-      end: { x: 0.8, y: 1 },
-    },
-    whiteToBlue: {
-      colors: ['#FFFFFF', '#F0F4FF', '#E6EDFF'],
+    // Card gradient system
+    cardBlue: {
+      colors: ['#3B82F6', '#2563EB'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
-    // Keep success for health-related items only
-    healthGreen: {
-      colors: ['#4ADE80', '#22C55E', '#15803D'],
+    cardBlueLight: {
+      colors: ['#93C5FD', '#60A5FA'],
       start: { x: 0, y: 0 },
-      end: { x: 1, y: 0.5 },
+      end: { x: 1, y: 1 },
     },
-    // Remove purple/pink themes entirely
-    ocean: {
-      colors: ['#93C5FD', '#60A5FA', '#3B82F6'], // Changed to blue
+    cardWhite: {
+      colors: ['#FFFFFF', '#F8FAFF'],
       start: { x: 0, y: 0 },
-      end: { x: 0.8, y: 1 },
+      end: { x: 1, y: 1 },
     },
-    aurora: {
-      colors: ['#DBEAFE', '#93C5FD', '#60A5FA'], // Changed to blue
+    cardGreen: {
+      colors: ['#22C55E', '#16A34A'],
       start: { x: 0, y: 0 },
-      end: { x: 1, y: 0.5 },
+      end: { x: 1, y: 1 },
+    },
+    // Special effects
+    glassBlue: {
+      colors: ['rgba(59, 130, 246, 0.1)', 'rgba(59, 130, 246, 0.05)'],
+      start: { x: 0, y: 0 },
+      end: { x: 1, y: 1 },
+    },
+    glassWhite: {
+      colors: ['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.8)'],
+      start: { x: 0, y: 0 },
+      end: { x: 1, y: 1 },
     },
   },
-  // Blue-focused accent colors
+  // Simplified accent colors
   accent: {
+    blue: '#3B82F6',
     lightBlue: '#93C5FD',
     darkBlue: '#1D4ED8',
-    green: '#22C55E', // Only for health/success indicators
-    neutral: '#71717A',
+    green: '#22C55E',
     white: '#FFFFFF',
   },
 };
@@ -363,7 +362,7 @@ export const darkColors: Colors = {
       end: { x: 1, y: 1 },
     },
     warning: {
-      colors: ['#93C5FD', '#60A5FA', '#3B82F6'], // Changed to blue theme
+      colors: ['#FCD34D', '#FBBF24', '#F59E0B'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
@@ -373,50 +372,49 @@ export const darkColors: Colors = {
       end: { x: 1, y: 1 },
     },
     info: {
-      colors: ['#DBEAFE', '#BFDBFE', '#93C5FD'],
+      colors: ['#EFF6FF', '#DBEAFE', '#BFDBFE'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
-    // Unified blue-based gradients (dark theme)
-    blueLight: {
-      colors: ['#1E3A8A', '#1E40AF', '#1D4ED8'],
-      start: { x: 0, y: 0 },
-      end: { x: 1, y: 0.8 },
-    },
-    blueToWhite: {
-      colors: ['#1E3A8A', '#3B82F6', '#93C5FD'],
-      start: { x: 0, y: 0 },
-      end: { x: 0.8, y: 1 },
-    },
-    whiteToBlue: {
-      colors: ['#FFFFFF', '#DBEAFE', '#93C5FD'],
+    // Card gradient system (dark theme)
+    cardBlue: {
+      colors: ['#60A5FA', '#3B82F6'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 },
     },
-    // Keep success for health-related items only
-    healthGreen: {
-      colors: ['#86EFAC', '#4ADE80', '#22C55E'],
+    cardBlueLight: {
+      colors: ['#BFDBFE', '#93C5FD'],
       start: { x: 0, y: 0 },
-      end: { x: 1, y: 0.5 },
+      end: { x: 1, y: 1 },
     },
-    // Remove purple/pink themes entirely
-    ocean: {
-      colors: ['#BFDBFE', '#93C5FD', '#60A5FA'], // Changed to blue
+    cardWhite: {
+      colors: ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)'],
       start: { x: 0, y: 0 },
-      end: { x: 0.8, y: 1 },
+      end: { x: 1, y: 1 },
     },
-    aurora: {
-      colors: ['#EFF6FF', '#DBEAFE', '#93C5FD'], // Changed to blue
+    cardGreen: {
+      colors: ['#4ADE80', '#22C55E'],
       start: { x: 0, y: 0 },
-      end: { x: 1, y: 0.5 },
+      end: { x: 1, y: 1 },
+    },
+    // Special effects (dark theme)
+    glassBlue: {
+      colors: ['rgba(59, 130, 246, 0.15)', 'rgba(59, 130, 246, 0.1)'],
+      start: { x: 0, y: 0 },
+      end: { x: 1, y: 1 },
+    },
+    glassWhite: {
+      colors: ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)'],
+      start: { x: 0, y: 0 },
+      end: { x: 1, y: 1 },
     },
   },
-  // Blue-focused accent colors (dark theme)
+  // Simplified accent colors (dark theme)
   accent: {
+    blue: '#60A5FA',
     lightBlue: '#BFDBFE',
     darkBlue: '#1E40AF',
-    green: '#4ADE80', // Only for health/success indicators
-    neutral: '#8D8D8D',
+    green: '#4ADE80',
     white: '#FFFFFF',
   },
 };

@@ -15,15 +15,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..exceptions import AIServiceError, RateLimitError, ValidationError
-from ..models import APIUsageLog, FoodItem, Meal, MealAnalysis, MealItem
+from ..models import FoodItem, Meal, MealAnalysis, MealItem
 from ..serializers.ai_serializers import (AnalysisResultSerializer,
                                           ImageAnalysisSerializer,
                                           MealSerializer,
                                           NutritionalBreakdownSerializer,
                                           RecalculationRequestSerializer)
-from ..services.confidence_routing import confidence_routing_service
 from ..services.gemini_service import GeminiService
-from ..services.progressive_analysis import progressive_analysis_service
 
 logger = logging.getLogger(__name__)
 
@@ -45,17 +43,15 @@ def log_api_usage(
         else:
             ip_address = request.META.get("REMOTE_ADDR")
 
-        APIUsageLog.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            endpoint=endpoint_name,
-            method=request.method,
-            ip_address=ip_address,
-            user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
-            request_body_size=len(request.body) if request.body else 0,
-            response_status_code=status_code,
-            response_time_ms=response_time_ms,
-            ai_tokens_used=ai_tokens_used,
-            error_message=error_message,
+        # Enhanced logging for debugging API calls
+        logger.info(
+            f"API Call: {request.method} {endpoint_name} - "
+            f"User: {request.user.email if request.user.is_authenticated else 'Anonymous'} - "
+            f"IP: {ip_address} - "
+            f"Status: {status_code} - "
+            f"Response Time: {response_time_ms}ms - "
+            f"AI Tokens: {ai_tokens_used} - "
+            f"Error: {error_message}"
         )
     except Exception as e:
         logger.error(f"Failed to log API usage: {str(e)}")
@@ -139,13 +135,17 @@ class AnalyzeImageView(APIView):
                 # Create analysis record
                 meal_analysis = MealAnalysis.objects.create(
                     meal=meal,
-                    ai_service="gemini",
-                    ai_response=analysis_result,
-                    confidence_score=analysis_result["data"]
+                    gemini_response=analysis_result,
+                    confidence_overall=analysis_result["data"]
                     .get("confidence", {})
-                    .get("overall", 0.8),
-                    analysis_time_ms=processing_time_ms,
-                    tokens_used=analysis_result.get("tokens_used", 0),
+                    .get("overall", 75),
+                    confidence_ingredients=analysis_result["data"]
+                    .get("confidence", {})
+                    .get("ingredients_identified", 75),
+                    confidence_portions=analysis_result["data"]
+                    .get("confidence", {})
+                    .get("portions_estimated", 75),
+                    analysis_context=context,
                 )
 
             # Prepare response
@@ -211,16 +211,15 @@ class AnalyzeImageView(APIView):
             )
 
     def _build_context(self, validated_data: Dict) -> Dict[str, Any]:
-        """Build comprehensive context information for AI analysis using enhanced metadata."""
+        """Build simple context information for AI analysis with location and time data."""
         now = timezone.now()
         
-        # Base context
+        # Base context with time information
         context = {
             "meal_type": validated_data.get("meal_type", "other"),
             "time_of_day": now.strftime("%H:%M"),
             "date": now.strftime("%Y-%m-%d"),
             "day_of_week": now.strftime("%A"),
-            "season": self._get_season(now),
         }
 
         # Basic metadata
@@ -231,127 +230,19 @@ class AnalyzeImageView(APIView):
         if validated_data.get("notes"):
             context["user_notes"] = validated_data["notes"]
 
-        # Enhanced location & environmental context
-        location_context = {}
+        # Location context - only captured during image analysis
         if validated_data.get("latitude") and validated_data.get("longitude"):
-            location_context["coordinates"] = {
-                "latitude": validated_data["latitude"],
-                "longitude": validated_data["longitude"]
+            context["location_context"] = {
+                "coordinates": {
+                    "latitude": validated_data["latitude"],
+                    "longitude": validated_data["longitude"]
+                }
             }
-            # Add geographic context based on coordinates
-            location_context["geographic_context"] = self._get_geographic_context(
-                validated_data["latitude"], validated_data["longitude"]
-            )
-        
+            
         if validated_data.get("timezone"):
-            location_context["timezone"] = validated_data["timezone"]
-        if validated_data.get("venue_type"):
-            location_context["venue_type"] = validated_data["venue_type"]
-        if validated_data.get("weather_temperature"):
-            location_context["weather"] = {
-                "temperature": validated_data["weather_temperature"],
-                "humidity": validated_data.get("weather_humidity")
-            }
-        
-        if location_context:
-            context["location_context"] = location_context
-
-        # Device & camera technical metadata
-        technical_context = {}
-        if validated_data.get("device_model"):
-            technical_context["device"] = {
-                "model": validated_data["device_model"],
-                "os": validated_data.get("device_os")
-            }
-        
-        camera_specs = {}
-        for field in ["camera_resolution_width", "camera_resolution_height", "camera_focal_length", 
-                     "camera_aperture", "camera_iso", "camera_shutter_speed", "white_balance"]:
-            if validated_data.get(field):
-                camera_specs[field.replace("camera_", "")] = validated_data[field]
-        
-        if validated_data.get("flash_used"):
-            camera_specs["flash_used"] = True
-            
-        if camera_specs:
-            technical_context["camera"] = camera_specs
-            
-        if technical_context:
-            context["technical_context"] = technical_context
-
-        # Visual analysis preprocessing context
-        visual_context = {}
-        if validated_data.get("image_brightness") is not None:
-            visual_context["lighting"] = {
-                "brightness": validated_data["image_brightness"],
-                "contrast": validated_data.get("image_contrast"),
-                "lighting_quality": self._assess_lighting_quality(
-                    validated_data["image_brightness"], 
-                    validated_data.get("image_contrast")
-                )
-            }
-        
-        if validated_data.get("dominant_colors"):
-            visual_context["colors"] = {
-                "dominant": validated_data["dominant_colors"],
-                "temperature": validated_data.get("color_temperature")
-            }
-        
-        if validated_data.get("has_reference_objects"):
-            visual_context["reference_objects"] = True
-        if validated_data.get("detected_tableware"):
-            visual_context["tableware"] = validated_data["detected_tableware"]
-            
-        if visual_context:
-            context["visual_context"] = visual_context
-
-        # User behavioral & historical context
-        user_context = {}
-        if validated_data.get("user_dietary_preferences"):
-            user_context["dietary_preferences"] = validated_data["user_dietary_preferences"]
-        if validated_data.get("typical_portion_size"):
-            user_context["typical_portion_size"] = validated_data["typical_portion_size"]
-        if validated_data.get("cooking_skill_level"):
-            user_context["cooking_skill_level"] = validated_data["cooking_skill_level"]
-        if validated_data.get("frequent_cuisines"):
-            user_context["frequent_cuisines"] = validated_data["frequent_cuisines"]
-            
-        if user_context:
-            context["user_context"] = user_context
-
-        # Smart contextual hints
-        smart_context = {}
-        if validated_data.get("meal_sharing_context"):
-            smart_context["sharing_context"] = validated_data["meal_sharing_context"]
-        if validated_data.get("estimated_meal_value"):
-            smart_context["estimated_value"] = validated_data["estimated_meal_value"]
-        if validated_data.get("restaurant_chain"):
-            smart_context["restaurant_chain"] = validated_data["restaurant_chain"]
-        if validated_data.get("home_cooking_indicators"):
-            smart_context["home_cooking_indicators"] = validated_data["home_cooking_indicators"]
-            
-        if smart_context:
-            context["smart_context"] = smart_context
-
-        # Multi-photo analysis context
-        if validated_data.get("total_photos_in_sequence", 1) > 1:
-            context["multi_photo"] = {
-                "sequence_number": validated_data.get("photo_sequence_number", 1),
-                "total_photos": validated_data["total_photos_in_sequence"],
-                "photo_angle": validated_data.get("photo_angle")
-            }
-
-        # Quality and confidence context
-        quality_context = {}
-        if validated_data.get("capture_confidence"):
-            quality_context["user_confidence"] = validated_data["capture_confidence"]
-        if validated_data.get("auto_detected_issues"):
-            quality_context["detected_issues"] = validated_data["auto_detected_issues"]
-        if validated_data.get("user_corrections"):
-            quality_context["user_corrections"] = validated_data["user_corrections"]
-            
-        if quality_context:
-            context["quality_context"] = quality_context
+            if "location_context" not in context:
+                context["location_context"] = {}
+            context["location_context"]["timezone"] = validated_data["timezone"]
 
         return context
     

@@ -3,12 +3,13 @@ import { StyleSheet, Alert, View, Image } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { Button } from '@/components/base/Button';
-import { GradientButton } from '@/components/base/GradientButton';
+import { UnifiedButton } from '@/components/base/UnifiedButton';
 import { useTwoFactorStore } from '@/store/twoFactorStore';
 import { useAuthStore } from '@/store/authStore';
 import { googleOAuthClientId } from '@/config/env';
 import { Ionicons } from '@/components/IconFallback';
 import { GoogleLogo } from '@/components/icons/GoogleLogo';
+import { useTheme } from '@/hooks/useTheme';
 
 // Ensure web browser sessions complete properly
 WebBrowser.maybeCompleteAuthSession();
@@ -26,15 +27,20 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
 }) => {
   const { loginWithGoogle, isSocialLoading } = useTwoFactorStore();
   const { updateUser } = useAuthStore();
+  const { theme } = useTheme();
 
   // Google OAuth configuration using expo-auth-session
   const discovery = AuthSession.useAutoDiscovery('https://accounts.google.com');
 
-  // Use the scheme from app.json (bitesight)
+  // Use the appropriate redirect URI based on environment
+  // In development, Expo uses exp:// scheme, in production it uses the custom scheme
   const redirectUri = AuthSession.makeRedirectUri({
-    scheme: 'bitesight',
-    preferLocalhost: false, // Don't use localhost for OAuth
+    // Don't specify scheme for development - let Expo handle it
+    scheme: __DEV__ ? undefined : 'bitesight',
+    preferLocalhost: false,
     isTripleSlashed: false,
+    // Use native redirect for better compatibility
+    native: true,
   });
   
   if (__DEV__) {
@@ -46,9 +52,17 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
     {
       clientId: googleOAuthClientId || '',
       scopes: ['openid', 'profile', 'email'],
-      responseType: AuthSession.ResponseType.Code, // Use authorization code flow with PKCE
+      responseType: AuthSession.ResponseType.Code,
       redirectUri,
-      usePKCE: true, // Enable PKCE for security
+      usePKCE: true,
+      // Add code challenge method for better compatibility
+      codeChallenge: request?.codeChallenge,
+      codeChallengeMethod: AuthSession.CodeChallengeMethod.S256,
+      // Additional parameters for better OAuth flow
+      extraParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
     },
     discovery
   );
@@ -191,10 +205,11 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
         console.error('   3. Add these redirect URIs:');
         console.error('      - bitesight://');
         console.error('      - bitesight://oauth');
-        console.error('      - https://auth.expo.io/@anonymous/bitesight');
+        console.error('      - https://auth.expo.io/@your-expo-username/bitesight');
+        console.error('      - ' + redirectUri); // Current redirect URI
+        console.error('      For development, also add:');
         console.error('      - exp://localhost:8081');
-        console.error('      - exp://127.0.0.1:8081');
-        console.error('      - exp://192.168.0.161:8081');
+        console.error('      - Any exp:// URLs shown in the error');
         console.error('   4. Update EXPO_PUBLIC_GOOGLE_OAUTH_CLIENT_ID in frontend/.env');
         console.error('   5. Update GOOGLE_OAUTH2_CLIENT_ID in backend/.env');
         console.error('   6. Current redirect URI would be:', redirectUri);
@@ -277,35 +292,23 @@ export const SocialLoginButton: React.FC<SocialLoginButtonProps> = ({
   const isDisabled = isSocialLoading || !request || !discovery;
 
   return (
-    <Button
+    <UnifiedButton
       onPress={provider === 'google' ? handleGoogleLogin : undefined}
-      variant="outline"
+      variant="secondary"
       disabled={isDisabled}
       loading={isSocialLoading}
       icon={getGoogleIcon()}
       iconPosition="left"
       style={styles.socialButton}
-      elevation={true}
+      fullWidth={true}
     >
       {getButtonText()}
-    </Button>
+    </UnifiedButton>
   );
 };
 
 const styles = StyleSheet.create({
   socialButton: {
-    width: '100%',
     marginVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 3.84,
-    elevation: 3,
   },
 });

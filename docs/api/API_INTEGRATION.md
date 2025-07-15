@@ -4,6 +4,16 @@
 
 This document describes how the Nutrition AI frontend integrates with the backend API, including authentication, data fetching, error handling, and offline support.
 
+## ⚠️ Backend Simplification Update
+
+**Note**: This document describes the original complex backend architecture. The backend has been simplified to focus on core functionality with 10 models. For updated integration examples, see:
+
+- [FRONTEND_API_INTEGRATION.md](./FRONTEND_API_INTEGRATION.md) - Updated integration examples
+- [SIMPLIFIED_API_GUIDE.md](./SIMPLIFIED_API_GUIDE.md) - Core endpoints guide
+- [API_REFERENCE.md](./API_REFERENCE.md) - Complete updated API reference
+
+**Removed Features**: Complex offline sync, favorites management, 2FA, SMS features, extensive caching, batch operations, and malware scanning have been removed for simplicity.
+
 ## API Configuration
 
 ### Base Configuration

@@ -28,7 +28,7 @@ v1_patterns = [
     # Notification endpoints
     path("notifications/", include("api.notifications.urls")),
     # Payment and subscription endpoints
-    path("payments/", include("api.payments.urls")),
+    # path("payments/", include("api.payments.urls")),  # Temporarily disabled during simplification
     # Mobile-optimized endpoints
     path("mobile/", include("api.mobile.urls")),
     # User endpoints

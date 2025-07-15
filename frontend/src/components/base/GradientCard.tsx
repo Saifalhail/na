@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ViewStyle, TouchableOpacity, ViewProps } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/hooks/useTheme';
+import { Theme } from '@/theme';
 import { getModernShadow } from '@/theme/shadows';
-import { rs, moderateScale } from '@/utils/responsive';
+import { spacing, layout } from '@/theme/spacing';
 import Animated, { FadeInDown, FadeInUp, ZoomIn, SlideInRight } from 'react-native-reanimated';
 
 export type GradientVariant =
@@ -13,24 +14,31 @@ export type GradientVariant =
   | 'warning'
   | 'error'
   | 'info'
-  | 'neutral'
+  | 'cardBlue'
+  | 'cardBlueLight'
+  | 'cardWhite'
+  | 'cardGreen'
+  | 'glass'
   | 'custom';
 export type AnimationType = 'fadeDown' | 'fadeUp' | 'zoomIn' | 'slideRight' | 'none';
 
-interface GradientCardProps {
+interface GradientCardProps extends ViewProps {
   children: React.ReactNode;
   variant?: GradientVariant;
   customColors?: string[];
-  style?: ViewStyle;
   gradientStyle?: ViewStyle;
   onPress?: () => void;
   disabled?: boolean;
-  elevation?: 'low' | 'medium' | 'high';
+  elevated?: boolean;
   borderRadius?: number;
-  padding?: number;
+  padding?: 'none' | 'small' | 'medium' | 'large' | 'xl';
   animated?: boolean;
   animationType?: AnimationType;
   animationDelay?: number;
+  borderWidth?: number;
+  borderColor?: string;
+  start?: { x: number; y: number };
+  end?: { x: number; y: number };
 }
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -38,18 +46,23 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 
 export const GradientCard: React.FC<GradientCardProps> = ({
   children,
-  variant = 'primary',
+  variant = 'cardBlue',
   customColors,
   style,
   gradientStyle,
   onPress,
   disabled = false,
-  elevation = 'medium',
-  borderRadius = moderateScale(16),
-  padding = rs.large,
+  elevated = true,
+  borderRadius = spacing['4'], // 16px
+  padding = 'medium',
   animated = true,
   animationType = 'fadeDown',
   animationDelay = 0,
+  borderWidth = 0,
+  borderColor,
+  start,
+  end,
+  ...props
 }) => {
   const { theme } = useTheme();
 
@@ -58,23 +71,35 @@ export const GradientCard: React.FC<GradientCardProps> = ({
       return customColors as unknown as readonly [string, string, ...string[]];
     }
 
+    const gradients = theme.colors.gradients;
+    
     switch (variant) {
       case 'primary':
-        return [theme.colors.primary[400] + '15', theme.colors.primary[500] + '08'] as const;
+        return gradients.primary.colors as readonly [string, string, ...string[]];
       case 'secondary':
-        return [theme.colors.secondary[400] + '15', theme.colors.secondary[500] + '08'] as const;
+        return gradients.secondary.colors as readonly [string, string, ...string[]];
       case 'success':
-        return [theme.colors.success[400] + '15', theme.colors.success[500] + '08'] as const;
+        return gradients.success.colors as readonly [string, string, ...string[]];
       case 'warning':
-        return [theme.colors.warning[400] + '15', theme.colors.warning[500] + '08'] as const;
+        return gradients.warning.colors as readonly [string, string, ...string[]];
       case 'error':
-        return [theme.colors.error[400] + '15', theme.colors.error[500] + '08'] as const;
+        return gradients.error.colors as readonly [string, string, ...string[]];
       case 'info':
-        return [theme.colors.info[400] + '15', theme.colors.info[500] + '08'] as const;
-      case 'neutral':
-        return [theme.colors.neutral[200] + '20', theme.colors.neutral[300] + '10'] as const;
+        return gradients.info.colors as readonly [string, string, ...string[]];
+      case 'cardBlue':
+        return gradients.cardBlue.colors as readonly [string, string, ...string[]];
+      case 'cardBlueLight':
+        return gradients.cardBlueLight.colors as readonly [string, string, ...string[]];
+      case 'cardWhite':
+        return gradients.cardWhite.colors as readonly [string, string, ...string[]];
+      case 'cardGreen':
+        return gradients.cardGreen.colors as readonly [string, string, ...string[]];
+      case 'glass':
+        return theme.isDark 
+          ? gradients.glassWhite.colors as readonly [string, string, ...string[]]
+          : gradients.glassBlue.colors as readonly [string, string, ...string[]];
       default:
-        return [theme.colors.primary[400] + '15', theme.colors.primary[500] + '08'] as const;
+        return gradients.cardBlue.colors as readonly [string, string, ...string[]];
     }
   };
 
@@ -93,15 +118,36 @@ export const GradientCard: React.FC<GradientCardProps> = ({
     }
   };
 
-  const containerStyle = [styles.container, getModernShadow(elevation), { borderRadius }, style];
+  const getPaddingValue = () => {
+    switch (padding) {
+      case 'none': return 0;
+      case 'small': return spacing['3']; // 12px
+      case 'medium': return layout.cardPadding; // 16px
+      case 'large': return layout.cardPaddingLarge; // 24px
+      case 'xl': return spacing['8']; // 32px
+      default: return layout.cardPadding;
+    }
+  };
 
-  const gradientStyleCombined = [styles.gradient, { borderRadius, padding }, gradientStyle];
+  const containerStyle = [
+    styles.container,
+    elevated && getModernShadow('card'),
+    { borderRadius },
+    borderWidth > 0 && { borderWidth, borderColor: borderColor || theme.colors.border },
+    style
+  ].filter(Boolean);
+
+  const gradientStyleCombined = [
+    styles.gradient,
+    { borderRadius, padding: getPaddingValue() },
+    gradientStyle
+  ];
 
   const content = (
     <LinearGradient
       colors={getGradientColors()}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      start={start || { x: 0, y: 0 }}
+      end={end || { x: 1, y: 1 }}
       style={gradientStyleCombined}
     >
       {children}
@@ -148,7 +194,6 @@ export const GradientCard: React.FC<GradientCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     overflow: 'hidden',
   },
   gradient: {

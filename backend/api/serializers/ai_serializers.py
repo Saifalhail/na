@@ -16,7 +16,7 @@ class FoodItemSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "brand",
-            "barcode",
+            "category",
             "calories",
             "protein",
             "carbohydrates",
@@ -24,19 +24,10 @@ class FoodItemSerializer(serializers.ModelSerializer):
             "fiber",
             "sugar",
             "sodium",
-            "saturated_fat",
-            "trans_fat",
-            "cholesterol",
-            "potassium",
-            "vitamin_a",
-            "vitamin_c",
-            "calcium",
-            "iron",
-            "source",
-            "is_verified",
             "created_at",
+            "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "is_verified"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class MealItemSerializer(serializers.ModelSerializer):
@@ -64,6 +55,7 @@ class MealItemSerializer(serializers.ModelSerializer):
             "custom_name",
             "notes",
             "created_at",
+            "updated_at",
         ]
         read_only_fields = [
             "id",
@@ -75,6 +67,7 @@ class MealItemSerializer(serializers.ModelSerializer):
             "sugar",
             "sodium",
             "created_at",
+            "updated_at",
         ]
 
 

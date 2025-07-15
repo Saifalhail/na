@@ -1,18 +1,29 @@
-# Mobile API Integration Guide
+# Mobile API Integration Guide - Simplified Backend
 
-Complete guide for integrating with the Nutrition AI mobile-optimized API endpoints.
+Complete guide for integrating with the Nutrition AI mobile-optimized API endpoints after backend simplification.
 
 ## Overview
 
 The mobile API endpoints are specifically designed for mobile applications with features like:
 
-- Offline support and data synchronization
-- Batch operations for efficiency
-- Reduced payload sizes
-- Optimized response times
-- Device-specific caching strategies
+- Device token management for push notifications
+- Optimized dashboard data for mobile screens
+- Efficient image upload and analysis
+- Mobile-specific error handling
+- Streamlined authentication flow
 
-**Base URL:** `https://your-domain.com/api/v1/mobile/`
+**Base URL:** `http://127.0.0.1:8000/api/v1/mobile/` (dev) | `https://api.nutritionai.com/api/v1/mobile/` (prod)
+
+## Backend Simplification Note
+
+This guide reflects the simplified backend structure with 10 core models:
+- **User, UserProfile** - Authentication and user data
+- **FoodItem, Meal, MealItem** - Food and meal tracking
+- **MealAnalysis** - AI analysis results
+- **Notification, DeviceToken** - Push notifications
+- **SubscriptionPlan, Subscription, Payment** - Premium features
+
+**Removed Features**: Complex offline sync, batch operations, favorites management, and extensive caching have been removed for simplicity.
 
 ## Authentication
 
@@ -24,311 +35,71 @@ Authorization: Bearer <access_token>
 
 ## Core Mobile Endpoints
 
-### 1. Data Synchronization
+### 1. Device Registration
 
-#### Full Sync
+#### Register Device
 
-**POST** `/mobile/sync/`
+**POST** `/mobile/register-device/`
 
-Synchronize all user data between mobile app and server.
-
-**Use Case:** App startup, major version updates, or after extended offline usage.
-
-**Request Schema:**
-
-```json
-{
-  "device_info": {
-    "device_id": "string (required, max 255 chars)",
-    "platform": "ios|android|web",
-    "app_version": "string (semantic version)",
-    "os_version": "string",
-    "device_name": "string (optional)"
-  },
-  "last_sync": "ISO 8601 datetime (optional)",
-  "sync_type": "full|incremental|force",
-  "data": {
-    "meals": [
-      {
-        "local_id": "string (required)",
-        "name": "string",
-        "consumed_at": "ISO 8601 datetime",
-        "meal_type": "breakfast|lunch|dinner|snack",
-        "image_path": "string (local file path)",
-        "total_calories": "number (optional)",
-        "meal_items": [
-          {
-            "local_id": "string",
-            "food_item_name": "string",
-            "quantity": "number",
-            "unit": "string",
-            "calories": "number"
-          }
-        ],
-        "created_at": "ISO 8601 datetime",
-        "updated_at": "ISO 8601 datetime",
-        "is_deleted": "boolean (default: false)"
-      }
-    ],
-    "favorites": ["meal_local_id1", "meal_local_id2"],
-    "user_preferences": {
-      "daily_calorie_goal": "number",
-      "daily_protein_goal": "number",
-      "meal_reminder_times": ["HH:MM", "HH:MM"],
-      "notification_preferences": {}
-    },
-    "device_tokens": [
-      {
-        "token": "string (push notification token)",
-        "platform": "ios|android",
-        "is_active": "boolean"
-      }
-    ]
-  }
-}
-```
-
-**Response (200):**
-
-```json
-{
-  "sync_id": "string (UUID)",
-  "status": "completed|partial|failed",
-  "sync_timestamp": "ISO 8601 datetime",
-  "conflicts": [
-    {
-      "type": "meal|preference|favorite",
-      "local_id": "string",
-      "server_id": "number|null",
-      "conflict_reason": "concurrent_modification|version_mismatch",
-      "local_data": {},
-      "server_data": {},
-      "resolution": "use_server|use_local|manual_required"
-    }
-  ],
-  "updated_mappings": {
-    "meals": [
-      {
-        "local_id": "meal_123",
-        "server_id": 456,
-        "status": "created|updated|deleted|conflict"
-      }
-    ]
-  },
-  "server_data": {
-    "meals": [
-      {
-        "id": 789,
-        "name": "Server Meal",
-        "consumed_at": "2024-01-20T12:30:00Z",
-        "total_calories": 450,
-        "meal_items": [],
-        "created_at": "2024-01-20T12:35:00Z",
-        "updated_at": "2024-01-20T12:35:00Z"
-      }
-    ],
-    "notifications": [
-      {
-        "id": "notif_123",
-        "title": "Goal Achieved!",
-        "message": "Great progress today",
-        "type": "goal_achieved",
-        "priority": "medium",
-        "created_at": "2024-01-20T15:00:00Z",
-        "read_at": null,
-        "data": {}
-      }
-    ],
-    "user_profile": {
-      "daily_calorie_goal": 2200,
-      "is_premium": false,
-      "subscription_expires_at": null
-    }
-  },
-  "next_sync_recommended": "ISO 8601 datetime",
-  "cache_invalidation": ["meals", "notifications"]
-}
-```
-
-#### Incremental Sync
-
-For regular background synchronization:
+Register a mobile device for push notifications.
 
 **Request:**
 
 ```json
 {
-  "device_info": {
-    "device_id": "ABC123-DEF456",
-    "platform": "ios"
-  },
-  "last_sync": "2024-01-20T10:00:00Z",
-  "sync_type": "incremental",
-  "data": {
-    "meals": [], // Only new/modified meals since last_sync
-    "favorites": [] // Only changes since last_sync
-  }
+  "token": "ExponentPushToken[xxx]",
+  "platform": "ios|android",
+  "device_id": "unique-device-id",
+  "device_name": "User's iPhone",
+  "app_version": "1.0.0",
+  "os_version": "17.2"
 }
 ```
 
-### 2. Batch Operations
-
-#### Batch Request
-
-**POST** `/mobile/batch/`
-
-Execute multiple API operations in a single request to reduce network overhead.
-
-**Request Schema:**
+**Response (201):**
 
 ```json
 {
-  "operations": [
-    {
-      "id": "op_1", // Client-generated operation ID
-      "type": "create_meal",
-      "data": {
-        "name": "Breakfast Bowl",
-        "consumed_at": "2024-01-20T08:30:00Z",
-        "meal_items": []
-      }
-    },
-    {
-      "id": "op_2",
-      "type": "update_profile",
-      "data": {
-        "daily_calorie_goal": 2300
-      }
-    },
-    {
-      "id": "op_3",
-      "type": "mark_notifications_read",
-      "data": {
-        "notification_ids": ["notif_123", "notif_456"]
-      }
-    },
-    {
-      "id": "op_4",
-      "type": "add_favorite",
-      "data": {
-        "meal_id": 789
-      }
-    },
-    {
-      "id": "op_5",
-      "type": "upload_image",
-      "data": {
-        "image_base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABA...",
-        "purpose": "meal_analysis"
-      }
-    }
-  ],
-  "transaction": true, // If true, all operations succeed or all fail
-  "timeout": 30 // Timeout in seconds (max 60)
+  "device_id": "unique-device-id",
+  "status": "registered",
+  "token_updated": true,
+  "created_at": "2025-07-15T10:30:00Z"
 }
 ```
 
-**Supported Operation Types:**
+#### Update Device Token
 
-- `create_meal`
-- `update_meal`
-- `delete_meal`
-- `add_favorite`
-- `remove_favorite`
-- `update_profile`
-- `mark_notifications_read`
-- `upload_image`
-- `analyze_image`
-- `create_device_token`
-- `update_device_token`
+**PUT** `/mobile/register-device/`
 
-**Response (200):**
+Update device token (same endpoint as registration).
+
+**Request:**
 
 ```json
 {
-  "batch_id": "batch_550e8400",
-  "total_operations": 5,
-  "successful_operations": 4,
-  "failed_operations": 1,
-  "execution_time": 1.25, // seconds
-  "results": [
-    {
-      "operation_id": "op_1",
-      "status": "success",
-      "execution_time": 0.15,
-      "data": {
-        "meal_id": 123,
-        "name": "Breakfast Bowl",
-        "created_at": "2024-01-20T08:35:00Z"
-      }
-    },
-    {
-      "operation_id": "op_2",
-      "status": "success",
-      "execution_time": 0.08,
-      "data": {
-        "updated_fields": ["daily_calorie_goal"],
-        "new_value": 2300
-      }
-    },
-    {
-      "operation_id": "op_3",
-      "status": "success",
-      "execution_time": 0.12,
-      "data": {
-        "updated_count": 2,
-        "notification_ids": ["notif_123", "notif_456"]
-      }
-    },
-    {
-      "operation_id": "op_4",
-      "status": "success",
-      "execution_time": 0.09,
-      "data": {
-        "meal_id": 789,
-        "is_favorite": true
-      }
-    },
-    {
-      "operation_id": "op_5",
-      "status": "error",
-      "execution_time": 0.05,
-      "error": {
-        "code": "file_too_large",
-        "message": "Image file exceeds maximum size limit",
-        "details": {
-          "max_size": "10MB",
-          "received_size": "12MB"
-        }
-      }
-    }
-  ]
+  "token": "ExponentPushToken[new-token]",
+  "platform": "ios",
+  "device_id": "unique-device-id",
+  "device_name": "User's iPhone",
+  "app_version": "1.0.1",
+  "os_version": "17.3"
 }
 ```
 
-### 3. Quick Dashboard Stats
+### 2. Dashboard Data
 
 #### Get Dashboard Data
 
-**GET** `/mobile/stats/`
+**GET** `/mobile/dashboard/`
 
 Get optimized dashboard data for mobile apps.
-
-**Query Parameters:**
-
-- `include` (string): Comma-separated list of data to include
-  - `today` (default)
-  - `week`
-  - `achievements`
-  - `reminders`
-  - `quick_actions`
 
 **Response (200):**
 
 ```json
 {
   "today": {
-    "date": "2024-01-20",
+    "date": "2025-07-15",
     "calories": {
       "consumed": 1850,
       "goal": 2200,
@@ -341,64 +112,37 @@ Get optimized dashboard data for mobile apps.
       "fat": { "consumed": 65, "goal": 73, "percentage": 89.0 }
     },
     "meals_logged": 3,
-    "meals_planned": 4,
     "water_intake": {
       "consumed": 1.5,
       "goal": 2.5,
       "unit": "liters"
     },
-    "streak_days": 15,
-    "next_meal_time": "19:00"
+    "recent_meals": [
+      {
+        "id": 123,
+        "name": "Breakfast Bowl",
+        "meal_type": "breakfast",
+        "consumed_at": "2025-07-15T08:30:00Z",
+        "total_calories": 450,
+        "image_url": "https://example.com/meals/123.jpg"
+      }
+    ]
   },
   "week": {
-    "week_start": "2024-01-15",
+    "week_start": "2025-07-09",
     "average_calories": 2050,
-    "days_on_track": 5,
     "total_meals": 21,
     "best_day": {
-      "date": "2024-01-18",
+      "date": "2025-07-12",
       "calories_percentage": 98.5
-    },
-    "trend": "improving" // improving|declining|stable
+    }
   },
-  "achievements": [
-    {
-      "id": "streak_15",
-      "type": "streak_milestone",
-      "title": "15-Day Streak! 🔥",
-      "description": "You've logged meals for 15 consecutive days",
-      "icon": "🔥",
-      "unlocked_at": "2024-01-20T00:00:00Z",
-      "points": 150,
-      "is_new": true
-    }
-  ],
-  "reminders": [
-    {
-      "type": "meal_reminder",
-      "title": "Time for dinner!",
-      "time": "19:00",
-      "enabled": true
-    },
-    {
-      "type": "goal_check",
-      "title": "You're close to your protein goal",
-      "description": "Add 25g more protein to reach your daily goal",
-      "action": "suggest_foods"
-    }
-  ],
   "quick_actions": [
     {
       "type": "analyze_meal",
       "title": "Analyze Food",
       "icon": "camera",
       "enabled": true
-    },
-    {
-      "type": "log_water",
-      "title": "Log Water",
-      "icon": "water",
-      "quick_amounts": [250, 500, 750] // ml
     },
     {
       "type": "view_progress",
@@ -409,61 +153,21 @@ Get optimized dashboard data for mobile apps.
 }
 ```
 
-### 4. Offline Queue Management
+### 3. Push Notifications
 
-#### Get Offline Queue Status
+#### Test Push Notification
 
-**GET** `/mobile/queue/`
+**POST** `/mobile/test-notification/`
 
-Get status of pending offline operations.
-
-**Response (200):**
-
-```json
-{
-  "queue_status": "syncing|idle|error",
-  "pending_operations": [
-    {
-      "id": "op_offline_123",
-      "type": "create_meal",
-      "created_at": "2024-01-20T10:00:00Z",
-      "retry_count": 2,
-      "last_error": "network_timeout",
-      "data": {
-        "name": "Offline Meal",
-        "consumed_at": "2024-01-20T10:00:00Z"
-      }
-    }
-  ],
-  "total_pending": 1,
-  "estimated_sync_time": 15, // seconds
-  "last_successful_sync": "2024-01-20T09:45:00Z"
-}
-```
-
-#### Process Offline Queue
-
-**POST** `/mobile/queue/`
-
-Process pending offline operations.
+Send a test push notification to a specific device.
 
 **Request:**
 
 ```json
 {
-  "operations": [
-    {
-      "id": "op_offline_123",
-      "type": "create_meal",
-      "timestamp": "2024-01-20T10:00:00Z",
-      "data": {
-        "name": "Offline Meal",
-        "consumed_at": "2024-01-20T10:00:00Z",
-        "meal_items": []
-      }
-    }
-  ],
-  "clear_queue_on_success": true
+  "device_id": "unique-device-id",
+  "title": "Test Notification",
+  "message": "This is a test notification from Nutrition AI"
 }
 ```
 
@@ -471,62 +175,76 @@ Process pending offline operations.
 
 ```json
 {
-  "processed": [
-    {
-      "id": "op_offline_123",
-      "status": "success",
-      "result": {
-        "meal_id": 456,
-        "created_at": "2024-01-20T15:30:00Z"
-      }
-    }
-  ],
-  "failed": [],
-  "queue_cleared": true,
-  "total_processed": 1
+  "status": "sent",
+  "device_id": "unique-device-id",
+  "sent_at": "2025-07-15T10:30:00Z"
 }
 ```
 
-### 5. Image Upload & Analysis
+### 4. Image Analysis
 
-#### Upload Image for Analysis
+Mobile apps can use the standard AI analysis endpoints with optimized image handling:
 
-**POST** `/mobile/analyze/`
+#### Analyze Food Image
 
-Upload and analyze food images with mobile optimizations.
+**POST** `/ai/analyze/`
 
-**Headers:**
-
-- `Content-Type: multipart/form-data`
-- `X-Device-Resolution: 1920x1080` (optional)
-- `X-Network-Type: wifi|cellular` (optional)
+Standard food image analysis endpoint (mobile-optimized).
 
 **Request (Form Data):**
 
-- `image` (file): Image file (JPEG, PNG, WebP, HEIF)
-- `compression_quality` (string): `low|medium|high` (default: medium)
-- `priority` (string): `normal|high` (default: normal)
-- `context` (JSON string): Analysis context
+- `image` (file): Food image (JPG, PNG, WebP, max 10MB)
+- `meal_type` (string): `breakfast|lunch|dinner|snack`
+- `location_name` (string, optional): Location context
+- `latitude` (number, optional): GPS latitude
+- `longitude` (number, optional): GPS longitude
 
-**Context Schema:**
+**Response (200):**
 
 ```json
 {
-  "meal_type": "breakfast|lunch|dinner|snack",
-  "cuisine_type": "italian|chinese|mexican|american|other",
-  "portion_size": "small|medium|large",
-  "dining_location": "home|restaurant|work|other",
-  "time_of_day": "morning|afternoon|evening|night",
-  "user_preferences": {
-    "dietary_restrictions": ["vegetarian", "gluten_free"],
-    "allergies": ["nuts", "shellfish"]
+  "meal": {
+    "id": 123,
+    "name": "Analyzed Meal",
+    "meal_type": "lunch",
+    "consumed_at": "2025-07-15T12:30:00Z",
+    "total_calories": 450,
+    "total_protein": 25.5,
+    "total_carbs": 35.2,
+    "total_fat": 18.3,
+    "meal_items": [
+      {
+        "id": 456,
+        "food_item_name": "Grilled Chicken",
+        "quantity": 150,
+        "unit": "g",
+        "calories": 231,
+        "protein": 43.5,
+        "carbohydrates": 0,
+        "fat": 5.0
+      }
+    ]
   },
-  "location": {
-    "latitude": 40.7128,
-    "longitude": -74.006
+  "analysis": {
+    "confidence_overall": 85.2,
+    "processing_time": 2.5,
+    "detected_items": 2,
+    "analysis_method": "gemini_vision"
   }
 }
 ```
+
+#### Progressive Analysis
+
+**POST** `/ai/progressive-analyze/`
+
+For complex images that need progressive analysis.
+
+**Request (Form Data):**
+
+- `image` (file): Food image
+- `meal_type` (string): Meal type
+- `target_confidence` (number): Target confidence level (70-95)
 
 **Response (202):**
 
@@ -534,69 +252,33 @@ Upload and analyze food images with mobile optimizations.
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
   "status": "processing",
-  "estimated_completion": "2024-01-20T15:32:00Z",
-  "websocket_url": "ws://your-domain.com/ws/analysis/",
-  "polling_url": "/api/v1/ai/analyze/550e8400-e29b-41d4-a716-446655440000/",
-  "image_url": "https://your-domain.com/uploads/analysis/session_123.jpg"
+  "progress": 0,
+  "estimated_completion": "2025-07-15T12:32:00Z"
 }
 ```
 
-### 6. Device & Push Notification Management
+#### Check Analysis Status
 
-#### Register Device Token
+**GET** `/ai/progressive-status/{session_id}/`
 
-**POST** `/mobile/device/register/`
-
-Register device for push notifications.
-
-**Request:**
-
-```json
-{
-  "device_id": "ABC123-DEF456",
-  "platform": "ios|android",
-  "token": "push_notification_token_here",
-  "device_name": "John's iPhone",
-  "app_version": "1.2.0",
-  "os_version": "17.2",
-  "is_active": true
-}
-```
-
-**Response (201):**
-
-```json
-{
-  "device_id": "ABC123-DEF456",
-  "status": "registered",
-  "token_updated": true,
-  "created_at": "2024-01-20T15:30:00Z"
-}
-```
-
-#### Update Device Token
-
-**PUT** `/mobile/device/{device_id}/`
-
-Update device information or token.
-
-**Request:**
-
-```json
-{
-  "token": "new_push_notification_token",
-  "app_version": "1.2.1",
-  "is_active": true
-}
-```
+Check the status of a progressive analysis.
 
 **Response (200):**
 
 ```json
 {
-  "device_id": "ABC123-DEF456",
-  "status": "updated",
-  "last_updated": "2024-01-20T15:30:00Z"
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "progress": 100,
+  "meal": {
+    "id": 789,
+    "name": "Progressive Analysis Result",
+    "meal_items": []
+  },
+  "analysis": {
+    "confidence_overall": 88.5,
+    "processing_time": 4.2
+  }
 }
 ```
 
@@ -606,155 +288,118 @@ Update device information or token.
 
 ```json
 {
-  "error": "sync_conflict",
-  "message": "Data conflicts detected during synchronization",
-  "details": {
-    "conflicts": [
-      {
-        "type": "meal",
-        "local_id": "meal_123",
-        "server_id": 456,
-        "conflict_reason": "concurrent_modification"
-      }
-    ],
-    "resolution_required": true
-  }
-}
-```
-
-```json
-{
-  "error": "offline_queue_full",
-  "message": "Offline operation queue is full",
-  "details": {
-    "max_queue_size": 100,
-    "current_queue_size": 100,
-    "suggested_action": "sync_and_retry"
-  }
-}
-```
-
-```json
-{
   "error": "device_not_registered",
   "message": "Device must be registered before performing this operation",
   "details": {
-    "registration_endpoint": "/mobile/device/register/"
+    "registration_endpoint": "/mobile/register-device/"
+  }
+}
+```
+
+```json
+{
+  "error": "invalid_push_token",
+  "message": "Invalid push notification token format",
+  "details": {
+    "token_format": "ExponentPushToken[xxx] or FCM token"
+  }
+}
+```
+
+```json
+{
+  "error": "image_too_large",
+  "message": "Image file exceeds maximum size limit",
+  "details": {
+    "max_size": "10MB",
+    "received_size": "12MB"
+  }
+}
+```
+
+```json
+{
+  "error": "analysis_failed",
+  "message": "AI analysis could not process the image",
+  "details": {
+    "reason": "low_image_quality",
+    "suggestions": [
+      "Use better lighting",
+      "Ensure food is clearly visible",
+      "Try a different angle"
+    ]
   }
 }
 ```
 
 ## Best Practices
 
-### 1. Offline Support Strategy
+### 1. Device Registration
 
 ```javascript
-// Example: Implementing offline queue
-class OfflineManager {
-  constructor() {
-    this.queue = [];
-    this.isOnline = navigator.onLine;
-    this.setupEventListeners();
-  }
+// Example: Device registration on app start
+class DeviceManager {
+  async registerDevice() {
+    const deviceInfo = await this.getDeviceInfo();
+    const pushToken = await this.getPushToken();
 
-  async apiCall(endpoint, data) {
-    if (this.isOnline) {
-      try {
-        return await this.makeRequest(endpoint, data);
-      } catch (error) {
-        if (this.isNetworkError(error)) {
-          this.queueOperation(endpoint, data);
-        }
-        throw error;
-      }
-    } else {
-      this.queueOperation(endpoint, data);
-      return { queued: true };
-    }
-  }
-
-  async syncQueue() {
-    if (!this.isOnline || this.queue.length === 0) return;
-
-    const operations = this.queue.splice(0);
     try {
-      const response = await fetch("/api/v1/mobile/queue/", {
+      const response = await fetch("/api/v1/mobile/register-device/", {
         method: "POST",
-        body: JSON.stringify({ operations }),
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.accessToken}`,
+        },
+        body: JSON.stringify({
+          token: pushToken,
+          platform: Platform.OS,
+          device_id: deviceInfo.deviceId,
+          device_name: deviceInfo.deviceName,
+          app_version: deviceInfo.appVersion,
+          os_version: deviceInfo.osVersion,
+        }),
       });
 
       const result = await response.json();
-      this.handleSyncResult(result);
+      console.log("Device registered:", result);
     } catch (error) {
-      // Re-queue failed operations
-      this.queue.unshift(...operations);
+      console.error("Device registration failed:", error);
     }
   }
 }
 ```
 
-### 2. Efficient Data Synchronization
-
-```javascript
-// Example: Incremental sync implementation
-class SyncManager {
-  async performSync() {
-    const lastSync = localStorage.getItem("lastSyncTime");
-    const localChanges = this.getLocalChanges(lastSync);
-
-    const syncRequest = {
-      device_info: this.getDeviceInfo(),
-      last_sync: lastSync,
-      sync_type: lastSync ? "incremental" : "full",
-      data: localChanges,
-    };
-
-    const response = await fetch("/api/v1/mobile/sync/", {
-      method: "POST",
-      body: JSON.stringify(syncRequest),
-      headers: this.getAuthHeaders(),
-    });
-
-    const result = await response.json();
-
-    // Handle conflicts
-    if (result.conflicts.length > 0) {
-      await this.resolveConflicts(result.conflicts);
-    }
-
-    // Update local data
-    await this.updateLocalData(result.server_data);
-
-    // Store sync timestamp
-    localStorage.setItem("lastSyncTime", result.sync_timestamp);
-  }
-}
-```
-
-### 3. Optimized Image Handling
+### 2. Optimized Image Handling
 
 ```javascript
 // Example: Image compression before upload
 class ImageUploader {
-  async uploadImage(file, options = {}) {
+  async uploadImage(imageUri, options = {}) {
     // Compress image based on network conditions
-    const networkType = this.getNetworkType();
+    const networkType = await this.getNetworkType();
     const quality = this.getCompressionQuality(networkType);
 
-    const compressedFile = await this.compressImage(file, quality);
+    const compressedUri = await this.compressImage(imageUri, quality);
 
     const formData = new FormData();
-    formData.append("image", compressedFile);
-    formData.append("compression_quality", quality);
-    formData.append("context", JSON.stringify(options.context));
+    formData.append("image", {
+      uri: compressedUri,
+      type: "image/jpeg",
+      name: "food_image.jpg",
+    });
+    formData.append("meal_type", options.meal_type || "lunch");
+    
+    if (options.location) {
+      formData.append("latitude", options.location.latitude);
+      formData.append("longitude", options.location.longitude);
+    }
 
-    return fetch("/api/v1/mobile/analyze/", {
+    return fetch("/api/v1/ai/analyze/", {
       method: "POST",
       body: formData,
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
-        "X-Network-Type": networkType,
+        "Content-Type": "multipart/form-data",
       },
     });
   }
@@ -762,104 +407,288 @@ class ImageUploader {
   getCompressionQuality(networkType) {
     switch (networkType) {
       case "wifi":
-        return "high";
-      case "cellular-4g":
-        return "medium";
-      case "cellular-3g":
-        return "low";
+        return 0.8;
+      case "cellular":
+        return 0.6;
       default:
-        return "medium";
+        return 0.7;
     }
   }
 }
 ```
 
-### 4. Battery-Efficient Background Sync
+### 3. Dashboard Data Caching
 
 ```javascript
-// Example: Background sync with exponential backoff
-class BackgroundSyncManager {
+// Example: Cache dashboard data for offline viewing
+class DashboardManager {
   constructor() {
-    this.syncInterval = 30000; // 30 seconds
-    this.maxInterval = 300000; // 5 minutes
-    this.retryCount = 0;
+    this.cacheKey = "dashboard_data";
+    this.cacheExpiry = 5 * 60 * 1000; // 5 minutes
   }
 
-  async startBackgroundSync() {
-    const performSync = async () => {
-      try {
-        await this.syncManager.performSync();
-        this.resetSyncInterval();
-      } catch (error) {
-        this.increaseSyncInterval();
-      }
+  async getDashboardData() {
+    // Check cache first
+    const cachedData = await this.getCachedData();
+    if (cachedData && !this.isCacheExpired(cachedData)) {
+      return cachedData.data;
+    }
 
-      setTimeout(performSync, this.syncInterval);
+    try {
+      const response = await fetch("/api/v1/mobile/dashboard/", {
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+      
+      // Cache the data
+      await this.setCachedData(data);
+      
+      return data;
+    } catch (error) {
+      // Return cached data if available, even if expired
+      if (cachedData) {
+        return cachedData.data;
+      }
+      throw error;
+    }
+  }
+
+  async setCachedData(data) {
+    const cacheItem = {
+      data,
+      timestamp: Date.now(),
     };
-
-    // Start background sync when app comes to foreground
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) {
-        performSync();
-      }
-    });
+    await AsyncStorage.setItem(this.cacheKey, JSON.stringify(cacheItem));
   }
 
-  resetSyncInterval() {
-    this.syncInterval = 30000;
-    this.retryCount = 0;
+  async getCachedData() {
+    const cached = await AsyncStorage.getItem(this.cacheKey);
+    return cached ? JSON.parse(cached) : null;
   }
 
-  increaseSyncInterval() {
-    this.retryCount++;
-    this.syncInterval = Math.min(
-      this.syncInterval * Math.pow(2, this.retryCount),
-      this.maxInterval,
-    );
+  isCacheExpired(cachedData) {
+    return Date.now() - cachedData.timestamp > this.cacheExpiry;
   }
 }
 ```
 
-## SDK Usage Examples
-
-### React Native Integration
+### 4. Progressive Analysis with Polling
 
 ```javascript
-import { NutritionAI } from "@nutrition-ai/react-native-sdk";
+// Example: Handle progressive analysis with polling
+class ProgressiveAnalyzer {
+  async analyzeImage(imageUri, options = {}) {
+    // Start progressive analysis
+    const formData = new FormData();
+    formData.append("image", {
+      uri: imageUri,
+      type: "image/jpeg",
+      name: "food_image.jpg",
+    });
+    formData.append("meal_type", options.meal_type || "lunch");
+    formData.append("target_confidence", options.target_confidence || 80);
 
-// Initialize SDK
-const nutritionAI = new NutritionAI({
-  apiKey: "your-api-key",
-  baseUrl: "https://your-domain.com/api/v1/",
-  enableOfflineSupport: true,
-  enableBackgroundSync: true,
-});
-
-// Analyze food image
-const analyzeFood = async (imageUri) => {
-  try {
-    const result = await nutritionAI.analyzeImage(imageUri, {
-      context: {
-        meal_type: "lunch",
-        cuisine_type: "italian",
+    const response = await fetch("/api/v1/ai/progressive-analyze/", {
+      method: "POST",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+        "Content-Type": "multipart/form-data",
       },
     });
 
-    return result;
-  } catch (error) {
-    console.error("Analysis failed:", error);
+    const result = await response.json();
+    
+    // Poll for completion
+    return this.pollForCompletion(result.session_id);
   }
-};
 
-// Sync data
-const syncData = async () => {
-  try {
-    const result = await nutritionAI.sync();
-    console.log("Sync completed:", result);
-  } catch (error) {
-    console.error("Sync failed:", error);
+  async pollForCompletion(sessionId) {
+    const maxAttempts = 30; // 30 seconds max
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const response = await fetch(`/api/v1/ai/progressive-status/${sessionId}/`, {
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+        });
+
+        const status = await response.json();
+        
+        if (status.status === "completed") {
+          return status;
+        } else if (status.status === "failed") {
+          throw new Error("Analysis failed");
+        }
+
+        // Wait 1 second before next poll
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    throw new Error("Analysis timeout");
   }
+}
+```
+
+## React Native Integration Examples
+
+### Basic Setup
+
+```javascript
+// API client setup
+class NutritionAIClient {
+  constructor(baseUrl, accessToken) {
+    this.baseUrl = baseUrl;
+    this.accessToken = accessToken;
+  }
+
+  async makeRequest(endpoint, options = {}) {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return response.json();
+  }
+}
+
+// Usage
+const apiClient = new NutritionAIClient(
+  'http://127.0.0.1:8000/api/v1',
+  'your-access-token'
+);
+```
+
+### Image Analysis Hook
+
+```javascript
+import { useState } from 'react';
+
+export const useImageAnalysis = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const analyzeImage = async (imageUri, mealType = 'lunch') => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'food_image.jpg',
+      });
+      formData.append('meal_type', mealType);
+
+      const response = await fetch('/api/v1/ai/analyze/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const result = await response.json();
+      setLoading(false);
+      return result;
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  return { analyzeImage, loading, error };
 };
 ```
 
-For complete SDK documentation and examples, visit: https://docs.your-domain.com/mobile-sdk/
+### Push Notification Setup
+
+```javascript
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+
+export const setupPushNotifications = async () => {
+  // Request permissions
+  const { status } = await Notifications.requestPermissionsAsync();
+  
+  if (status !== 'granted') {
+    throw new Error('Push notification permissions not granted');
+  }
+
+  // Get push token
+  const token = await Notifications.getExpoPushTokenAsync();
+  
+  // Register device
+  await fetch('/api/v1/mobile/register-device/', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      token: token.data,
+      platform: Platform.OS,
+      device_id: await getDeviceId(),
+      device_name: await getDeviceName(),
+      app_version: Constants.manifest.version,
+      os_version: Platform.Version,
+    }),
+  });
+};
+```
+
+### Dashboard Data Hook
+
+```javascript
+import { useQuery } from 'react-query';
+
+export const useDashboardData = () => {
+  return useQuery(
+    'dashboardData',
+    async () => {
+      const response = await fetch('/api/v1/mobile/dashboard/', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      return response.json();
+    },
+    {
+      refetchOnWindowFocus: true,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
+};
+```
+
+## Related Documentation
+
+- [API_REFERENCE.md](./API_REFERENCE.md) - Complete API documentation
+- [SIMPLIFIED_API_GUIDE.md](./SIMPLIFIED_API_GUIDE.md) - Core endpoints guide
+- [ENHANCED_POSTMAN_GUIDE.md](./ENHANCED_POSTMAN_GUIDE.md) - Postman testing guide
+- [FRONTEND_API_INTEGRATION.md](./FRONTEND_API_INTEGRATION.md) - Web frontend integration
+
+---
+
+*Last Updated: July 15, 2025*
+*Version: 1.0.0 - Simplified Backend*

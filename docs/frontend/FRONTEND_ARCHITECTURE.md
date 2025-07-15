@@ -4,6 +4,16 @@
 
 The Nutrition AI frontend is built with React Native and TypeScript, providing a cross-platform mobile application for iOS and Android. The application follows a component-based architecture with a focus on reusability, type safety, and performance.
 
+## ⚠️ Backend Simplification Update
+
+**Note**: This document describes the original complex backend integration. The backend has been simplified to focus on core functionality with 10 models. For updated integration examples, see:
+
+- [FRONTEND_API_INTEGRATION.md](../api/FRONTEND_API_INTEGRATION.md) - Updated integration examples
+- [MOBILE_API_GUIDE.md](../api/MOBILE_API_GUIDE.md) - Mobile-specific integration guide
+- [SIMPLIFIED_API_GUIDE.md](../api/SIMPLIFIED_API_GUIDE.md) - Core endpoints guide
+
+**Removed Features**: Complex offline sync, favorites management, 2FA, SMS features, extensive caching, batch operations, and malware scanning have been removed for simplicity.
+
 ## Technology Stack
 
 ### Core Technologies

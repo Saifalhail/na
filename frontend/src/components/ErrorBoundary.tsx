@@ -1,6 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { lightColors, darkColors } from '@/theme/colors';
+import { spacing } from '@/theme/spacing';
 
 interface Props {
   children: ReactNode;
@@ -14,8 +16,22 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+// Wrapper component to provide theme context
+export const ErrorBoundary: React.FC<Props> = (props) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = isDark ? darkColors : lightColors;
+  
+  return <ErrorBoundaryClass {...props} colors={colors} isDark={isDark} />;
+};
+
+interface ErrorBoundaryClassProps extends Props {
+  colors: typeof lightColors;
+  isDark: boolean;
+}
+
+class ErrorBoundaryClass extends Component<ErrorBoundaryClassProps, State> {
+  constructor(props: ErrorBoundaryClassProps) {
     super(props);
     this.state = {
       hasError: false,
@@ -59,6 +75,9 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   render() {
+    const { colors, isDark } = this.props;
+    const styles = createStyles(colors, isDark);
+
     if (this.state.hasError) {
       // Use custom fallback if provided
       if (this.props.fallback) {
@@ -68,8 +87,13 @@ export class ErrorBoundary extends Component<Props, State> {
       // Default error UI
       return (
         <SafeAreaView style={styles.container}>
+          <StatusBar 
+            barStyle={isDark ? 'light-content' : 'dark-content'} 
+            backgroundColor={colors.background}
+          />
           <ScrollView contentContainerStyle={styles.content}>
             <View style={styles.errorContainer}>
+              <Text style={styles.icon}>🚨</Text>
               <Text style={styles.title}>Oops! Something went wrong</Text>
               <Text style={styles.message}>
                 We apologize for the inconvenience. An unexpected error occurred.
@@ -101,81 +125,89 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  content: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  errorContainer: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignSelf: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorDetails: {
-    marginTop: 20,
-    marginBottom: 20,
-    padding: 16,
-    backgroundColor: '#fff3cd',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ffeeba',
-  },
-  errorTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#856404',
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#856404',
-    fontFamily: 'monospace',
-  },
-  stackTrace: {
-    marginTop: 12,
-    maxHeight: 200,
-  },
-  stackText: {
-    fontSize: 10,
-    color: '#856404',
-    fontFamily: 'monospace',
-  },
-});
+const createStyles = (colors: typeof lightColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      padding: spacing['5'],
+    },
+    errorContainer: {
+      backgroundColor: colors.surface,
+      borderRadius: spacing['4'],
+      padding: spacing['6'],
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: colors.error[200],
+    },
+    icon: {
+      fontSize: 48,
+      textAlign: 'center',
+      marginBottom: spacing['4'],
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: colors.text.primary,
+      marginBottom: spacing['3'],
+      textAlign: 'center',
+    },
+    message: {
+      fontSize: 16,
+      color: colors.text.secondary,
+      textAlign: 'center',
+      marginBottom: spacing['6'],
+      lineHeight: 22,
+    },
+    button: {
+      backgroundColor: colors.error[500],
+      paddingVertical: spacing['3'],
+      paddingHorizontal: spacing['6'],
+      borderRadius: spacing['2'],
+      alignSelf: 'center',
+    },
+    buttonText: {
+      color: colors.white,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    errorDetails: {
+      marginTop: spacing['5'],
+      marginBottom: spacing['5'],
+      padding: spacing['4'],
+      backgroundColor: isDark ? colors.error[900] : colors.error[50],
+      borderRadius: spacing['2'],
+      borderWidth: 1,
+      borderColor: isDark ? colors.error[700] : colors.error[200],
+    },
+    errorTitle: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: isDark ? colors.error[300] : colors.error[700],
+      marginBottom: spacing['2'],
+    },
+    errorText: {
+      fontSize: 12,
+      color: isDark ? colors.error[300] : colors.error[700],
+      fontFamily: 'monospace',
+    },
+    stackTrace: {
+      marginTop: spacing['3'],
+      maxHeight: 200,
+    },
+    stackText: {
+      fontSize: 10,
+      color: isDark ? colors.error[400] : colors.error[600],
+      fontFamily: 'monospace',
+    },
+  });
 
 export default ErrorBoundary;

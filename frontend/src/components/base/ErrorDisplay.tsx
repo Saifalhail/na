@@ -1,9 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { useTheme } from '@theme/ThemeContext';
-import { Theme } from '@theme/index';
-import Card from './Card';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, Platform } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
+import { Theme } from '@/theme';
+import { UnifiedCard } from './UnifiedCard';
+import { UnifiedButton } from './UnifiedButton';
+import { UnifiedIcon, UNIFIED_ICONS } from './UnifiedIcon';
+import { UI } from '@/constants/uiConstants';
 import { borderRadius, rs } from '@/utils/responsive';
+import { NetworkError, ApiError, ValidationError } from '@/services/api/errors';
 
 interface ErrorDisplayProps {
   error?: string | Error | null;
@@ -27,34 +31,130 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
 
   if (!error) return null;
 
-  const errorMessage = error instanceof Error ? error.message : error;
+  // Get user-friendly error message and action based on error type
+  const getErrorDetails = () => {
+    if (error instanceof NetworkError) {
+      return {
+        title: 'Connection Issue',
+        message: 'Unable to connect to the server. Please check your internet connection.',
+        actions: [
+          '• Check your Wi-Fi or mobile data',
+          '• Ensure the app server is running',
+          Platform.OS === 'android' ? '• Try: adb reverse tcp:8000 tcp:8000' : null,
+        ].filter(Boolean),
+        icon: '📡',
+      };
+    }
+
+    if (error instanceof ApiError) {
+      if (error.isAuthError()) {
+        return {
+          title: 'Authentication Required',
+          message: 'Your session has expired. Please log in again.',
+          icon: '🔒',
+        };
+      }
+      if (error.isRateLimitError()) {
+        return {
+          title: 'Too Many Requests',
+          message: 'Please wait a moment before trying again.',
+          icon: '⏳',
+        };
+      }
+      if (error.isServerError()) {
+        return {
+          title: 'Server Error',
+          message: 'The server is experiencing issues. Please try again later.',
+          icon: '🔧',
+        };
+      }
+    }
+
+    if (error instanceof ValidationError) {
+      return {
+        title: 'Invalid Input',
+        message: error.getFirstError(),
+        icon: '📝',
+      };
+    }
+
+    // Check for common error patterns
+    const errorMessage = error instanceof Error ? error.message : error;
+    
+    if (errorMessage.toLowerCase().includes('network')) {
+      return {
+        title: 'Network Problem',
+        message: 'Check your internet connection and try again.',
+        icon: '🌐',
+      };
+    }
+
+    if (errorMessage.toLowerCase().includes('timeout')) {
+      return {
+        title: 'Request Timeout',
+        message: 'The request took too long. Please check your connection and try again.',
+        icon: '⏱️',
+      };
+    }
+
+    // Default error
+    return {
+      title: title,
+      message: errorMessage,
+      icon: '⚠️',
+    };
+  };
+
+  const errorDetails = getErrorDetails();
 
   if (compact) {
     return (
       <View style={[styles.compactContainer, style]}>
-        <Text style={styles.compactText}>{errorMessage}</Text>
+        <Text style={styles.compactText}>{errorDetails.message}</Text>
         {onRetry && (
-          <TouchableOpacity onPress={onRetry}>
-            <Text style={styles.retryTextCompact}>{retryText}</Text>
-          </TouchableOpacity>
+          <UnifiedButton 
+            onPress={onRetry}
+            variant="ghost"
+            size="small"
+            style={styles.compactRetryButton}
+          >
+            {retryText}
+          </UnifiedButton>
         )}
       </View>
     );
   }
 
   return (
-    <Card variant="outlined" style={[styles.container, style]}>
+    <UnifiedCard style={[styles.container, style]}>
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>⚠️</Text>
+        <Text style={styles.icon}>{errorDetails.icon}</Text>
       </View>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.message}>{errorMessage}</Text>
-      {onRetry && (
-        <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-          <Text style={styles.retryText}>{retryText}</Text>
-        </TouchableOpacity>
+      <Text style={styles.title}>{errorDetails.title}</Text>
+      <Text style={styles.message}>{errorDetails.message}</Text>
+      
+      {/* Show actionable steps if available */}
+      {errorDetails.actions && errorDetails.actions.length > 0 && (
+        <View style={styles.actionsContainer}>
+          <Text style={styles.actionsTitle}>Try these steps:</Text>
+          {errorDetails.actions.map((action, index) => (
+            <Text key={index} style={styles.actionItem}>
+              {action}
+            </Text>
+          ))}
+        </View>
       )}
-    </Card>
+      
+      {onRetry && (
+        <UnifiedButton 
+          onPress={onRetry}
+          variant="primary"
+          style={styles.retryButton}
+        >
+          {retryText}
+        </UnifiedButton>
+      )}
+    </UnifiedCard>
   );
 };
 
@@ -125,6 +225,25 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.text.secondary,
       textAlign: 'center',
       marginBottom: theme.spacing.m,
+    },
+    actionsContainer: {
+      backgroundColor: theme.colors.neutral[50],
+      borderRadius: theme.borderRadius.md,
+      padding: theme.spacing.m,
+      marginBottom: theme.spacing.m,
+      width: '100%',
+    },
+    actionsTitle: {
+      fontSize: theme.typography.fontSize.sm,
+      fontWeight: theme.typography.fontWeight.semibold,
+      color: theme.colors.text.primary,
+      marginBottom: theme.spacing.xs,
+    },
+    actionItem: {
+      fontSize: theme.typography.fontSize.sm,
+      color: theme.colors.text.secondary,
+      lineHeight: 20,
+      marginVertical: 2,
     },
     retryButton: {
       paddingHorizontal: theme.spacing.l,

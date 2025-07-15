@@ -16,7 +16,7 @@ from rest_framework_simplejwt.serializers import (TokenObtainPairSerializer,
                                                   TokenRefreshSerializer)
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api.models import APIUsageLog
+# API usage logging has been simplified and moved to standard logging
 
 User = get_user_model()
 logger = logging.getLogger(__name__)

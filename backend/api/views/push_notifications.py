@@ -11,7 +11,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import DeviceToken, PushNotification
+from api.models import DeviceToken, Notification
 from api.permissions import IsOwnerPermission
 from api.serializers.mobile_serializers import (DeviceTokenSerializer,
                                                 PushNotificationSerializer,
@@ -199,7 +199,7 @@ class PushNotificationHistoryView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return self.request.user.push_notifications.all()[:100]  # Limit to last 100
+        return self.request.user.notifications.filter(channel="push")[:100]  # Limit to last 100
 
     @extend_schema(
         summary="Get push notification history",

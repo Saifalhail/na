@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from ..models import FavoriteMeal, FoodItem, Meal, MealItem
+from ..models import FoodItem, Meal, MealItem
 from ..serializers.ai_serializers import FoodItemSerializer, MealItemSerializer
 
 
@@ -64,9 +64,7 @@ class MealListSerializer(serializers.ModelSerializer):
 
     def get_is_favorite(self, obj):
         """Check if meal is in user's favorites."""
-        request = self.context.get("request")
-        if request and request.user.is_authenticated:
-            return obj.favorited_by.filter(user=request.user).exists()
+        # FavoriteMeal model has been removed in backend simplification
         return False
 
 
@@ -104,17 +102,12 @@ class MealDetailSerializer(serializers.ModelSerializer):
 
     def get_is_favorite(self, obj):
         """Check if meal is in user's favorites."""
-        request = self.context.get("request")
-        if request and request.user.is_authenticated:
-            return obj.favorited_by.filter(user=request.user).exists()
+        # FavoriteMeal model has been removed in backend simplification
         return False
 
     def get_favorite_id(self, obj):
         """Get favorite ID if meal is favorited."""
-        request = self.context.get("request")
-        if request and request.user.is_authenticated:
-            favorite = obj.favorited_by.filter(user=request.user).first()
-            return favorite.id if favorite else None
+        # FavoriteMeal model has been removed in backend simplification
         return None
 
 
@@ -187,51 +180,7 @@ class MealCreateUpdateSerializer(serializers.ModelSerializer):
         return MealItem.objects.create(**item_data)
 
 
-class FavoriteMealSerializer(serializers.ModelSerializer):
-    """Serializer for favorite meals."""
-
-    meal = MealListSerializer(read_only=True)
-    meal_id = serializers.UUIDField(write_only=True)
-
-    class Meta:
-        model = FavoriteMeal
-        fields = [
-            "id",
-            "meal",
-            "meal_id",
-            "name",
-            "is_template",
-            "quick_add_order",
-            "times_used",
-            "last_used",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "times_used", "last_used", "created_at", "updated_at"]
-
-    def validate_meal_id(self, value):
-        """Ensure meal exists and belongs to user."""
-        request = self.context.get("request")
-        if not request or not request.user:
-            raise serializers.ValidationError(_("Authentication required"))
-
-        try:
-            meal = Meal.objects.get(id=value, user=request.user)
-        except Meal.DoesNotExist:
-            raise serializers.ValidationError(_("Meal not found"))
-
-        # Check if already favorited
-        if FavoriteMeal.objects.filter(user=request.user, meal=meal).exists():
-            raise serializers.ValidationError(_("Meal is already in favorites"))
-
-        return value
-
-    def create(self, validated_data):
-        """Create favorite with user from request."""
-        validated_data["user"] = self.context["request"].user
-        meal_id = validated_data.pop("meal_id")
-        validated_data["meal"] = Meal.objects.get(id=meal_id)
-        return super().create(validated_data)
+# FavoriteMeal model has been removed in backend simplification
 
 
 class MealDuplicateSerializer(serializers.Serializer):
@@ -261,7 +210,7 @@ class MealStatisticsSerializer(serializers.Serializer):
     average_calories_per_meal = serializers.FloatField()
     favorite_meal_type = serializers.CharField()
     meals_by_type = serializers.DictField()
-    recent_favorites = FavoriteMealSerializer(many=True)
+    # recent_favorites removed in backend simplification
 
     # Nutritional averages
     average_macros = serializers.DictField()

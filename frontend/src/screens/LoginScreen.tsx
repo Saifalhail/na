@@ -10,10 +10,12 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { Button } from '@/components/base/Button';
+import { UnifiedButton } from '@/components/base/UnifiedButton';
 import { TextInput } from '@/components/base/TextInput';
-import { Card } from '@/components/base/Card';
+import { UnifiedCard } from '@/components/base/UnifiedCard';
 import { SocialLoginButton } from '@/components/auth/SocialLoginButton';
+import { UnifiedIcon, UNIFIED_ICONS } from '@/components/base/UnifiedIcon';
+import { UI } from '@/constants/uiConstants';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/store/authStore';
 import { AuthStackParamList } from '@/navigation/types';
@@ -119,11 +121,13 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         >
           {/* Header Section */}
           <View style={styles.header}>
-            <Image
-              source={require('../../assets/logo_cropped.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/logo_cropped.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>
               Sign in to continue your nutrition journey
@@ -131,7 +135,12 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           {/* Form Section */}
-          <Card variant="elevated" padding="large" style={styles.formCard}>
+          <UnifiedCard 
+            size="large" 
+            animated={true}
+            animationType="fadeUp"
+            style={styles.formCard}
+          >
             <View style={styles.form}>
               <TextInput
                 label="Email"
@@ -172,15 +181,15 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 variant="outlined"
               />
 
-              <Button 
+              <UnifiedButton 
                 onPress={handleForgotPassword} 
-                variant="text" 
+                variant="ghost" 
                 style={styles.forgotButton}
               >
                 Forgot Password?
-              </Button>
+              </UnifiedButton>
 
-              <Button
+              <UnifiedButton
                 onPress={handleLogin}
                 variant="primary"
                 size="large"
@@ -189,7 +198,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 style={styles.loginButton}
               >
                 {isLoading ? LOADING_MESSAGES.LOGGING_IN : 'Sign In'}
-              </Button>
+              </UnifiedButton>
 
               {enableSocialAuth && (
                 <>
@@ -215,35 +224,30 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
               )}
 
               {APP_CONFIG.ENABLE_DEMO_MODE && (
-                <Button
+                <UnifiedButton
                   onPress={handleDemoLogin}
                   variant="primary"
                   size="large"
                   fullWidth
                   style={styles.demoButton}
-                  leftIcon={
-                    <Ionicons
-                      name="play-circle-outline"
-                      size={20}
-                      color={theme.colors.white}
-                    />
-                  }
+                  icon={<UnifiedIcon name={UNIFIED_ICONS.info} size="small" variant="white" />}
+                  iconPosition="left"
                 >
                   Continue with Demo
-                </Button>
+                </UnifiedButton>
               )}
 
-              <Button
+              <UnifiedButton
                 onPress={handleRegister}
-                variant="outline"
+                variant="secondary"
                 size="large"
                 fullWidth
                 style={styles.registerButton}
               >
                 Create New Account
-              </Button>
+              </UnifiedButton>
             </View>
-          </Card>
+          </UnifiedCard>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -254,7 +258,7 @@ const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.isDark ? theme.colors.background : '#FFFFFF',
     },
     keyboardContainer: {
       flex: 1,
@@ -271,20 +275,30 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
       marginBottom: spacing['8'], // 32px
     },
-    logo: {
-      width: spacing['20'], // 80px
-      height: spacing['20'], // 80px
+    logoContainer: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: '#FFFFFF',
+      alignItems: 'center',
+      justifyContent: 'center',
       marginBottom: spacing['4'], // 16px
+      ...UI.shadows.premium,
+    },
+    logo: {
+      width: 60,
+      height: 60,
     },
     title: {
       ...textPresets.h1,
-      color: theme.colors.text.primary,
+      color: theme.isDark ? theme.colors.text.primary : '#000000',
       marginBottom: spacing['2'], // 8px
       textAlign: 'center',
+      fontWeight: '700',
     },
     subtitle: {
       ...textPresets.body,
-      color: theme.colors.text.secondary,
+      color: theme.isDark ? theme.colors.text.secondary : '#666666',
       textAlign: 'center',
       lineHeight: spacing['6'], // 24px
       paddingHorizontal: spacing['4'], // 16px

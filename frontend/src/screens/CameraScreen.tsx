@@ -22,9 +22,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { SafeAreaContainer, SafeAreaHeader } from '@/components/layout';
 import { Container, Spacer } from '@/components/layout';
-import { Button } from '@/components/base/Button';
+import { UnifiedButton } from '@/components/base/UnifiedButton';
+import { UnifiedIcon, UNIFIED_ICONS } from '@/components/base/UnifiedIcon';
+import { UnifiedCard } from '@/components/base/UnifiedCard';
 import { Ionicons } from '@/components/IconFallback';
 import { GradientIcon } from '@/components/icons/GradientIcon';
+import { UI } from '@/constants/uiConstants';
 import { LoadingOverlay } from '@/components/base/Loading';
 import { Badge } from '@/components/base/Badge';
 import { useTheme } from '@/hooks/useTheme';
@@ -386,9 +389,9 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images,
+        // mediaTypes removed due to compatibility issues
         allowsEditing: CAMERA_CONFIG.ALLOW_EDITING,
-        aspect: CAMERA_CONFIG.ASPECT_RATIO,
+        // aspect removed - not needed
         quality: CAMERA_CONFIG.QUALITY,
         allowsMultipleSelection: false,
         exif: false,
@@ -568,7 +571,7 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.isDark ? theme.colors.background : '#FFFFFF' }]}>
       {/* Background Gradient */}
       <LinearGradient
         colors={theme.isDark
@@ -672,49 +675,31 @@ export const CameraScreen: React.FC<Props> = ({ navigation }) => {
             }],
           },
         ]}>
-          <TouchableOpacity
+          <UnifiedButton
             onPress={handleOpenCamera}
-            style={[styles.primaryButton, styles.primaryButtonCamera]}
-            activeOpacity={0.85}
+            variant="primary"
+            size="large"
+            fullWidth
             disabled={isLoading}
+            icon={<UnifiedIcon name={UNIFIED_ICONS.camera} size="large" variant="white" />}
+            iconPosition="left"
+            style={styles.primaryButton}
           >
-            <LinearGradient
-              colors={[theme.colors.primary[400], theme.colors.primary[600]]}
-              style={styles.primaryButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.primaryButtonContent}>
-                <Ionicons name="camera" size={32} color="white" />
-                <View style={styles.primaryButtonTextContainer}>
-                  <Text style={styles.primaryButtonText}>Take Photo</Text>
-                  <Text style={styles.primaryButtonSubtext}>Use camera for best results</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
+            Take Photo
+          </UnifiedButton>
           
-          <TouchableOpacity
+          <UnifiedButton
             onPress={handleSelectFromGallery}
-            style={[styles.primaryButton, styles.primaryButtonGallery]}
-            activeOpacity={0.85}
+            variant="secondary"
+            size="large"
+            fullWidth
             disabled={isLoading}
+            icon={<UnifiedIcon name={UNIFIED_ICONS.image} size="large" variant="primary" />}
+            iconPosition="left"
+            style={styles.primaryButton}
           >
-            <LinearGradient
-              colors={[theme.colors.secondary[400], theme.colors.secondary[600]]}
-              style={styles.primaryButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.primaryButtonContent}>
-                <Ionicons name="images" size={32} color="white" />
-                <View style={styles.primaryButtonTextContainer}>
-                  <Text style={styles.primaryButtonText}>Upload Photo</Text>
-                  <Text style={styles.primaryButtonSubtext}>Choose from your gallery</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
+            Upload Photo
+          </UnifiedButton>
         </Animated.View>
 
         {/* Features Section */}
@@ -1293,6 +1278,40 @@ const styles = StyleSheet.create({
   optimalCapture: {
     backgroundColor: '#10b981',
     borderColor: '#86efac',
+  },
+  ovalGuideContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none',
+  },
+  ovalGuide: {
+    width: screenWidth * 0.85,
+    height: screenHeight * 0.4,
+    borderRadius: (screenWidth * 0.85) / 2,
+    borderWidth: 3,
+    borderColor: 'rgba(239, 68, 68, 0.8)', // Red border
+    backgroundColor: 'transparent',
+    shadowColor: 'rgba(239, 68, 68, 0.5)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+  },
+  guideText: {
+    position: 'absolute',
+    bottom: '25%',
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    paddingHorizontal: spacing['4'],
   },
   captureButtonRing: {
     width: 64,

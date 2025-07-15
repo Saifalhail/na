@@ -32,7 +32,7 @@ def invalidate_user_cache_on_user_save(sender, instance, **kwargs):
         
         # Only invalidate cache for significant changes
         significant_fields = {
-            'account_type', 'is_active', 'is_verified', 'two_factor_enabled',
+            'is_active', 'is_verified',
             'email', 'first_name', 'last_name', 'is_staff', 'is_superuser'
         }
         

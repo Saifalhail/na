@@ -1,40 +1,79 @@
-﻿annotated-types==0.7.0
-asgiref==3.9.1
-attrs==25.3.0
-cachetools==5.5.2
-certifi==2025.7.9
-charset-normalizer==3.4.2
-colorama==0.4.6
+# Core Django Framework
 Django==5.2.4
+djangorestframework==3.16.0
 django-cors-headers==4.7.0
 django-environ==0.12.0
-djangorestframework==3.16.0
+django-filter==24.2
+
+# Database
+psycopg2-binary==2.9.10
+
+# API Documentation
 drf-spectacular==0.28.0
+
+# Google AI Integration
+google-generativeai==0.8.5
 google-ai-generativelanguage==0.6.15
 google-api-core==2.25.1
 google-api-python-client==2.176.0
 google-auth==2.40.3
 google-auth-httplib2==0.2.0
-google-generativeai==0.8.5
 googleapis-common-protos==1.70.0
 grpcio==1.73.1
 grpcio-status==1.71.2
-httplib2==0.22.0
+
+# Image Processing
+pillow==11.3.0
+
+# Authentication
+djangorestframework-simplejwt==5.4.0
+
+# Payment Processing
+stripe==7.8.0
+
+# Environment Management
+python-dotenv==1.1.1
+python-decouple==3.8
+
+# Push Notifications (Expo)
+# Note: Push notifications handled through Expo SDK in frontend
+
+# Email Support
+# Note: Using Django's built-in email support
+
+# Basic Security
+django-ratelimit==4.1.0
+bleach==6.2.0
+
+# Testing
+pytest==8.3.4
+pytest-django==4.10.0
+pytest-cov==6.0.0
+factory-boy==3.3.1
+faker==24.14.1
+
+# Production
+gunicorn==23.0.0
+sentry-sdk==2.20.0
+
+# Development
+ipython==8.31.0
+
+# Common Dependencies
+certifi==2025.7.9
+charset-normalizer==3.4.2
+colorama==0.4.6
 idna==3.10
 inflection==0.5.1
 jsonschema==4.24.0
 jsonschema-specifications==2025.4.1
-pillow==11.3.0
 proto-plus==1.26.1
 protobuf==5.29.5
-psycopg2-binary==2.9.10
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pydantic==2.11.7
 pydantic_core==2.33.2
 pyparsing==3.2.3
-python-dotenv==1.1.1
-python-decouple==3.8
 PyYAML==6.0.2
 referencing==0.36.2
 requests==2.32.4
@@ -42,77 +81,13 @@ rpds-py==0.26.0
 rsa==4.9.1
 sqlparse==0.5.3
 tqdm==4.67.1
-typing-inspection==0.4.1
 typing_extensions==4.14.1
 tzdata==2025.2
 uritemplate==4.2.0
 urllib3==2.5.0
-
-# API filters
-django-filter==24.2
-
-# OAuth2 and social authentication
-django-allauth==65.9.0
-dj-rest-auth==7.0.1
-cryptography==45.0.5  # Required for OAuth2
-
-# Testing dependencies
-pytest==8.3.4
-pytest-django==4.10.0
-pytest-cov==6.0.0
-pytest-xdist==3.6.1
-pytest-xvfb==3.1.1
-factory-boy==3.3.1
-faker==24.14.1
-
-# Security dependencies
-djangorestframework-simplejwt==5.4.0
-django-ratelimit==4.1.0
-# django-security==1.0.7  # Removed - conflicts with Django 5.2.4, functionality replaced by custom middleware
-bleach==6.2.0
-bandit==1.8.0
-safety==3.2.8
-
-# Development dependencies
-ipython==8.31.0
-
-# Two-factor authentication
-django-otp==1.5.4
-qrcode==8.0
-pyotp==2.9.0
-
-# Production dependencies
-sentry-sdk==2.20.0
-celery==5.4.0
-redis==5.1.1
-gunicorn==23.0.0
-psutil==6.0.0
-
-# WebSocket and real-time features
-channels==4.0.0
-channels-redis==4.2.1
-daphne==4.0.0
-
-# File type detection and malware scanning
-python-magic-bin==0.4.14; sys_platform == 'win32'
-python-magic==0.4.27; sys_platform != 'win32'
-pyclamd==0.4.0
-
-# Payment processing
-stripe==7.8.0
-
-# SMS notifications
-twilio==8.11.0
-
-
-# Image processing and AI caching
-numpy==1.26.4
-scipy==1.14.1
-
-# Firebase integration
-firebase-admin==6.5.0
-google-cloud-firestore==2.20.1
-google-auth==2.40.3  # Already included above, version updated for Firebase compatibility
-
-# Phone number validation and formatting
-phonenumbers==8.13.34
+httplib2==0.22.0
+cachetools==5.5.2
+asgiref==3.9.1
+attrs==25.3.0
+annotated-types==0.7.0
+typing-inspection==0.4.1

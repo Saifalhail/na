@@ -14,9 +14,10 @@ import {
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaContainer, Container, Spacer, Row } from '@/components/layout';
-import { Card } from '@/components/base/Card';
-import { Button } from '@/components/base/Button';
+import { UnifiedCard } from '@/components/base/UnifiedCard';
+import { UnifiedButton } from '@/components/base/UnifiedButton';
 import { Modal } from '@/components/base/Modal';
+import { UI } from '@/constants/uiConstants';
 import { LoadingOverlay } from '@/components/base/Loading';
 import { Badge } from '@/components/base/Badge';
 import { ProgressBar } from '@/components/base/ProgressBar';
@@ -307,10 +308,10 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const getBMICategory = (bmi: number) => {
-    if (bmi < 18.5) return { label: 'Underweight', color: '#3498db' };
-    if (bmi < 25) return { label: 'Normal', color: '#2ecc71' };
-    if (bmi < 30) return { label: 'Overweight', color: '#f39c12' };
-    return { label: 'Obese', color: '#e74c3c' };
+    if (bmi < 18.5) return { label: 'Underweight', color: theme.colors.info[500] };
+    if (bmi < 25) return { label: 'Normal', color: theme.colors.success[500] };
+    if (bmi < 30) return { label: 'Overweight', color: theme.colors.warning[500] };
+    return { label: 'Obese', color: theme.colors.error[500] };
   };
 
   const accountType = getAccountTypeInfo();
@@ -344,7 +345,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
       <Spacer size="xl" />
 
       {/* Profile Info */}
-      <Card style={styles.profileCard}>
+      <UnifiedCard style={styles.profileCard}>
         <View style={styles.avatarContainer}>
           <TouchableOpacity onPress={handleAvatarChange} style={styles.avatar}>
             {user?.avatar ? (
@@ -371,24 +372,24 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           </Badge>
         </View>
 
-        <Text style={[styles.email, { color: theme.colors.textSecondary }]}>{user?.email}</Text>
+        <Text style={[styles.email, { color: theme.colors.text.secondary }]}>{user?.email}</Text>
 
-        <Text style={[styles.joinDate, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.joinDate, { color: theme.colors.text.secondary }]}>
           Member since {formatDate(new Date(user?.date_joined || new Date().toISOString()))}
         </Text>
 
         <Spacer size="lg" />
 
-        <Button onPress={() => setShowEditModal(true)} variant="outline" style={styles.editButton}>
+        <UnifiedButton onPress={() => setShowEditModal(true)} variant="secondary" style={styles.editButton}>
           Edit Profile
-        </Button>
-      </Card>
+        </UnifiedButton>
+      </UnifiedCard>
 
       <Spacer size="xl" />
 
       {/* Today's Progress */}
-      <Card style={styles.progressCard}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+      <UnifiedCard style={styles.progressCard}>
+        <Text style={[styles.sectionTitle, { color: theme.isDark ? theme.colors.text.primary : '#000000' }]}>
           Today's Progress
         </Text>
 
@@ -412,30 +413,30 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         <View style={styles.macrosRow}>
           <View style={styles.macroItem}>
-            <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Protein</Text>
+            <Text style={[styles.macroLabel, { color: theme.colors.text.secondary }]}>Protein</Text>
             <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
               {todayStats.protein}g
             </Text>
           </View>
           <View style={styles.macroItem}>
-            <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Carbs</Text>
+            <Text style={[styles.macroLabel, { color: theme.colors.text.secondary }]}>Carbs</Text>
             <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
               {todayStats.carbs}g
             </Text>
           </View>
           <View style={styles.macroItem}>
-            <Text style={[styles.macroLabel, { color: theme.colors.textSecondary }]}>Fat</Text>
+            <Text style={[styles.macroLabel, { color: theme.colors.text.secondary }]}>Fat</Text>
             <Text style={[styles.macroValue, { color: theme.colors.text.primary }]}>
               {todayStats.fat}g
             </Text>
           </View>
         </View>
-      </Card>
+      </UnifiedCard>
 
       <Spacer size="xl" />
 
       {/* Health Metrics */}
-      <Card style={styles.healthCard}>
+      <UnifiedCard style={styles.healthCard}>
         <View style={styles.cardHeader}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
             Health Metrics
@@ -453,7 +454,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
                 {healthMetrics.bmi}
               </Text>
-              <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMI</Text>
+              <Text style={[styles.metricLabel, { color: theme.colors.text.secondary }]}>BMI</Text>
               <Text
                 style={[styles.metricCategory, { color: getBMICategory(healthMetrics.bmi).color }]}
               >
@@ -467,8 +468,8 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
                 {healthMetrics.bmr}
               </Text>
-              <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>BMR</Text>
-              <Text style={[styles.metricCategory, { color: theme.colors.textSecondary }]}>
+              <Text style={[styles.metricLabel, { color: theme.colors.text.secondary }]}>BMR</Text>
+              <Text style={[styles.metricCategory, { color: theme.colors.text.secondary }]}>
                 kcal/day
               </Text>
             </View>
@@ -479,8 +480,8 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
                 {healthMetrics.tdee}
               </Text>
-              <Text style={[styles.metricLabel, { color: theme.colors.textSecondary }]}>TDEE</Text>
-              <Text style={[styles.metricCategory, { color: theme.colors.textSecondary }]}>
+              <Text style={[styles.metricLabel, { color: theme.colors.text.secondary }]}>TDEE</Text>
+              <Text style={[styles.metricCategory, { color: theme.colors.text.secondary }]}>
                 kcal/day
               </Text>
             </View>
@@ -500,12 +501,12 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             theme={theme}
           />
         </View>
-      </Card>
+      </UnifiedCard>
 
       <Spacer size="xl" />
 
       {/* Settings */}
-      <Card style={styles.settingsCard}>
+      <UnifiedCard style={styles.settingsCard}>
         <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Settings</Text>
 
         <Spacer size="lg" />
@@ -553,7 +554,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.settingTitle, { color: theme.colors.text.primary }]}>
                 Dark Mode
               </Text>
-              <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
+              <Text style={[styles.settingSubtitle, { color: theme.colors.text.secondary }]}>
                 {themeMode === 'dark' ? 'Enabled' : 'Disabled'}
               </Text>
             </View>
@@ -583,12 +584,12 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           theme={theme}
           showBadge={false}
         />
-      </Card>
+      </UnifiedCard>
 
       <Spacer size="xl" />
 
       {/* Account Actions */}
-      <Card style={styles.accountCard}>
+      <UnifiedCard style={styles.accountCard}>
         <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Account</Text>
 
         <Spacer size="lg" />
@@ -604,14 +605,14 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             Delete Account
           </Text>
         </TouchableOpacity>
-      </Card>
+      </UnifiedCard>
 
       <Spacer size="xl" />
 
       {/* Logout */}
-      <Button onPress={handleLogout} variant="danger" style={styles.logoutButton}>
+      <UnifiedButton onPress={handleLogout} variant="danger" style={styles.logoutButton}>
         Sign Out
-      </Button>
+      </UnifiedButton>
 
       <Spacer size="xxl" />
 
@@ -631,7 +632,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             value={profileData.firstName}
             onChangeText={(text) => setProfileData({ ...profileData, firstName: text })}
             placeholder="First Name"
-            placeholderTextColor={theme.colors.textSecondary}
+            placeholderTextColor={theme.colors.text.secondary}
           />
 
           <Spacer size="md" />
@@ -641,7 +642,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             value={profileData.lastName}
             onChangeText={(text) => setProfileData({ ...profileData, lastName: text })}
             placeholder="Last Name"
-            placeholderTextColor={theme.colors.textSecondary}
+            placeholderTextColor={theme.colors.text.secondary}
           />
 
           <Spacer size="md" />
@@ -651,15 +652,15 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
             value={profileData.phoneNumber}
             onChangeText={(text) => setProfileData({ ...profileData, phoneNumber: text })}
             placeholder="Phone Number"
-            placeholderTextColor={theme.colors.textSecondary}
+            placeholderTextColor={theme.colors.text.secondary}
             keyboardType="phone-pad"
           />
 
           <Spacer size="lg" />
 
-          <Button onPress={handleSaveProfile} variant="primary" fullWidth loading={isLoading}>
+          <UnifiedButton onPress={handleSaveProfile} variant="primary" fullWidth loading={isLoading}>
             Save Changes
-          </Button>
+          </UnifiedButton>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -749,7 +750,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
                     <Text style={[styles.radioLabel, { color: theme.colors.text.primary }]}>
                       {level.label}
                     </Text>
-                    <Text style={[styles.radioDescription, { color: theme.colors.textSecondary }]}>
+                    <Text style={[styles.radioDescription, { color: theme.colors.text.secondary }]}>
                       {level.description}
                     </Text>
                   </View>
@@ -759,14 +760,14 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="lg" />
 
-            <Button
+            <UnifiedButton
               onPress={handleSaveHealthMetrics}
               variant="primary"
               fullWidth
               loading={isLoading}
             >
               Save
-            </Button>
+            </UnifiedButton>
           </View>
         </ScrollView>
       </Modal>
@@ -873,9 +874,9 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="lg" />
 
-            <Button onPress={handleSaveGoals} variant="primary" fullWidth loading={isLoading}>
+            <UnifiedButton onPress={handleSaveGoals} variant="primary" fullWidth loading={isLoading}>
               Save Goals
-            </Button>
+            </UnifiedButton>
           </View>
         </ScrollView>
       </Modal>
@@ -918,14 +919,14 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
             <Spacer size="lg" />
 
-            <Button
+            <UnifiedButton
               onPress={handleSaveDietaryRestrictions}
               variant="primary"
               fullWidth
               loading={isLoading}
             >
               Save Preferences
-            </Button>
+            </UnifiedButton>
           </View>
         </ScrollView>
       </Modal>
@@ -948,15 +949,15 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
 
           <Spacer size="lg" />
 
-          <Button onPress={() => setShowDeleteModal(false)} variant="outline" fullWidth>
+          <UnifiedButton onPress={() => setShowDeleteModal(false)} variant="secondary" fullWidth>
             Cancel
-          </Button>
+          </UnifiedButton>
 
           <Spacer size="md" />
 
-          <Button onPress={handleDeleteAccount} variant="danger" fullWidth>
+          <UnifiedButton onPress={handleDeleteAccount} variant="danger" fullWidth>
             Delete My Account
-          </Button>
+          </UnifiedButton>
         </View>
       </Modal>
     </SafeAreaContainer>
@@ -985,7 +986,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
       <Text style={styles.settingIcon}>{icon}</Text>
       <View style={styles.settingText}>
         <Text style={[styles.settingTitle, { color: theme.colors.text.primary }]}>{title}</Text>
-        <Text style={[styles.settingSubtitle, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.settingSubtitle, { color: theme.colors.text.secondary }]}>
           {subtitle}
         </Text>
       </View>
@@ -994,7 +995,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
       {showBadge && (
         <View style={[styles.settingBadge, { backgroundColor: theme.colors.primary[500] }]} />
       )}
-      <Text style={[styles.settingArrow, { color: theme.colors.textSecondary }]}>→</Text>
+      <Text style={[styles.settingArrow, { color: theme.colors.text.secondary }]}>→</Text>
     </View>
   </TouchableOpacity>
 );
@@ -1007,7 +1008,7 @@ interface MetricRowProps {
 
 const MetricRow: React.FC<MetricRowProps> = ({ label, value, theme }) => (
   <View style={styles.metricRow}>
-    <Text style={[styles.metricRowLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
+    <Text style={[styles.metricRowLabel, { color: theme.colors.text.secondary }]}>{label}</Text>
     <Text style={[styles.metricRowValue, { color: theme.colors.text.primary }]}>{value}</Text>
   </View>
 );
@@ -1015,6 +1016,7 @@ const MetricRow: React.FC<MetricRowProps> = ({ label, value, theme }) => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',

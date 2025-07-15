@@ -1,0 +1,824 @@
+{
+  "info": {
+    "name": "Nutrition AI API - Complete Collection",
+    "description": "Complete API collection for Nutrition AI backend with image upload and AI analysis testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "v1",
+      "type": "string"
+    },
+    {
+      "key": "apiBaseUrl",
+      "value": "{{baseUrl}}/api/{{apiVersion}}",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh token if expired",
+          "const accessToken = pm.environment.get('accessToken');",
+          "const refreshToken = pm.environment.get('refreshToken');",
+          "",
+          "if (!accessToken && refreshToken) {",
+          "    pm.sendRequest({",
+          "        url: pm.environment.get('apiBaseUrl') + '/auth/refresh/',",
+          "        method: 'POST',",
+          "        header: {",
+          "            'Content-Type': 'application/json',",
+          "        },",
+          "        body: {",
+          "            mode: 'raw',",
+          "            raw: JSON.stringify({'refresh': refreshToken})",
+          "        }",
+          "    }, function (err, response) {",
+          "        if (response.code === 200) {",
+          "            const jsonData = response.json();",
+          "            pm.environment.set('accessToken', jsonData.access);",
+          "            if (jsonData.refresh) {",
+          "                pm.environment.set('refreshToken', jsonData.refresh);",
+          "            }",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common response validation",
+          "pm.test('Response time is acceptable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test('Response has correct Content-Type', function () {",
+          "    const contentType = pm.response.headers.get('Content-Type');",
+          "    if (contentType) {",
+          "        pm.expect(contentType).to.include('application/json');",
+          "    }",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "API Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Health check successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData.status).to.equal('healthy');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Service Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health/services/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health", "services"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"SecurePass123!\",\n    \"password_confirm\": \"SecurePass123!\",\n    \"first_name\": \"Test\",\n    \"last_name\": \"User\",\n    \"terms_accepted\": true,\n    \"marketing_consent\": false\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/auth/registration/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["auth", "registration"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('User registration successful', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.have.property('email');",
+                  "    pm.environment.set('userId', jsonData.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/auth/login/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.expect(jsonData).to.have.property('refresh_token');",
+                  "    ",
+                  "    // Store tokens",
+                  "    pm.environment.set('accessToken', jsonData.access_token);",
+                  "    pm.environment.set('refreshToken', jsonData.refresh_token);",
+                  "    pm.environment.set('userId', jsonData.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refresh\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/auth/refresh/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Token refresh successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access');",
+                  "    pm.environment.set('accessToken', jsonData.access);",
+                  "    if (jsonData.refresh) {",
+                  "        pm.environment.set('refreshToken', jsonData.refresh);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refresh\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/auth/logout/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Analysis",
+      "item": [
+        {
+          "name": "Basic Image Analysis",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": [],
+                  "description": "Upload a food image (JPG, PNG, WebP, max 10MB)"
+                },
+                {
+                  "key": "meal_type",
+                  "value": "lunch",
+                  "type": "text"
+                },
+                {
+                  "key": "location_name",
+                  "value": "Test Location",
+                  "type": "text"
+                },
+                {
+                  "key": "latitude",
+                  "value": "40.7128",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-74.0060",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/ai/analyze/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["ai", "analyze"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Image analysis successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    ",
+                  "    // Verify response structure",
+                  "    pm.expect(jsonData).to.have.property('meal');",
+                  "    pm.expect(jsonData).to.have.property('analysis');",
+                  "    pm.expect(jsonData.meal).to.have.property('name');",
+                  "    pm.expect(jsonData.meal).to.have.property('meal_items');",
+                  "    pm.expect(jsonData.analysis).to.have.property('confidence_overall');",
+                  "    ",
+                  "    // Store meal ID for further testing",
+                  "    pm.environment.set('testMealId', jsonData.meal.id);",
+                  "    ",
+                  "    // Verify meal items",
+                  "    pm.expect(jsonData.meal.meal_items).to.be.an('array');",
+                  "    pm.expect(jsonData.meal.meal_items.length).to.be.greaterThan(0);",
+                  "    ",
+                  "    // Verify nutritional data",
+                  "    jsonData.meal.meal_items.forEach(item => {",
+                  "        pm.expect(item).to.have.property('food_item_name');",
+                  "        pm.expect(item).to.have.property('quantity');",
+                  "        pm.expect(item).to.have.property('calories');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Progressive Analysis",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": [],
+                  "description": "Upload a food image for progressive analysis"
+                },
+                {
+                  "key": "meal_type",
+                  "value": "dinner",
+                  "type": "text"
+                },
+                {
+                  "key": "target_confidence",
+                  "value": "85",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/ai/progressive-analyze/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["ai", "progressive-analyze"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Progressive analysis initiated', function () {",
+                  "    pm.response.to.have.status(202);",
+                  "    const jsonData = pm.response.json();",
+                  "    ",
+                  "    pm.expect(jsonData).to.have.property('session_id');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData.status).to.equal('processing');",
+                  "    ",
+                  "    // Store session ID for status checking",
+                  "    pm.environment.set('progressiveSessionId', jsonData.session_id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Progressive Analysis Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/ai/progressive-status/{{progressiveSessionId}}/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["ai", "progressive-status", "{{progressiveSessionId}}"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Progressive analysis status check', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    ",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('session_id');",
+                  "    pm.expect(jsonData).to.have.property('progress');",
+                  "    ",
+                  "    if (jsonData.status === 'completed') {",
+                  "        pm.expect(jsonData).to.have.property('meal');",
+                  "        pm.expect(jsonData).to.have.property('analysis');",
+                  "        pm.environment.set('progressiveMealId', jsonData.meal.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confidence Routing Analysis",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "meal_type",
+                  "value": "breakfast",
+                  "type": "text"
+                },
+                {
+                  "key": "confidence_threshold",
+                  "value": "75",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/ai/confidence-analyze/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["ai", "confidence-analyze"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recalculate Nutrition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"meal_id\": \"{{testMealId}}\",\n    \"meal_items\": [\n        {\n            \"food_item_name\": \"Chicken Breast\",\n            \"quantity\": 200,\n            \"unit\": \"g\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/ai/recalculate/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["ai", "recalculate"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Meals",
+      "item": [
+        {
+          "name": "Get All Meals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/meals/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["meals"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Meal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Meal\",\n    \"meal_type\": \"lunch\",\n    \"consumed_at\": \"2025-07-15T12:00:00.000Z\",\n    \"notes\": \"Created via Postman testing\",\n    \"meal_items\": [\n        {\n            \"food_item_name\": \"Chicken Breast\",\n            \"quantity\": 150,\n            \"unit\": \"g\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/meals/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["meals"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Meal created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData.name).to.equal('Test Meal');",
+                  "    pm.environment.set('createdMealId', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Meal Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/meals/{{createdMealId}}/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["meals", "{{createdMealId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Meal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Test Meal\",\n    \"meal_type\": \"dinner\",\n    \"consumed_at\": \"2025-07-15T18:00:00.000Z\",\n    \"notes\": \"Updated via Postman testing\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/meals/{{createdMealId}}/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["meals", "{{createdMealId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Meal",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/meals/{{createdMealId}}/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["meals", "{{createdMealId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Duplicate Meal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Duplicated Meal\",\n    \"consumed_at\": \"2025-07-15T14:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/meals/{{testMealId}}/duplicate/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["meals", "{{testMealId}}", "duplicate"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/users/profile/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Profile retrieved successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('first_name');",
+                  "    pm.expect(jsonData).to.have.property('last_name');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"first_name\": \"Updated\",\n    \"last_name\": \"User\",\n    \"gender\": \"M\",\n    \"height\": 175,\n    \"weight\": 70,\n    \"activity_level\": \"moderately_active\",\n    \"goal\": \"maintain\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/users/profile/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Meals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/users/{{userId}}/meals/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["users", "{{userId}}", "meals"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/users/{{userId}}/stats/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["users", "{{userId}}", "stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/notifications/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["notifications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/notifications/{{notificationId}}/read/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "read"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mobile",
+      "item": [
+        {
+          "name": "Register Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"ExponentPushToken[test-token-123]\",\n    \"platform\": \"android\",\n    \"device_id\": \"test-device-001\",\n    \"device_name\": \"Test Device\",\n    \"app_version\": \"1.0.0\",\n    \"os_version\": \"12.0\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/mobile/register-device/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["mobile", "register-device"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Push Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"device_id\": \"test-device-001\",\n    \"title\": \"Test Notification\",\n    \"message\": \"This is a test notification\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/mobile/test-notification/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["mobile", "test-notification"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/mobile/dashboard/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["mobile", "dashboard"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

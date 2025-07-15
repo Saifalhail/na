@@ -165,7 +165,7 @@ export const NetworkStatusIndicator: React.FC = () => {
         {
           transform: [{ translateY }, { scale }],
           opacity,
-          bottom: insets.bottom + 100, // Position above bottom nav
+          bottom: insets.bottom + 85, // Position above bottom nav
         },
       ]}
     >

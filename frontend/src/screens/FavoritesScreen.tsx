@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { spacing } from '@/utils/responsive';
 import {
   View,
   Text,
@@ -10,9 +9,13 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Container, Spacer } from '@/components/layout';
-import { Button } from '@/components/base/Button';
-import { Card } from '@/components/base/Card';
+import { spacing, layout } from '@/theme/spacing';
+import { textPresets } from '@/theme/typography';
+import { SafeAreaContainer } from '@/components/layout';
+import { UnifiedButton } from '@/components/base/UnifiedButton';
+import { UnifiedCard } from '@/components/base/UnifiedCard';
+import { UnifiedIcon, UNIFIED_ICONS } from '@/components/base/UnifiedIcon';
+import { UI } from '@/constants/uiConstants';
 import { LoadingOverlay, ListSkeleton } from '@/components/base/Loading';
 import { ErrorDisplay } from '@/components/base/ErrorDisplay';
 import { EmptyState } from '@/components/base/EmptyState';
@@ -45,37 +48,73 @@ const FavoriteMealCard: React.FC<FavoriteMealCardProps> = ({
   };
 
   return (
-    <Card style={styles.favoriteCard}>
-      <TouchableOpacity onPress={() => onViewDetails(meal)} style={styles.cardContent}>
+    <UnifiedCard
+      gradient={true}
+      variant="cardWhite"
+      padding="none"
+      borderRadius={16}
+      onPress={() => onViewDetails(meal)}
+      style={styles.favoriteCard}
+      elevated={true}
+      animationType="zoomIn"
+      borderWidth={1}
+      borderColor={theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(59, 130, 246, 0.1)'}
+    >
+      <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <Text style={[styles.mealName, { color: theme.colors.text.primary }]} numberOfLines={1}>
+          <Text style={[styles.mealName, { color: theme.isDark ? theme.colors.text.primary : '#000000' }]} numberOfLines={1}>
             {meal.name}
           </Text>
           <TouchableOpacity onPress={() => onRemoveFavorite(meal)} style={styles.removeButton}>
-            <Text style={[styles.removeIcon, { color: theme.colors.error[500] }]}>♥</Text>
+            <Text style={[styles.removeIcon, { color: theme.colors.error[500] }]}>❤️</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.mealInfo}>
-          <Text style={[styles.mealType, { color: theme.colors.primary[500] }]}>
-            {meal.mealType?.charAt(0).toUpperCase() + meal.mealType?.slice(1)}
-          </Text>
-          <Text style={[styles.calories, { color: theme.colors.text.primary }]}>
+          <View style={[styles.mealTypeBadge, { backgroundColor: theme.colors.primary[100] }]}>
+            <Text style={[styles.mealType, { color: theme.colors.primary[600] }]}>
+              {meal.mealType?.charAt(0).toUpperCase() + meal.mealType?.slice(1)}
+            </Text>
+          </View>
+          <Text style={[styles.calories, { color: theme.colors.primary[500] }]}>
             {formatCalories(meal.totalCalories)}
           </Text>
         </View>
 
-        <Text style={[styles.macros, { color: theme.colors.textSecondary }]}>
-          {formatMacros(meal.totalProtein, meal.totalCarbs, meal.totalFat)}
-        </Text>
+        <View style={styles.macrosContainer}>
+          <View style={[styles.macroItem, { backgroundColor: theme.colors.primary[50] }]}>
+            <Text style={[styles.macroLabel, { color: theme.colors.text.secondary }]}>P</Text>
+            <Text style={[styles.macroValue, { color: theme.isDark ? theme.colors.text.primary : '#000000' }]}>
+              {Math.round(meal.totalProtein)}g
+            </Text>
+          </View>
+          <View style={[styles.macroItem, { backgroundColor: theme.colors.info[50] }]}>
+            <Text style={[styles.macroLabel, { color: theme.colors.text.secondary }]}>C</Text>
+            <Text style={[styles.macroValue, { color: theme.isDark ? theme.colors.text.primary : '#000000' }]}>
+              {Math.round(meal.totalCarbs)}g
+            </Text>
+          </View>
+          <View style={[styles.macroItem, { backgroundColor: theme.colors.warning[50] }]}>
+            <Text style={[styles.macroLabel, { color: theme.colors.text.secondary }]}>F</Text>
+            <Text style={[styles.macroValue, { color: theme.isDark ? theme.colors.text.primary : '#000000' }]}>
+              {Math.round(meal.totalFat)}g
+            </Text>
+          </View>
+        </View>
 
-        <Spacer size="md" />
+        <View style={{ marginTop: spacing['4'] }} />
 
-        <Button onPress={() => onQuickLog(meal)} variant="primary" style={styles.quickLogButton}>
-          Quick Log
-        </Button>
-      </TouchableOpacity>
-    </Card>
+        <UnifiedButton
+          onPress={() => onQuickLog(meal)}
+          variant="primary"
+          size="medium"
+          fullWidth
+          style={styles.quickLogButton}
+        >
+          Quick Log 🚀
+        </UnifiedButton>
+      </View>
+    </UnifiedCard>
   );
 };
 
@@ -189,7 +228,7 @@ export const FavoritesScreen: React.FC = () => {
 
   if (error) {
     return (
-      <Container style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaContainer style={[styles.container, { backgroundColor: theme.isDark ? theme.colors.background : '#FFFFFF' }]}>
         <ErrorDisplay
           error={error}
           onRetry={() => {
@@ -197,22 +236,21 @@ export const FavoritesScreen: React.FC = () => {
             loadFavorites();
           }}
         />
-      </Container>
+      </SafeAreaContainer>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.isDark ? theme.colors.background : '#FFFFFF' }]}>
       <AppHeader 
         title="Favorite Meals"
         subtitle="Quickly log your favorite meals"
-        showLogo={true}
+        showLogo={false}
         showUserInfo={true}
       />
       
-      <Container style={styles.contentContainer}>
-
-      <FlatList
+      <View style={styles.contentContainer}>
+        <FlatList
         data={favoriteMeals}
         renderItem={renderFavoriteCard}
         keyExtractor={(item) => item.id}
@@ -237,16 +275,16 @@ export const FavoritesScreen: React.FC = () => {
           <ListSkeleton count={3} />
         </View>
       )}
-      {quickLogging && <LoadingOverlay visible={true} message="Logging meal..." />}
-      </Container>
+        {quickLogging && <LoadingOverlay visible={true} message="Logging meal..." />}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   skeletonContainer: {
-    paddingHorizontal: spacing.medium,
-    paddingTop: spacing.medium,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: spacing['4'],
   },
   container: {
     flex: 1,
@@ -271,8 +309,8 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: layout.screenPadding,
+    paddingBottom: spacing['6'],
   },
   emptyListContent: {
     flexGrow: 1,
@@ -299,12 +337,19 @@ const styles = StyleSheet.create({
   },
   // Favorite Card Styles
   favoriteCard: {
-    marginVertical: 8,
+    marginVertical: spacing['2'],
+    marginHorizontal: layout.screenPadding,
     padding: 0,
     overflow: 'hidden',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardContent: {
-    padding: 16,
+    padding: spacing['4'],
   },
   cardHeader: {
     flexDirection: 'row',
@@ -335,14 +380,49 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   calories: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
   },
   macros: {
     fontSize: 14,
     marginBottom: 4,
   },
+  mealTypeBadge: {
+    paddingHorizontal: spacing['2'],
+    paddingVertical: spacing['1'],
+    borderRadius: 8,
+  },
+  macrosContainer: {
+    flexDirection: 'row',
+    gap: spacing['2'],
+    marginTop: spacing['3'],
+  },
+  macroItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing['2'],
+    paddingVertical: spacing['1'],
+    borderRadius: 8,
+    gap: spacing['1'],
+  },
+  macroLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  macroValue: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
   quickLogButton: {
     width: '100%',
+    paddingVertical: spacing['3'],
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickLogButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
